@@ -26,7 +26,7 @@ extlinks = {
 
 html_theme = "furo"
 html_theme_options = {
-    "githuburl": "https://github.com/InstituteforDiseaseModeling/laser-cholera/",
+    # "githuburl": "https://github.com/InstituteforDiseaseModeling/laser-cholera/",
 }
 
 html_use_smartypants = True
