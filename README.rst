@@ -41,9 +41,9 @@ Overview
     :alt: Supported implementations
     :target: https://test.pypi.org/project/laser-cholera
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/InstituteforDiseaseModeling/laser-cholera/v0.0.1.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/InstituteforDiseaseModeling/laser-cholera/v0.0.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/InstituteforDiseaseModeling/laser-cholera/compare/301d0d2...main
+    :target: https://github.com/InstituteforDiseaseModeling/laser-cholera/compare/v0.0.0...main
 
 
 
