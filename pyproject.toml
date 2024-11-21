@@ -35,9 +35,11 @@ classifiers = [
 ]
 dependencies = [
     "click",
-    "laser-core @ git+https://github.com/InstituteforDiseaseModeling/laser.git@v0.1.0",
-    "numpy>=1.26.4,<2.0.0",
-    "numba>=0.59.1",
+    "laser-core==0.1.1",
+    # "numpy>=1.26.4,<2.0.0", # depend on laser-core
+    # "numba~=0.59.1",  # depend on laser-core
+    "pandas",
+    "geopandas",
     "tqdm",
     "matplotlib",
 ]

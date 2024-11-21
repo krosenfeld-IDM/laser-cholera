@@ -1,0 +1,6 @@
+[submodule "mosaic-data"]
+	path = mosaic-data
+	url = git@github.com:InstituteforDiseaseModeling/MOSAIC-data.git
+[submodule "mosaic-pkg"]
+	path = mosaic-pkg
+	url = git@github.com:InstituteforDiseaseModeling/MOSAIC-pkg.git
