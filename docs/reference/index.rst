@@ -1,7 +1,7 @@
-Reference
-=========
+laser_cholera
+=============
 
 .. toctree::
-    :glob:
+   :maxdepth: 4
 
-    laser_cholera*
+   laser_cholera

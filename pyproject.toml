@@ -44,6 +44,10 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.optional-dependencies]
+"dev" = ["uv", "tox"]
+# "docs" = ["sphinx", "sphinx-rtd-theme"]
+
 [project.urls]
 Homepage = "https://example.com"
 Documentation = "https://laser-cholera.readthedocs.io/en/latest/"
@@ -53,7 +57,7 @@ Changelog = "https://github.com/InstituteforDiseaseModeling/laser-cholera/blob/m
 
 [project.scripts]
 cli = "laser_cholera.cli:run"
-cholera = "laser_measles.cholera.model:run"
+cholera = "laser_cholera.cholera.model:run"
 
 [tool.ruff]
 extend-exclude = ["static", "ci/templates"]
@@ -144,7 +148,7 @@ search = 'version = release = "{current_version}"'
 replace = 'version = release = "{new_version}"'
 
 [[tool.bumpversion.files]]
-filename = "src/laser_measles/__init__.py"
+filename = "src/laser_cholera/__init__.py"
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'
 

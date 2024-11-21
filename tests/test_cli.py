@@ -2,4 +2,4 @@ import subprocess
 
 
 def test_main():
-    assert subprocess.check_output(["laser-cholera", "foo", "foobar"], text=True) == "foobar\n"
+    assert subprocess.check_output(["cli", "foo", "foobar", "bar"], text=True) == "foobar\n"

@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from laser_cholera import PropagatePopulation
 from laser_cholera.metapop import Births
+from laser_cholera.metapop import Transmission
 from laser_cholera.metapop import get_parameters
 from laser_cholera.metapop import scenario
 from laser_cholera.utils import calc_distances
@@ -49,14 +50,14 @@ class Model:
         self.population = LaserFrame(npatches)
 
         # S, I, R, V (vaccinated), W (environmental)
-        self.population.add_scalar_property("S", dtype=np.uint32, default=0)
-        self.population.add_scalar_property("I", dtype=np.uint32, default=0)
-        self.population.add_scalar_property("R", dtype=np.uint32, default=0)
-        self.population.add_scalar_property("V", dtype=np.uint32, default=0)
-        self.population.add_scalar_property("W", dtype=np.float32, default=np.float32(0.0))
+        self.population.add_vector_property("S", length=parameters.nticks, dtype=np.uint32, default=0)
+        self.population.add_vector_property("I", length=parameters.nticks, dtype=np.uint32, default=0)
+        self.population.add_vector_property("R", length=parameters.nticks, dtype=np.uint32, default=0)
+        self.population.add_vector_property("V", length=parameters.nticks, dtype=np.uint32, default=0)
+        self.population.add_vector_property("W", length=parameters.nticks, dtype=np.float32, default=np.float32(0.0))
 
         # initialize the "agent" states
-        self.population.S[:] = scenario.population.values
+        self.population.S[0, :] = scenario.population.values
 
         return
 
@@ -246,7 +247,7 @@ class Model:
 @click.option("--param", "-p", multiple=True, help="Additional parameter overrides (param:value or param=value)")
 def run(**kwargs):
     """
-    Run the measles model simulation with the given parameters.
+    Run the cholera model simulation with the given parameters.
 
     This function initializes the model with the specified parameters, sets up the
     components of the model, seeds initial infections, runs the simulation, and
@@ -282,11 +283,12 @@ def run(**kwargs):
         # RoutineImmunization,
         # Infection,
         # Incubation,
-        # Transmission,
+        Transmission,
     ]
 
     # seed_infections_randomly(model, ninfections=100)
-    seed_infections_in_patch(model, ipatch=13, ninfections=100)
+    ipatch = model.patches.population[0, :].argmax()
+    seed_infections_in_patch(model, ipatch=ipatch, ninfections=100)
 
     model.run()
 
@@ -297,8 +299,8 @@ def run(**kwargs):
 
 
 def seed_infections_in_patch(model, ipatch, ninfections):
-    model.population.S[ipatch] -= ninfections
-    model.population.I[ipatch] = ninfections
+    model.population.S[0, ipatch] -= ninfections
+    model.population.I[0, ipatch] = ninfections
 
     return
 

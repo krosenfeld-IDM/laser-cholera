@@ -8,10 +8,10 @@ from laser_core.propertyset import PropertySet
 
 def get_parameters(kwargs) -> PropertySet:
     """
-    Generate a set of parameters for the generic measles simulation.
+    Generate a set of parameters for the generic cholera simulation.
 
     This function initializes default parameters for the simulation, including meta parameters,
-    measles-specific parameters, network parameters, and routine immunization parameters. It then
+    cholera-specific parameters, network parameters, and routine immunization parameters. It then
     allows for these parameters to be overwritten by values from a JSON file and/or command line
     arguments.
 
@@ -39,7 +39,7 @@ def get_parameters(kwargs) -> PropertySet:
         }
     )
 
-    measles_params = PropertySet(
+    cholera_params = PropertySet(
         {
             "exp_scale": np.float32(1.0),
             "exp_shape": np.float32(3.5),
@@ -73,7 +73,7 @@ def get_parameters(kwargs) -> PropertySet:
         }
     )
 
-    params = PropertySet(meta_params, measles_params, network_params, ri_params)
+    params = PropertySet(meta_params, cholera_params, network_params, ri_params)
 
     # Overwrite any default parameters with those from a JSON file (optional)
     if kwargs.get("params") is not None:
