@@ -57,7 +57,7 @@ Changelog = "https://github.com/InstituteforDiseaseModeling/laser-cholera/blob/m
 
 [project.scripts]
 cli = "laser_cholera.cli:run"
-cholera = "laser_cholera.cholera.model:run"
+metapop = "laser_cholera.metapop.model:run"
 
 [tool.ruff]
 extend-exclude = ["static", "ci/templates"]

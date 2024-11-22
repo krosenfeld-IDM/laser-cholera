@@ -240,7 +240,7 @@ class Model:
 @click.option("--nticks", default=365, help="Number of ticks to run the simulation")
 @click.option("--seed", default=20241107, help="Random seed")
 @click.option("--verbose", is_flag=True, help="Print verbose output")
-@click.option("--no_viz", is_flag=True, default=False, help="Suppress displaying visualizations")
+@click.option("--no-viz", is_flag=True, default=False, help="Suppress displaying visualizations")
 @click.option("--pdf", is_flag=True, help="Output visualization results as a PDF")
 @click.option("--output", default=None, help="Output file for results")
 @click.option("--params", default=None, help="JSON file with parameters")
