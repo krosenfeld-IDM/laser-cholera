@@ -14,7 +14,7 @@ Overview
     * - package
       - |version| |wheel| |supported-versions| |supported-implementations| |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/laser-cholera/badge/?style=flat
-    :target: https://laser-cholera.readthedocs.org/en/latest/
+    :target: https://laser-cholera.readthedocs.io/en/latest/
     :alt: Documentation Status
 
 .. |github-actions| image:: https://github.com/InstituteforDiseaseModeling/laser-cholera/actions/workflows/github-actions.yml/badge.svg
