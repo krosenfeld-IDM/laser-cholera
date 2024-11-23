@@ -5,7 +5,7 @@ from .iso_codes import iso_codes
 from .proppop import PropagatePopulation
 
 __all__ = [
+    "PropagatePopulation",
     "compute",
     "iso_codes",
-    "PropagatePopulation",
 ]

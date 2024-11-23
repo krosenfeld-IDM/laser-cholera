@@ -73,7 +73,24 @@ def get_parameters(kwargs) -> PropertySet:
         }
     )
 
-    params = PropertySet(meta_params, cholera_params, network_params, ri_params)
+    tbd_params = PropertySet(
+        {
+            "alpha": np.float32(0.95),  # overall population mixing parameter
+            "delta": np.float32(0.0001),  # TODO - value from JG "spec" # rate of decay of V. cholerae in the environment
+            "epsilon": np.float32(0.0001),  # TODO - value from JG "spec"   # rate of waning immunity for recovered individuals
+            "gamma": np.float32(0.0001),  # TODO - value from JG "spec" # rate of recovery for infected individuals
+            "kappa": np.float32(
+                316000
+            ),  # concentration of V. cholerae in the environment that results in a 50% probability of infection 10^5-10^6
+            "mu": np.float32(0.0001),  # TODO - value from JG "spec"    # mortality rate for infected individuals due to V. cholerae
+            "omega": np.float32(0.000568010078163538),  # rate of waning immunity for vaccinated individuals
+            "phi": np.float32(0.641193308748988),  # effectiveness of OCV
+            "sigma": np.float32(0.0001),  # TODO - value from JG "spec" # proportion of symptomatic infections
+            "zeta": np.float32(1.0),  # rate of shedding from individuals into the environment 0.1 - 10.0
+        }
+    )
+
+    params = PropertySet(meta_params, cholera_params, network_params, ri_params, tbd_params)
 
     # Overwrite any default parameters with those from a JSON file (optional)
     if kwargs.get("params") is not None:
