@@ -34,23 +34,28 @@ class Susceptibles:
     def __call__(self, model, tick: int) -> None:
         S = model.population.S[tick]
         Sprime = model.population.S[tick + 1]
-        R = model.population.R[tick]
+        # R = model.population.R[tick]
         N = model.population.N[tick]
-        V = model.population.V[tick]
-        LAMBDA = model.patches.LAMBDA[tick + 1]
-        PSI = model.patches.PSI[tick + 1]
-        Nprime = model.population.N[tick + 1]
+        # V = model.population.V[tick]
+        # LAMBDA = model.patches.LAMBDA[tick + 1]
+        # PSI = model.patches.PSI[tick + 1]
 
         Sprime[:] = S
+        # births
         Sprime += model.prng.binomial(N, model.patches.birthrate).astype(Sprime.dtype)  # rate or probability?
-        Sprime -= model.prng.binomial(S, model.params.phi * model.patches.nu[tick]).astype(Sprime.dtype)
-        Sprime += model.prng.binomial(V, model.params.omega).astype(Sprime.dtype)
-        Sprime -= LAMBDA.astype(Sprime.dtype)  # TODO - is this a rate or a count?
-        Sprime -= PSI.astype(Sprime.dtype)  # TODO - is this a rate or a count?
-        Sprime += model.prng.binomial(R, model.params.epsilon).astype(Sprime.dtype)  # rate or probability?
+        # # vaccinations
+        # Sprime -= model.prng.binomial(S, model.params.phi * model.patches.nu[tick]).astype(Sprime.dtype)
+        # # waning vaccinations
+        # Sprime += model.prng.binomial(V, model.params.omega).astype(Sprime.dtype)
+        # human-to-human transmission
+        # Sprime -= LAMBDA.astype(Sprime.dtype)  # TODO - is this a rate or a count?
+        # # environmental-to-human transmission
+        # Sprime -= PSI.astype(Sprime.dtype)  # TODO - is this a rate or a count?
+        # # waning acquired immunity
+        # Sprime += model.prng.binomial(R, model.params.epsilon).astype(Sprime.dtype)  # rate or probability?
+        # non-disease mortality
         Sprime -= model.prng.binomial(S, model.patches.mortrate).astype(Sprime.dtype)  # rate or probability?
 
-        Nprime[:] += Sprime
         return
 
     def plot(self, fig: Figure = None):

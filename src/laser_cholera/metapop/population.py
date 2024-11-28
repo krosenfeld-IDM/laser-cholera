@@ -21,13 +21,13 @@ class Population:
         return
 
     def __call__(self, model, tick: int) -> None:
-        Snext = model.population.S[tick + 1]
-        Inext = model.population.I[tick + 1]
-        Rnext = model.population.R[tick + 1]
-        Vnext = model.population.V[tick + 1]
-        Nnext = model.population.N[tick + 1]
+        Sprime = model.population.S[tick + 1]
+        Vprime = model.population.V[tick + 1]
+        Iprime = model.population.I[tick + 1]
+        Rprime = model.population.R[tick + 1]
+        Nprime = model.population.N[tick + 1]
 
-        Nnext[:] = Snext + Inext + Rnext + Vnext
+        Nprime[:] = Sprime + Vprime + Iprime + Rprime
 
         return
 

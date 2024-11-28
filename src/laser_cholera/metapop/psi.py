@@ -36,7 +36,7 @@ class Psi:
         W = model.patches.W[tick]
 
         PSIprime[:] = beta_env * (S * (1 - model.patches.tau)) * (1 - model.patches.theta[tick]) * W
-        PSIprime /= model.params.kappa * W
+        PSIprime /= model.params.kappa + W
 
         return
 

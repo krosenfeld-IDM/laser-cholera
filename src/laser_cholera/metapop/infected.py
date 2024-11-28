@@ -29,12 +29,20 @@ class Infected:
         Iprime = model.population.I[tick + 1]
         LAMBDA = model.patches.LAMBDA[tick + 1]
         PSI = model.patches.PSI[tick + 1]
+        Sprime = model.population.S[tick + 1]
 
         Iprime[:] = I
-        Iprime += LAMBDA.astype(Iprime.dtype)  # TODO - is this a rate or a count?
-        Iprime += PSI.astype(Iprime.dtype)  # TODO - is this a rate or a count?
+        # human-to-human transmission
+        new_infs = LAMBDA.astype(Iprime.dtype)  # TODO - is this a rate or a count?
+        # environmental-to-human transmission
+        new_infs += PSI.astype(Iprime.dtype)  # TODO - is this a rate or a count?
+        Iprime += new_infs
+        Sprime -= new_infs
+        # recovered
         Iprime -= model.prng.binomial(I, model.params.gamma).astype(Iprime.dtype)
+        # disease deaths
         Iprime -= model.prng.binomial(I, model.params.mu * model.params.sigma).astype(Iprime.dtype)
+        # non-disease mortality
         Iprime -= model.prng.binomial(I, model.patches.mortrate).astype(Iprime.dtype)
 
         return

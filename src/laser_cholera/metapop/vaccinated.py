@@ -23,10 +23,16 @@ class Vaccinated:
         V = model.population.V[tick]
         Vprime = model.population.V[tick + 1]
         S = model.population.S[tick]
+        Sprime = model.population.S[tick + 1]
 
         Vprime[:] = V
-        Vprime += model.prng.binomial(S, model.params.phi * model.patches.nu[tick]).astype(Vprime.dtype)  # rate or probability?
-        Vprime -= model.prng.binomial(V, model.params.omega).astype(Vprime.dtype)
+        newly_vaxxed = model.prng.binomial(S, model.params.phi * model.patches.nu[tick]).astype(Vprime.dtype)  # rate or probability?
+        Vprime += newly_vaxxed
+        Sprime -= newly_vaxxed
+        waned_vax = model.prng.binomial(V, model.params.omega).astype(Vprime.dtype)
+        Vprime -= waned_vax
+        Sprime += waned_vax
+        # non-disease mortality
         Vprime -= model.prng.binomial(V, model.patches.mortrate).astype(Vprime.dtype)  # rate or probability?
 
         return

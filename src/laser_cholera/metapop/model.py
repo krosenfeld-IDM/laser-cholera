@@ -338,6 +338,7 @@ def run(**kwargs):
 def seed_infections_in_patch(model, ipatch, ninfections):
     model.population.S[0, ipatch] -= ninfections
     model.population.I[0, ipatch] = ninfections
+    model.patches.W[0, ipatch] = model.params.zeta * ninfections
 
     return
 

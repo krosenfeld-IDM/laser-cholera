@@ -22,10 +22,17 @@ class Recovered:
         R = model.population.R[tick]
         Rprime = model.population.R[tick + 1]
         I = model.population.I[tick]  # noqa: E741
+        Iprime = model.population.I[tick + 1]
+        Sprime = model.population.S[tick + 1]
 
         Rprime[:] = R
-        Rprime += model.prng.binomial(I, model.params.gamma).astype(Rprime.dtype)  # rate or probability?
-        Rprime -= model.prng.binomial(R, model.params.epsilon).astype(Rprime.dtype)  # rate or probability?
+        newly_recovered = model.prng.binomial(I, model.params.gamma).astype(Rprime.dtype)  # rate or probability?
+        Iprime -= newly_recovered
+        Rprime += newly_recovered
+        waned = model.prng.binomial(R, model.params.epsilon).astype(Rprime.dtype)  # rate or probability?
+        Sprime += waned
+        Rprime -= waned
+        # non-disease mortality
         Rprime -= model.prng.binomial(R, model.patches.mortrate).astype(Rprime.dtype)  # rate or probability?
 
         return
