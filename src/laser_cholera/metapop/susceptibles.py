@@ -7,11 +7,11 @@ class Susceptibles:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Susceptibles: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "S"), "Susceptibles: model population needs to have a 'S' (susceptible) attribute."
-        assert hasattr(model.population, "R"), "Susceptibles: model population needs to have a 'R' (recovered) attribute."
-        assert hasattr(model.population, "N"), "Susceptibles: model population needs to have a 'N' (current population) attribute."
-        assert hasattr(model.population, "V"), "Susceptibles: model population needs to have a 'V' (vaccinated) attribute."
+        assert hasattr(model, "agents"), "Susceptibles: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "S"), "Susceptibles: model agents needs to have a 'S' (susceptible) attribute."
+        assert hasattr(model.agents, "R"), "Susceptibles: model agents needs to have a 'R' (recovered) attribute."
+        assert hasattr(model.agents, "N"), "Susceptibles: model agents needs to have a 'N' (current population) attribute."
+        assert hasattr(model.agents, "V"), "Susceptibles: model agents needs to have a 'V' (vaccinated) attribute."
         assert hasattr(model, "patches"), "Susceptibles: model needs to have a 'patches' attribute."
         assert hasattr(
             model.patches, "LAMBDA"
@@ -26,17 +26,17 @@ class Susceptibles:
         assert hasattr(model.params, "phi"), "Susceptibles: model params needs to have a 'phi' (death rate) parameter."
         assert hasattr(model.params, "omega"), "Susceptibles: model params needs to have a 'omega' (vaccination rate) parameter."
 
-        # model.population.add_vector_property("S", length=model.params.nticks+1, dtype=float, default=0.0)
-        model.population.S[0] = model.patches.initpop
+        # model.agents.add_vector_property("S", length=model.params.nticks+1, dtype=float, default=0.0)
+        model.agents.S[0,:] = model.patches.initpop
 
         return
 
     def __call__(self, model, tick: int) -> None:
-        S = model.population.S[tick]
-        Sprime = model.population.S[tick + 1]
-        # R = model.population.R[tick]
-        N = model.population.N[tick]
-        # V = model.population.V[tick]
+        S = model.agents.S[tick]
+        Sprime = model.agents.S[tick + 1]
+        # R = model.agents.R[tick]
+        N = model.agents.N[tick]
+        # V = model.agents.V[tick]
         # LAMBDA = model.patches.LAMBDA[tick + 1]
         # PSI = model.patches.PSI[tick + 1]
 
@@ -63,7 +63,7 @@ class Susceptibles:
 
         ipatch = self.model.patches.initpop.argmax()
         plt.title(f"Susceptibles in Patch {ipatch}")
-        plt.plot(self.model.population.S[:, ipatch], color="green", label="Susceptibles")
+        plt.plot(self.model.agents.S[:, ipatch], color="green", label="Susceptibles")
         plt.xlabel("Tick")
 
         yield

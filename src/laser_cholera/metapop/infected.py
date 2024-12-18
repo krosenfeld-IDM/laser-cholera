@@ -7,8 +7,8 @@ class Infected:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Infected: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "I"), "Infected: model population needs to have a 'I' (infectious) attribute."
+        assert hasattr(model, "agents"), "Infected: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "I"), "Infected: model agents needs to have a 'I' (infectious) attribute."
         assert hasattr(model, "patches"), "Infected: model needs to have a 'patches' attribute."
         assert hasattr(
             model.patches, "LAMBDA"
@@ -25,11 +25,11 @@ class Infected:
         return
 
     def __call__(self, model, tick: int) -> None:
-        I = model.population.I[tick]  # noqa: E741
-        Iprime = model.population.I[tick + 1]
+        I = model.agents.I[tick]  # noqa: E741
+        Iprime = model.agents.I[tick + 1]
         LAMBDA = model.patches.LAMBDA[tick + 1]
         PSI = model.patches.PSI[tick + 1]
-        Sprime = model.population.S[tick + 1]
+        Sprime = model.agents.S[tick + 1]
 
         Iprime[:] = I
         # human-to-human transmission
@@ -51,7 +51,7 @@ class Infected:
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
         ipatch = self.model.patches.initpop.argmax()
         plt.title(f"Infected in Patch {ipatch}")
-        plt.plot(self.model.population.I[:, ipatch], color="red", label="Infected")
+        plt.plot(self.model.agents.I[:, ipatch], color="red", label="Infected")
         plt.xlabel("Tick")
 
         yield

@@ -7,8 +7,8 @@ class Environmental:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Environmental: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "I"), "Environmental: model population needs to have a 'I' (infectious) attribute."
+        assert hasattr(model, "agents"), "Environmental: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "I"), "Environmental: model agents needs to have a 'I' (infectious) attribute."
         assert hasattr(model, "params"), "Environmental: model needs to have a 'params' attribute."
         assert hasattr(model.params, "delta"), "Environmental: model paraams needs to have a 'delta' (suitability decay) parameter."
         assert hasattr(
@@ -22,7 +22,7 @@ class Environmental:
     def __call__(self, model, tick: int) -> None:
         W = model.patches.W[tick]
         Wprime = model.patches.W[tick + 1]
-        I = model.population.I[tick]  # noqa: E741
+        I = model.agents.I[tick]  # noqa: E741
 
         Wprime[:] = W
         Wprime += model.params.zeta * I

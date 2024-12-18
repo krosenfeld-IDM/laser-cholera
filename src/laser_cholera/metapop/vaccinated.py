@@ -7,9 +7,9 @@ class Vaccinated:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Vaccinated: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "V"), "Vaccinated: model population needs to have a 'V' (vaccinated) attribute."
-        assert hasattr(model.population, "S"), "Vaccinated: model population needs to have a 'S' (susceptible) attribute."
+        assert hasattr(model, "agents"), "Vaccinated: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "V"), "Vaccinated: model agents needs to have a 'V' (vaccinated) attribute."
+        assert hasattr(model.agents, "S"), "Vaccinated: model agents needs to have a 'S' (susceptible) attribute."
         assert hasattr(model, "params"), "Vaccinated: model needs to have a 'params' attribute."
         assert hasattr(model.params, "phi"), "Vaccinated: model needs to have a 'phi' (vaccination rate) parameter."
         assert hasattr(model.params, "omega"), "Vaccinated: model needs to have a 'omega' (vaccination rate) parameter."
@@ -20,10 +20,10 @@ class Vaccinated:
         return
 
     def __call__(self, model, tick: int) -> None:
-        V = model.population.V[tick]
-        Vprime = model.population.V[tick + 1]
-        S = model.population.S[tick]
-        Sprime = model.population.S[tick + 1]
+        V = model.agents.V[tick]
+        Vprime = model.agents.V[tick + 1]
+        S = model.agents.S[tick]
+        Sprime = model.agents.S[tick + 1]
 
         Vprime[:] = V
         newly_vaxxed = model.prng.binomial(S, model.params.phi * model.patches.nu[tick]).astype(Vprime.dtype)  # rate or probability?
@@ -42,7 +42,7 @@ class Vaccinated:
 
         ipatch = self.model.patches.initpop.argmax()
         plt.title(f"Vaccinated in Patch {ipatch}")
-        plt.plot(self.model.population.V[:, ipatch], color="blue", label="Vaccinated")
+        plt.plot(self.model.agents.V[:, ipatch], color="blue", label="Vaccinated")
         plt.xlabel("Tick")
 
         yield

@@ -1,121 +1,46 @@
 import re
 from pathlib import Path
+from typing import Optional
+from typing import Union
 
 import click
-import numpy as np
+import yaml
 from laser_core.propertyset import PropertySet
 
+from .defaults import write_default_yaml
 
-def get_parameters(kwargs) -> PropertySet:
-    """
-    Generate a set of parameters for the generic cholera simulation.
 
-    This function initializes default parameters for the simulation, including meta parameters,
-    cholera-specific parameters, network parameters, and routine immunization parameters. It then
-    allows for these parameters to be overwritten by values from a JSON file and/or command line
-    arguments.
+def get_parameters(filename: Optional[Union[str, Path]] = None, overrides:Optional[str] = None) -> PropertySet:
 
-    Args:
+    filename = Path(filename) if filename is not None else write_default_yaml()
 
-        kwargs (dict): A dictionary of keyword arguments that can include:
+    with filename.open("r") as file:
+        parameters = yaml.safe_load(file)
 
-            - "params" (str): Path to a JSON file containing parameter values to overwrite defaults.
-            - "param" (list): List of strings in the format "key=value" to overwrite specific parameters.
+    params = PropertySet(parameters)
+    params.birthrate = PropertySet(params.birthrate)
+    params.initpop = PropertySet(params.initpop)
+    params.mortrate = PropertySet(params.mortrate)
+    params.tau = PropertySet(params.tau)
+    params.beta_env_t0 = PropertySet(params.beta_env_t0)
+    params.beta_hum_t0 = PropertySet(params.beta_hum_t0)
+    params.nu = PropertySet(params.nu)
+    params.psi = PropertySet(params.psi)
+    params.theta = PropertySet(params.theta)
+    params.pi = PropertySet(params.pi)
+    params.seasonality_coefficients = PropertySet(params.seasonality_coefficients)
 
-    Returns:
+    if params.verbose:
+        click.echo(f"Loaded parameters from `{filename}`…")
 
-        PropertySet: A PropertySet object containing all the parameters for the simulation.
-    """
-
-    meta_params = PropertySet(
-        {
-            "nticks": 365,
-            "verbose": False,
-            "cbr": np.float32(13.7),
-            "population_file": Path(__file__).parent.absolute() / "WA County Populations-2000.csv",
-            "shape_file": Path(__file__).parent.absolute() / "WA_County_Boundaries" / "WA_County_Boundaries.shp",
-            "pyramid_file": Path(__file__).parent.absolute() / "USA pyramid-2000.csv",
-            "mortality_file": Path(__file__).parent.absolute() / "USA mortality-2000.csv",
-        }
-    )
-
-    cholera_params = PropertySet(
-        {
-            "exp_scale": np.float32(1.0),
-            "exp_shape": np.float32(3.5),
-            "inf_mean": np.float32(18.0),
-            "inf_std": np.float32(2.0),
-            "r_naught": np.float32(15.0),
-            "seasonality_factor": np.float32(0.125),
-            "seasonality_phase": np.float32(182),
-        }
-    )
-
-    network_params = PropertySet(
-        {
-            "k": np.float32(50.0),
-            "a": np.float32(1.0),
-            "b": np.float32(0.0),
-            "c": np.float32(1.0),
-            "max_frac": np.float32(0.05),
-        }
-    )
-
-    ri_params = PropertySet(
-        {
-            "ri_coverage": 0.7,
-            "probability_mcv1_take": 0.85,
-            "probability_mcv2_take": 0.95,
-            "mcv1_start": int(8.5 * 365 / 12),  # 8.5 months
-            "mcv1_end": int(9.5 * 365 / 12),  # 9.5 months
-            "mcv2_start": int(14.5 * 365 / 12),  # 14.5 months
-            "mcv2_end": int(15.5 * 365 / 12),  # 15.5 months
-        }
-    )
-
-    tbd_params = PropertySet(
-        {
-            "alpha": np.float32(0.95),  # overall population mixing parameter
-            "delta": np.float32(0.0001),  # TODO - value from JG "spec" # rate of decay of V. cholerae in the environment
-            "epsilon": np.float32(0.0001),  # TODO - value from JG "spec"   # rate of waning immunity for recovered individuals
-            "gamma": np.float32(0.0001),  # TODO - value from JG "spec" # rate of recovery for infected individuals
-            "kappa": np.float32(
-                316000
-            ),  # concentration of V. cholerae in the environment that results in a 50% probability of infection 10^5-10^6
-            "mu": np.float32(0.0001),  # TODO - value from JG "spec"    # mortality rate for infected individuals due to V. cholerae
-            "omega": np.float32(0.000568010078163538),  # rate of waning immunity for vaccinated individuals
-            "phi": np.float32(0.641193308748988),  # effectiveness of OCV
-            "sigma": np.float32(0.0001),  # TODO - value from JG "spec" # proportion of symptomatic infections
-            "zeta": np.float32(1.0),  # rate of shedding from individuals into the environment 0.1 - 10.0
-        }
-    )
-
-    params = PropertySet(meta_params, cholera_params, network_params, ri_params, tbd_params)
-
-    # Overwrite any default parameters with those from a JSON file (optional)
-    if kwargs.get("params") is not None:
-        paramfile = Path(kwargs.get("params"))
-        params += PropertySet.load(paramfile)
-        click.echo(f"Loaded parameters from `{paramfile}`…")
-
-    # Finally, overwrite any parameters with those from the command line (optional)
-    for key, value in kwargs.items():
-        if key == "params":
-            continue  # handled above
-
-        if key != "param":
-            click.echo(f"Using `{value}` for parameter `{key}` from the command line…")
-            params[key] = value
-        else:  # arbitrary param:value pairs from the command line
-            for kvp in kwargs["param"]:
-                key, value = re.split("[=:]+", kvp)
-                if key not in params:
-                    click.echo(f"Unknown parameter `{key}` ({value=}). Skipping…")
-                    continue
-                value = type(params[key])(value)  # Cast the value to the same type as the existing parameter
-                click.echo(f"Using `{value}` for parameter `{key}` from the command line…")
-                params[key] = value
-
-    params.beta = np.float32(np.float32(params.r_naught) / np.float32(params.inf_mean))
+    # Overwrite any parameters with those from the command line (optional)
+    for kvp in overrides:
+        key, value = re.split("[=:]+", kvp)
+        if key not in params:
+            click.echo(f"Unknown parameter `{key}` ({value=}). Skipping…")
+            continue
+        value = type(params[key])(value)    # Cast the value to the same type as the existing parameter
+        click.echo(f"Using `{value}` for parameter `{key}` from the command line…")
+        params[key] = value
 
     return params

@@ -13,10 +13,10 @@ class Lambda_:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Lambda_: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "S"), "Lambda_: model population needs to have a 'S' (susceptible) attribute."
-        assert hasattr(model.population, "I"), "Lambda_: model population needs to have a 'I' (infectious) attribute."
-        assert hasattr(model.population, "N"), "Lambda_: model population needs to have a 'N' (current population) attribute."
+        assert hasattr(model, "agents"), "Lambda_: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "S"), "Lambda_: model agents needs to have a 'S' (susceptible) attribute."
+        assert hasattr(model.agents, "I"), "Lambda_: model agents needs to have a 'I' (infectious) attribute."
+        assert hasattr(model.agents, "N"), "Lambda_: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(model, "patches"), "Lambda_: model needs to have a 'patches' attribute."
         assert hasattr(model.patches, "network"), "Lambda_: model patches needs to have a 'network' attribute."
         assert hasattr(model.patches, "beta_hum"), "Lambda_: model patches needs to have a 'beta_hum' (human-to-human rate) attribute."
@@ -40,13 +40,13 @@ class Lambda_:
 
         # "lambda" is a reserved keyword in Python
         LAMBDAprime = model.patches.LAMBDA[tick + 1]
-        LAMBDAprime[:] = model.population.I[tick] * (1 - model.patches.tau)
+        LAMBDAprime[:] = model.agents.I[tick] * (1 - model.patches.tau)
         # TODO - sum over axis=0 or axis=1?
-        LAMBDAprime += (model.patches.pi * (model.patches.tau * model.population.I[tick])).sum(axis=0)
-        LAMBDAprime *= model.population.S[tick] * (1 - model.patches.tau)
+        LAMBDAprime += (model.patches.pi * (model.patches.tau * model.agents.I[tick])).sum(axis=0)
+        LAMBDAprime *= model.agents.S[tick] * (1 - model.patches.tau)
         np.power(LAMBDAprime, model.params.alpha, out=LAMBDAprime)
         LAMBDAprime *= model.patches.beta_hum[tick]
-        LAMBDAprime /= model.population.N[tick]
+        LAMBDAprime /= model.agents.N[tick]
 
         return
 

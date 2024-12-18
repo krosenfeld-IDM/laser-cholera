@@ -13,21 +13,24 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
+from laser_cholera import iso_codes
+
 # from laser_cholera import PropagatePopulation
 from laser_cholera.metapop import Births
-from laser_cholera.metapop import Environmental
-from laser_cholera.metapop import Infected
-from laser_cholera.metapop import Lambda_
-from laser_cholera.metapop import Population
-from laser_cholera.metapop import Psi
-from laser_cholera.metapop import Recovered
+
+# from laser_cholera.metapop import Environmental
+# from laser_cholera.metapop import Infected
+# from laser_cholera.metapop import Lambda_
+# from laser_cholera.metapop import Population
+# from laser_cholera.metapop import Psi
+# from laser_cholera.metapop import Recovered
 from laser_cholera.metapop import Susceptibles
-from laser_cholera.metapop import Transmission
-from laser_cholera.metapop import Vaccinated
-from laser_cholera.metapop import Wash
+
+# from laser_cholera.metapop import Transmission
+# from laser_cholera.metapop import Vaccinated
+# from laser_cholera.metapop import Wash
 from laser_cholera.metapop import get_parameters
 from laser_cholera.metapop import scenario
-from laser_cholera.utils import calc_distances
 
 
 class Model:
@@ -51,12 +54,9 @@ class Model:
         # self.patches.add_vector_property("population", length=parameters.nticks, dtype=np.uint32, default=np.uint32(0))
         self.patches.add_scalar_property("initpop", dtype=np.uint32, default=np.uint32(0))
         self.patches.initpop[:] = scenario.population.values
-        self.patches.add_vector_property("network", length=npatches, dtype=np.float32, default=np.float32(0.0))
-        distances = calc_distances(scenario.latitude.values, scenario.longitude.values, parameters.verbose)
-        self.patches.network[:, :] = row_normalizer(
-            gravity(scenario.population.values, distances, parameters.k, parameters.a, parameters.b, parameters.c), parameters.max_frac
-        )
-
+        self.patches.add_vector_property("pi", length=npatches, dtype=np.float32, default=np.float32(0.0))
+        for i, iso in enumerate(iso_codes):
+            self.patches.pi[i] = parameters.pi[iso]
         self.patches.add_vector_property("W", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
         self.patches.add_vector_property("beta_hum", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
         self.patches.add_vector_property("beta_env", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
@@ -65,18 +65,21 @@ class Model:
         self.patches.add_vector_property("nu", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
 
         self.patches.add_scalar_property("birthrate", dtype=np.float32, default=np.float32(0.0))
-        Warning("TODO - initialize birth rate from JG data")
+        for i, iso in enumerate(iso_codes):
+            self.patches.birthrate[i] = parameters.birthrate[iso]
         self.patches.add_scalar_property("mortrate", dtype=np.float32, default=np.float32(0.0))
+        for i, iso in enumerate(iso_codes):
+            self.patches.mortrate[i] = parameters.mortrate[iso]
 
         # setup the LaserFrame for agents/population (states and dynamics)
-        self.population = LaserFrame(npatches)
+        self.agents = LaserFrame(npatches)
 
         # S, I, R, V (vaccinated), W (environmental)
-        self.population.add_vector_property("S", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.population.add_vector_property("I", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.population.add_vector_property("R", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.population.add_vector_property("V", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.population.add_vector_property("N", length=parameters.nticks + 1, dtype=np.uint32, default=0)
+        self.agents.add_vector_property("S", length=parameters.nticks + 1, dtype=np.uint32, default=0)
+        self.agents.add_vector_property("I", length=parameters.nticks + 1, dtype=np.uint32, default=0)
+        self.agents.add_vector_property("R", length=parameters.nticks + 1, dtype=np.uint32, default=0)
+        self.agents.add_vector_property("V", length=parameters.nticks + 1, dtype=np.uint32, default=0)
+        self.agents.add_vector_property("N", length=parameters.nticks + 1, dtype=np.uint32, default=0)
 
         # initialize the "agent" states
 
@@ -295,31 +298,14 @@ def run(**kwargs):
         None
     """
 
-    parameters = get_parameters(kwargs)
+    parameters = get_parameters(overrides=["verbose:1"])
     # scenario = get_scenario(parameters, parameters["verbose"])
     model = Model(scenario, parameters)
 
     # infection dynamics come _before_ incubation dynamics so newly set itimers
     # don't immediately expire
     model.components = [
-        #        PropagatePopulation,
-        #        Births,
-        Lambda_,
-        Wash,
-        Psi,
         Susceptibles,
-        Vaccinated,
-        Infected,
-        Environmental,
-        Recovered,
-        Population,
-        # NonDiseaseDeaths,
-        # Susceptibility,
-        # MaternalAntibodies,
-        # RoutineImmunization,
-        # Infection,
-        # Incubation,
-        Transmission,
     ]
 
     # seed_infections_randomly(model, ninfections=100)
@@ -336,8 +322,8 @@ def run(**kwargs):
 
 
 def seed_infections_in_patch(model, ipatch, ninfections):
-    model.population.S[0, ipatch] -= ninfections
-    model.population.I[0, ipatch] = ninfections
+    model.agents.S[0, ipatch] -= ninfections
+    model.agents.I[0, ipatch] = ninfections
     model.patches.W[0, ipatch] = model.params.zeta * ninfections
 
     return

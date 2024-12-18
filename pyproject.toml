@@ -48,6 +48,7 @@ dependencies = [
 [project.optional-dependencies]
 "dev" = ["uv", "tox"]
 # "docs" = ["sphinx", "sphinx-rtd-theme"]
+"nb" = ["jupyter", "nbconvert", "nbformat", "ipykernel"]
 
 [project.urls]
 Homepage = "https://example.com"

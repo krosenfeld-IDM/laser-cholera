@@ -7,9 +7,9 @@ class Recovered:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Recovered: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "R"), "Recovered: model population needs to have a 'R' (recovered) attribute."
-        assert hasattr(model.population, "I"), "Recovered: model population needs to have a 'I' (infectious) attribute."
+        assert hasattr(model, "agents"), "Recovered: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "R"), "Recovered: model agents needs to have a 'R' (recovered) attribute."
+        assert hasattr(model.agents, "I"), "Recovered: model agents needs to have a 'I' (infectious) attribute."
         assert hasattr(model, "params"), "Recovered: model needs to have a 'params' attribute."
         assert hasattr(model.params, "gamma"), "Recovered: model params needs to have a 'gamma' (recovery rate) parameter."
         assert hasattr(model.params, "epsilon"), "Recovered: model params needs to have a 'epsilon' (recovery rate) parameter."
@@ -19,11 +19,11 @@ class Recovered:
         return
 
     def __call__(self, model, tick: int) -> None:
-        R = model.population.R[tick]
-        Rprime = model.population.R[tick + 1]
-        I = model.population.I[tick]  # noqa: E741
-        Iprime = model.population.I[tick + 1]
-        Sprime = model.population.S[tick + 1]
+        R = model.agents.R[tick]
+        Rprime = model.agents.R[tick + 1]
+        I = model.agents.I[tick]  # noqa: E741
+        Iprime = model.agents.I[tick + 1]
+        Sprime = model.agents.S[tick + 1]
 
         Rprime[:] = R
         newly_recovered = model.prng.binomial(I, model.params.gamma).astype(Rprime.dtype)  # rate or probability?
@@ -41,7 +41,7 @@ class Recovered:
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
         ipatch = self.model.patches.initpop.argmax()
         plt.title(f"Recovered in Patch {ipatch}")
-        plt.plot(self.model.population.R[:, ipatch], color="purple", label="Recovered")
+        plt.plot(self.model.agents.R[:, ipatch], color="purple", label="Recovered")
         plt.xlabel("Tick")
 
         yield

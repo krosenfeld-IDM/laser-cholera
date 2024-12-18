@@ -1,4 +1,4 @@
-iso_codes = [
+iso_codes = sorted([
     "AGO",  # Angola
     "BEN",  # Benin
     "BWA",  # Botswana
@@ -40,4 +40,4 @@ iso_codes = [
     "TZA",  # United Republic of Tanzania
     "ZMB",  # Zambia
     "ZWE",  # Zimbabwe
-]
+])

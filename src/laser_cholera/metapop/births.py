@@ -18,7 +18,7 @@ class Births:
     def __call__(self, model, tick: int) -> None:
         births = model.prng.poisson(model.patches.daily_birth_rate * model.patches.population[tick, :]).astype(model.patches.births.dtype)
         model.patches.births[tick, :] = births
-        model.population.S[tick, :] += births
+        model.agents.S[tick, :] += births
 
         return
 

@@ -12,8 +12,8 @@ class Psi:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "population"), "Psi: model needs to have a 'population' attribute."
-        assert hasattr(model.population, "S"), "Psi: model population needs to have a 'S' (susceptible) attribute."
+        assert hasattr(model, "agents"), "Psi: model needs to have a 'agents' attribute."
+        assert hasattr(model.agents, "S"), "Psi: model agents needs to have a 'S' (susceptible) attribute."
         assert hasattr(model, "patches"), "Psi: model needs to have a 'patches' attribute."
         assert hasattr(model.patches, "PSI"), "Psi: model patches needs to have a 'PSI' (environmental transmission rate) attribute."
         assert hasattr(
@@ -32,7 +32,7 @@ class Psi:
     def __call__(self, model, tick: int) -> None:
         PSIprime = model.patches.PSI[tick + 1]
         beta_env = model.patches.beta_env[tick]
-        S = model.population.S[tick]
+        S = model.agents.S[tick]
         W = model.patches.W[tick]
 
         PSIprime[:] = beta_env * (S * (1 - model.patches.tau)) * (1 - model.patches.theta[tick]) * W
