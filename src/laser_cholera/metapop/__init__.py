@@ -1,29 +1,23 @@
-from .births import Births
+from .census import Census
 from .environmental import Environmental
-from .infected import Infected
-from .lambda_ import Lambda_
+from .envtohuman import EnvToHuman
+from .humantohuman import HumanToHuman
+from .infectious import Infectious
 from .params import get_parameters
-from .population import Population
-from .psi import Psi
 from .recovered import Recovered
 from .scenario import scenario
-from .susceptibles import Susceptibles
-from .transmission import Transmission
+from .susceptible import Susceptible
 from .vaccinated import Vaccinated
-from .wash import Wash
 
 __all__ = [
-    "Births",
+    "Census",
+    "EnvToHuman",
     "Environmental",
-    "Infected",
-    "Lambda_",
-    "Population",
-    "Psi",
+    "HumanToHuman",
+    "Infectious",
     "Recovered",
-    "Susceptibles",
-    "Transmission",
+    "Susceptible",
     "Vaccinated",
-    "Wash",
     "get_parameters",
     "scenario",
 ]

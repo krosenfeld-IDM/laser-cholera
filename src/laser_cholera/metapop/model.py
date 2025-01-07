@@ -1,11 +1,9 @@
 from datetime import datetime
+from pathlib import Path
 
 import click
-import numpy as np
 import pandas as pd
 from laser_core.laserframe import LaserFrame
-from laser_core.migration import gravity
-from laser_core.migration import row_normalizer
 from laser_core.propertyset import PropertySet
 from laser_core.random import seed as seed_prng
 from matplotlib import pyplot as plt
@@ -13,75 +11,36 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
-from laser_cholera import iso_codes
-
-# from laser_cholera import PropagatePopulation
-from laser_cholera.metapop import Births
-
-# from laser_cholera.metapop import Environmental
-# from laser_cholera.metapop import Infected
-# from laser_cholera.metapop import Lambda_
-# from laser_cholera.metapop import Population
-# from laser_cholera.metapop import Psi
-# from laser_cholera.metapop import Recovered
-from laser_cholera.metapop import Susceptibles
-
-# from laser_cholera.metapop import Transmission
-# from laser_cholera.metapop import Vaccinated
-# from laser_cholera.metapop import Wash
+from laser_cholera.metapop import Census
+from laser_cholera.metapop import Environmental
+from laser_cholera.metapop import EnvToHuman
+from laser_cholera.metapop import HumanToHuman
+from laser_cholera.metapop import Infectious
+from laser_cholera.metapop import Recovered
+from laser_cholera.metapop import Susceptible
+from laser_cholera.metapop import Vaccinated
 from laser_cholera.metapop import get_parameters
-from laser_cholera.metapop import scenario
 
 
 class Model:
-    def __init__(self, scenario: pd.DataFrame, parameters: PropertySet, name: str = "Cholera Metapop"):
+    def __init__(self, parameters: PropertySet, name: str = "Cholera Metapop"):
         self.tinit = datetime.now(tz=None)  # noqa: DTZ005
         click.echo(f"{self.tinit}: Creating the {name} model…")
-        self.scenario = scenario
         self.params = parameters
         self.name = name
 
         self.prng = seed_prng(parameters.seed if parameters.seed is not None else self.tinit.microsecond)
 
-        click.echo(f"Initializing the {name} model with {len(scenario)} patches…")
+        click.echo(f"Initializing the {name} model with {len(parameters.location_id)} patches…")
 
         # https://gilesjohnr.github.io/MOSAIC-docs/model-description.html
 
+        # setup the LaserFrame for agents/population (states and dynamics)
         # setup the LaserFrame for patches (inputs and reporting)
-        npatches = len(scenario)
+        npatches = len(parameters.location_id)
+        self.agents = LaserFrame(npatches)
         self.patches = LaserFrame(npatches)
         _istart, _iend = self.patches.add(npatches)
-        # self.patches.add_vector_property("population", length=parameters.nticks, dtype=np.uint32, default=np.uint32(0))
-        self.patches.add_scalar_property("initpop", dtype=np.uint32, default=np.uint32(0))
-        self.patches.initpop[:] = scenario.population.values
-        self.patches.add_vector_property("pi", length=npatches, dtype=np.float32, default=np.float32(0.0))
-        for i, iso in enumerate(iso_codes):
-            self.patches.pi[i] = parameters.pi[iso]
-        self.patches.add_vector_property("W", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-        self.patches.add_vector_property("beta_hum", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-        self.patches.add_vector_property("beta_env", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-        self.patches.add_vector_property("LAMBDA", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-        self.patches.add_vector_property("PSI", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-        self.patches.add_vector_property("nu", length=parameters.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-
-        self.patches.add_scalar_property("birthrate", dtype=np.float32, default=np.float32(0.0))
-        for i, iso in enumerate(iso_codes):
-            self.patches.birthrate[i] = parameters.birthrate[iso]
-        self.patches.add_scalar_property("mortrate", dtype=np.float32, default=np.float32(0.0))
-        for i, iso in enumerate(iso_codes):
-            self.patches.mortrate[i] = parameters.mortrate[iso]
-
-        # setup the LaserFrame for agents/population (states and dynamics)
-        self.agents = LaserFrame(npatches)
-
-        # S, I, R, V (vaccinated), W (environmental)
-        self.agents.add_vector_property("S", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.agents.add_vector_property("I", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.agents.add_vector_property("R", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.agents.add_vector_property("V", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-        self.agents.add_vector_property("N", length=parameters.nticks + 1, dtype=np.uint32, default=0)
-
-        # initialize the "agent" states
 
         return
 
@@ -123,23 +82,7 @@ class Model:
             if "__call__" in dir(instance):
                 self.phases.append(instance)
 
-        # TODO - check for 0, 1, or 2+ Births components
-        # if 0 and there are components with an on_birth function, warn
-        # if 1, add the component instances with an on_birth() function to the Births component
-        # if 2+, raise an exception
-
-        births = list(filter(lambda object: isinstance(object, Births), self.instances))
-        if len(births) == 0:
-            for instance in self.instances:
-                if "on_birth" in dir(instance):
-                    click.echo(
-                        f"Warning: Component {type(instance).__name__} has an on_birth function but there is no Births component with which to register it."
-                    )
-        elif len(births) == 1:
-            births = births[0]  # get the single Births component
-            births.initializers = [instance for instance in self.instances if "on_birth" in dir(instance)]
-        else:
-            raise RuntimeError(f"Error: Multiple Births components found in {self.name} model.")
+        _ = [instance.check() for instance in self.instances]
 
         return
 
@@ -272,8 +215,8 @@ class Model:
 @click.option("--verbose", is_flag=True, help="Print verbose output")
 @click.option("--no-viz", is_flag=True, default=False, help="Suppress displaying visualizations")
 @click.option("--pdf", is_flag=True, help="Output visualization results as a PDF")
-@click.option("--output", default=None, help="Output file for results")
-@click.option("--params", default=None, help="JSON file with parameters")
+@click.option("--outdir", default=Path.cwd(), help="Output file for results")
+@click.option("--paramfile", default=None, help="JSON file with parameters")
 @click.option("--param", "-p", multiple=True, help="Additional parameter overrides (param:value or param=value)")
 def run(**kwargs):
     """
@@ -298,33 +241,15 @@ def run(**kwargs):
         None
     """
 
-    parameters = get_parameters(overrides=["verbose:1"])
-    # scenario = get_scenario(parameters, parameters["verbose"])
-    model = Model(scenario, parameters)
+    parameters = get_parameters(overrides=kwargs)
+    model = Model(parameters)
 
-    # infection dynamics come _before_ incubation dynamics so newly set itimers
-    # don't immediately expire
-    model.components = [
-        Susceptibles,
-    ]
-
-    # seed_infections_randomly(model, ninfections=100)
-    # ipatch = model.patches.population[0, :].argmax()
-    ipatch = model.patches.initpop.argmax()
-    seed_infections_in_patch(model, ipatch=ipatch, ninfections=100)
+    model.components = [Susceptible, Infectious, Recovered, Vaccinated, Census, HumanToHuman, EnvToHuman, Environmental]
 
     model.run()
 
     if not parameters.no_viz:
         model.visualize(pdf=parameters.pdf)
-
-    return
-
-
-def seed_infections_in_patch(model, ipatch, ninfections):
-    model.agents.S[0, ipatch] -= ninfections
-    model.agents.I[0, ipatch] = ninfections
-    model.patches.W[0, ipatch] = model.params.zeta * ninfections
 
     return
 

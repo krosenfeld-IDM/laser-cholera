@@ -6,6 +6,7 @@ from .proppop import PropagatePopulation
 
 __all__ = [
     "PropagatePopulation",
+    "__version__",
     "compute",
     "iso_codes",
 ]
