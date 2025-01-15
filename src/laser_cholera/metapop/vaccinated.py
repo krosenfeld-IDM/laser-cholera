@@ -13,7 +13,7 @@ class Vaccinated:
         self.verbose = verbose
 
         assert hasattr(model, "agents"), "Vaccinated: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("V", length=model.params.nticks + 1, dtype=np.uint32, default=0)
+        model.agents.add_vector_property("V", length=model.params.nticks + 1, dtype=np.int32, default=0)
 
         return
 
@@ -30,6 +30,7 @@ class Vaccinated:
         V = model.agents.V[tick]
         Vprime = model.agents.V[tick + 1]
         S = model.agents.S[tick]
+        N = model.agents.N[tick]
         Sprime = model.agents.S[tick + 1]
 
         # non-disease mortality
@@ -46,9 +47,14 @@ class Vaccinated:
         # vaccination
         # TODO - look up vaccination rates correctly based on tick/calendar date
         # TODO - rate or probability?
-        newly_vaccinated = model.prng.poisson(model.params.phi * model.params.nu_jt[:, tick] * S).astype(Sprime.dtype)
+        # TODO - verify `tick%365` is correct (it isn't)
+        # Only vaccinating S'es, not worrying about Is, Rs, or existing Vs.
+        newly_vaccinated = model.prng.poisson(model.params.phi * model.params.nu_jt[:, tick % 365] * S / N).astype(Sprime.dtype)
         Sprime -= newly_vaccinated
         Vprime += newly_vaccinated
+
+        assert np.all(Sprime >= 0), "S' should not go negative"
+        assert np.all(Vprime >= 0), "V' should not go negative"
 
         return
 
@@ -58,7 +64,7 @@ class Vaccinated:
             def __init__(self, d_j: float = 0.0, omega: float = 0.0, phi: float = 0.0, nu_jt: np.ndarray = np.zeros((4, 8))):  # noqa: B008
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
                 self.agents.S[0] = [1_000, 10_000, 100_000, 1_000_000]
                 self.params = PropertySet({"d_j": d_j, "omega": omega, "phi": phi, "nu_jt": nu_jt, "nticks": 8})
 
@@ -109,10 +115,11 @@ class Vaccinated:
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Vaccinated in Patch {ipatch}")
-        plt.plot(self.model.agents.V[:, ipatch], color="blue", label="Vaccinated")
+        plt.title("Vaccinated")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.agents.V[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

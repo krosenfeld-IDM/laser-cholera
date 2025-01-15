@@ -13,7 +13,7 @@ class Recovered:
         self.verbose = verbose
 
         assert hasattr(model, "agents"), "Recovered: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("R", length=model.params.nticks + 1, dtype=np.uint32, default=0)
+        model.agents.add_vector_property("R", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Recovered: model needs to have a 'params' attribute."
         assert hasattr(
             self.model.params, "R_j_initial"
@@ -54,6 +54,10 @@ class Recovered:
         Iprime -= newly_recovered
         Rprime += newly_recovered
 
+        assert np.all(Sprime >= 0), "S' should not go negative"
+        assert np.all(Iprime >= 0), "I' should not go negative"
+        assert np.all(Rprime >= 0), "R' should not go negative"
+
         return
 
     @staticmethod
@@ -62,8 +66,8 @@ class Recovered:
             def __init__(self, d_j: float = 0.0, epsilon: float = 0.0, gamma: float = 0.0):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("I", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
                 self.agents.I[0] = [1_000, 10_000, 100_000, 1_000_000]
                 self.params = PropertySet(
                     {"d_j": d_j, "epsilon": epsilon, "gamma": gamma, "R_j_initial": [1_000, 10_000, 100_000, 1_000_000], "nticks": 8}
@@ -99,10 +103,12 @@ class Recovered:
 
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Recovered in Patch {ipatch}")
-        plt.plot(self.model.agents.R[:, ipatch], color="purple", label="Recovered")
+
+        plt.title("Recovered")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.agents.R[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

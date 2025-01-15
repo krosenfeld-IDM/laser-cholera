@@ -13,7 +13,7 @@ class Infectious:
         self.verbose = verbose
 
         assert hasattr(model, "agents"), "Infectious: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("I", length=model.params.nticks + 1, dtype=np.uint32, default=0)
+        model.agents.add_vector_property("I", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Infectious: model needs to have a 'params' attribute."
         assert hasattr(
             self.model.params, "I_j_initial"
@@ -45,6 +45,8 @@ class Infectious:
         # human-to-human infection in humantohuman.py
         # environmental infection in envtohuman.py
         # recovery from infection in recovered.py
+
+        assert np.all(Iprime >= 0), "I' should not go negative"
 
         return
 
@@ -80,10 +82,12 @@ class Infectious:
 
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Infected in Patch {ipatch}")
-        plt.plot(self.model.agents.I[:, ipatch], color="red", label="Infected")
+
+        plt.title("Infectious")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.agents.I[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

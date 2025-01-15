@@ -13,7 +13,7 @@ class Census:
         self.verbose = verbose
 
         assert hasattr(model, "agents"), "Census: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("N", length=model.params.nticks + 1, dtype=np.uint32, default=0)
+        model.agents.add_vector_property("N", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Census: model needs to have a 'params' attribute."
         assert "N_j_initial" in self.model.params, "Census: model params needs to have a 'N_j_initial' parameter."
         model.agents.N[0] = model.params.N_j_initial
@@ -41,6 +41,8 @@ class Census:
 
         Nprime[:] = Sprime + Vprime + Iprime + Rprime
 
+        assert np.all(Nprime >= 0), "N' should not go negative"
+
         return
 
     @staticmethod
@@ -49,10 +51,10 @@ class Census:
             def __init__(self):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("I", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("R", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("V", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("R", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("V", length=8, dtype=np.int32, default=0)
                 self.agents.S[0] = self.agents.S[1] = [250, 2_500, 25_000, 250_000]
                 self.agents.I[0] = self.agents.I[1] = [100, 1_000, 10_000, 100_000]
                 self.agents.R[0] = self.agents.R[1] = [500, 5_000, 50_000, 500_000]
@@ -79,8 +81,12 @@ class Census:
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Census")
-        plt.plot(self.model.agents.N[0:-1, :], color="black", label="Total Population")
+        # plt.plot(self.model.agents.N[0:-1, :], color="black", label="Total Population")
+        # for ipatch in np.argsort(self.model.params.S_j_initial):
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.agents.N[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

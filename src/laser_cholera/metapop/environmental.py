@@ -44,10 +44,13 @@ class Environmental:
         Wprime = model.patches.W[tick + 1]
 
         Wprime[:] = W
-        environmental_decay = (model.patches.delta[tick] * W).astype(Wprime.dtype)
+        # TODO - verify `tick%365` is correct
+        environmental_decay = (model.patches.delta[tick % 365] * W).astype(Wprime.dtype)
         Wprime -= environmental_decay
         human_shedding = (model.params.zeta * I).astype(Wprime.dtype)
         Wprime += human_shedding
+
+        assert np.all(Wprime >= 0), "W' should not go negative"
 
         return
 
@@ -57,7 +60,7 @@ class Environmental:
             def __init__(self, psi_jt, delta_max, delta_min, zeta):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("I", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
                 self.agents.I[0] = [100, 1_000, 10_000, 100_000]
                 self.patches = LaserFrame(4)
                 self.params = PropertySet(
@@ -126,10 +129,11 @@ class Environmental:
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Environmental in Patch {ipatch}")
-        plt.plot(self.model.patches.W[:, ipatch], color="orange", label="Environmental")
+        plt.title("Environmental Reservoir")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.patches.W[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

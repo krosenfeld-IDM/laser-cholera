@@ -11,15 +11,18 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
+from laser_cholera.metapop import Analyzer
 from laser_cholera.metapop import Census
 from laser_cholera.metapop import Environmental
 from laser_cholera.metapop import EnvToHuman
 from laser_cholera.metapop import HumanToHuman
 from laser_cholera.metapop import Infectious
+from laser_cholera.metapop import Recorder
 from laser_cholera.metapop import Recovered
 from laser_cholera.metapop import Susceptible
 from laser_cholera.metapop import Vaccinated
 from laser_cholera.metapop import get_parameters
+from laser_cholera.metapop import scenario
 
 
 class Model:
@@ -28,6 +31,8 @@ class Model:
         click.echo(f"{self.tinit}: Creating the {name} model…")
         self.params = parameters
         self.name = name
+
+        self.scenario = scenario
 
         self.prng = seed_prng(parameters.seed if parameters.seed is not None else self.tinit.microsecond)
 
@@ -39,6 +44,7 @@ class Model:
         # setup the LaserFrame for patches (inputs and reporting)
         npatches = len(parameters.location_id)
         self.agents = LaserFrame(npatches)
+        _istart, _iend = self.agents.add(npatches)
         self.patches = LaserFrame(npatches)
         _istart, _iend = self.patches.add(npatches)
 
@@ -244,7 +250,7 @@ def run(**kwargs):
     parameters = get_parameters(overrides=kwargs)
     model = Model(parameters)
 
-    model.components = [Susceptible, Infectious, Recovered, Vaccinated, Census, HumanToHuman, EnvToHuman, Environmental]
+    model.components = [Susceptible, Infectious, Recovered, Vaccinated, Census, HumanToHuman, EnvToHuman, Environmental, Analyzer, Recorder]
 
     model.run()
 
@@ -256,4 +262,4 @@ def run(**kwargs):
 
 if __name__ == "__main__":
     ctx = click.Context(run)
-    ctx.invoke(run, nticks=365, seed=20241107, verbose=True, no_viz=False, pdf=False)
+    ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, no_viz=False, pdf=False)

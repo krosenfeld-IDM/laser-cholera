@@ -15,7 +15,7 @@ class HumanToHuman:
         self.verbose = verbose
 
         assert hasattr(model, "patches"), "HumanToHuman: model needs to have a 'patches' attribute."
-        model.patches.add_vector_property("LAMBDA", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
+        model.patches.add_vector_property("LAMDA", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
 
         return
 
@@ -49,7 +49,7 @@ class HumanToHuman:
         $\Lambda_{j,t+1} = \frac {\beta^{hum}_{jt}((S_{jt}(1 - \tau_j))(I_{jt}(1 - \tau_j) + \sum_{\forall i \neq j (\pi_{ij} \tau_j I_{it})}))^{\alpha}} {N_{jt}}$
         """
 
-        Lprime = model.patches.LAMBDA[tick + 1]
+        Lprime = model.patches.LAMDA[tick + 1]
         I = model.agents.I[tick]  # noqa: E741
         S = model.agents.S[tick]
         Sprime = model.agents.S[tick + 1]
@@ -76,7 +76,8 @@ class HumanToHuman:
         t4 = np.power(lp3, model.params.alpha).astype(Lprime.dtype)
         lp4 = t4
         # TODO - look up seasonality correctly based on tick/calendar date
-        t5 = (model.params.beta_j0_hum + model.params.beta_j_seasonality[:, tick % 365]).astype(Lprime.dtype)
+        # TODO - fix use of "maximum"
+        t5 = np.maximum(0, (model.params.beta_j0_hum + model.params.beta_j_seasonality[:, tick % 365])).astype(Lprime.dtype)
         lp5 = lp4 * t5
         lp6 = lp5 / N
         Lprime[:] = lp6
@@ -85,6 +86,10 @@ class HumanToHuman:
         newly_infected = model.prng.poisson(Lprime).astype(Sprime.dtype)
         Sprime -= newly_infected
         Iprime += newly_infected
+
+        assert np.all(Sprime >= 0), "S' should not go negative"
+        assert np.all(Iprime >= 0), "I' should not go negative"
+        assert np.all(Lprime >= 0), "λ' should not go negative"
 
         return
 
@@ -96,12 +101,13 @@ class HumanToHuman:
             ):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("I", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("N", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("N", length=8, dtype=np.int32, default=0)
                 self.agents.S[0] = self.agents.S[1] = [250, 2_500, 25_000, 250_000]  # 25%
                 self.agents.I[0] = self.agents.I[1] = [100, 1_000, 10_000, 100_000]  # 10%
                 self.agents.N[0] = self.agents.N[1] = [1_000, 10_000, 100_000, 1_000_000]
+                self.patches = LaserFrame(4)  # required for HumanToHuman to add LAMDA
                 self.params = PropertySet(
                     {
                         "alpha": alpha,
@@ -154,10 +160,11 @@ class HumanToHuman:
     def plot(self, fig: Figure = None):
         _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Patch {ipatch} - Human-to-Human Transmission Rate")
-        plt.plot(self.model.patches.LAMBDA[:, ipatch], color="blue", label="Human-to-Human Transmission Rate")
+        plt.title("Human-to-Human Transmission Rate")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.patches.LAMDA[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

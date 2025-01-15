@@ -13,7 +13,7 @@ class Susceptible:
         self.verbose = verbose
 
         assert hasattr(model, "agents"), "Susceptible: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("S", length=model.params.nticks + 1, dtype=np.uint32, default=0)
+        model.agents.add_vector_property("S", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Susceptible: model needs to have a 'params' attribute."
         assert "S_j_initial" in self.model.params, "Susceptible: model params needs to have a 'S_j_initial' parameter."
         model.agents.S[0] = model.params.S_j_initial
@@ -35,12 +35,15 @@ class Susceptible:
         # births
         N = model.agents.N[tick]
         # TODO - rate or probability?
-        Sprime[:] += model.prng.poisson(model.params.b_j * N).astype(Sprime.dtype)
+        births = model.prng.poisson(model.params.b_j * N).astype(Sprime.dtype)
+        Sprime[:] += births
 
         # natural mortality
         # TODO - rate or probability?
         Smort = model.prng.poisson(model.params.d_j * S).astype(Sprime.dtype)
         Sprime -= Smort
+
+        assert np.all(Sprime >= 0), "S' should not go negative"
 
         return
 
@@ -50,7 +53,7 @@ class Susceptible:
             def __init__(self, b_j: float = 0.0, d_j: float = 0.0):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("N", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("N", length=8, dtype=np.int32, default=0)
                 self.agents.N[0] = [1_000, 10_000, 100_000, 1_000_000]
                 self.params = PropertySet({"b_j": b_j, "d_j": d_j, "S_j_initial": [1_000, 10_000, 100_000, 1_000_000], "nticks": 8})
 
@@ -77,10 +80,11 @@ class Susceptible:
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Susceptibles in Patch {ipatch}")
-        plt.plot(self.model.agents.S[:, ipatch], color="green", label="Susceptibles")
+        plt.title("Susceptibles")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.agents.S[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return

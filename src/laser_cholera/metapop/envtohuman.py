@@ -56,12 +56,17 @@ class EnvToHuman:
         Sprime = model.agents.S[tick + 1]
         Iprime = model.agents.I[tick + 1]
 
-        Pprime[:] = model.patches.beta_env[tick] * (S * (1 - model.params.tau_i)) * (1 - model.params.theta_j) * W
+        # TODO - verify `tick%365` is correct
+        Pprime[:] = model.patches.beta_env[tick % 365] * (S * (1 - model.params.tau_i)) * (1 - model.params.theta_j) * W
         Pprime /= model.params.kappa + W
 
         newly_infected = model.prng.poisson(Pprime).astype(Sprime.dtype)
         Sprime -= newly_infected
         Iprime += newly_infected
+
+        assert np.all(Sprime) >= 0, "S' should not go negative"
+        assert np.all(Iprime) >= 0, "I' should not go negative"
+        assert np.all(Pprime) >= 0, "Ψ' should not go negative"
 
         return
 
@@ -72,8 +77,8 @@ class EnvToHuman:
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
 
                 self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.uint32, default=0)
-                self.agents.add_vector_property("I", length=8, dtype=np.uint32, default=0)
+                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
+                self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
                 self.agents.S[0] = self.agents.S[1] = [250, 2_500, 25_000, 250_000]  # 25%
                 self.agents.I[0] = self.agents.I[1] = [100, 1_000, 10_000, 100_000]  # 10%
 
@@ -312,10 +317,11 @@ class EnvToHuman:
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        ipatch = self.model.patches.initpop.argmax()
-        plt.title(f"Environmental Transmission Rate in Patch {ipatch}")
-        plt.plot(self.model.patches.PSI[:, ipatch], color="orange", label="Environmental Transmission Rate")
+        plt.title("Environmental Transmission Rate")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.patches.PSI[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
+        plt.legend()
 
         yield
         return
