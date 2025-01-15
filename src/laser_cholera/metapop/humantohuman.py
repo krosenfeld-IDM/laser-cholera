@@ -26,19 +26,19 @@ class HumanToHuman:
         assert hasattr(self.model.agents, "N"), "HumanToHuman: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(self.model, "params"), "HumanToHuman: model needs to have a 'params' attribute."
         assert "alpha" in self.model.params, "HumanToHuman: model params needs to have an 'alpha' parameter."
-        assert hasattr(
-            self.model.params, "tau_i"
-        ), "HumanToHuman: model.params needs to have a 'tau_i' (emmigration probability) parameter."
-        assert hasattr(
-            self.model.params, "pi_ij"
-        ), "HumanToHuman: model.params needs to have a 'pi_ij' (connectivity probability) parameter."
+        assert hasattr(self.model.params, "tau_i"), (
+            "HumanToHuman: model.params needs to have a 'tau_i' (emmigration probability) parameter."
+        )
+        assert hasattr(self.model.params, "pi_ij"), (
+            "HumanToHuman: model.params needs to have a 'pi_ij' (connectivity probability) parameter."
+        )
         assert hasattr(self.model.params, "alpha"), "HumanToHuman: model.params needs to have a 'alpha' (population mixing) parameter."
-        assert hasattr(
-            self.model.params, "beta_j0_hum"
-        ), "HumanToHuman: model.params needs to have a 'beta_j0_hum' (baseline transmission rate) parameter."
-        assert hasattr(
-            self.model.params, "beta_j_seasonality"
-        ), "HumanToHuman: model.params needs to have a 'beta_j_seasonality' (seasonal transmission rate) parameter."
+        assert hasattr(self.model.params, "beta_j0_hum"), (
+            "HumanToHuman: model.params needs to have a 'beta_j0_hum' (baseline transmission rate) parameter."
+        )
+        assert hasattr(self.model.params, "beta_j_seasonality"), (
+            "HumanToHuman: model.params needs to have a 'beta_j_seasonality' (seasonal transmission rate) parameter."
+        )
 
         return
 
@@ -144,15 +144,15 @@ class HumanToHuman:
         )
         component.check()
         component(model, 0)
-        assert np.all(
-            model.agents.S[1] < model.agents.S[0]
-        ), f"Some susceptible populations didn't decline based on human-human transmission.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
-        assert np.all(
-            model.agents.I[1] > model.agents.I[0]
-        ), f"Some infected populations didn't increase based on human-human transmission.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
-        assert np.all(
-            model.agents.S[0] - model.agents.S[1] == model.agents.I[1] - model.agents.I[0]
-        ), f"S and I population changes don't match.\n\t{model.agents.S[0]=}\n\t{model.agents.S[1]=}\n\t{model.agents.I[0]=}\n\t{model.agents.I[1]=}"
+        assert np.all(model.agents.S[1] < model.agents.S[0]), (
+            f"Some susceptible populations didn't decline based on human-human transmission.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
+        )
+        assert np.all(model.agents.I[1] > model.agents.I[0]), (
+            f"Some infected populations didn't increase based on human-human transmission.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
+        )
+        assert np.all(model.agents.S[0] - model.agents.S[1] == model.agents.I[1] - model.agents.I[0]), (
+            f"S and I population changes don't match.\n\t{model.agents.S[0]=}\n\t{model.agents.S[1]=}\n\t{model.agents.I[0]=}\n\t{model.agents.I[1]=}"
+        )
 
         print("PASSED HumanToHuman.test()")
         return

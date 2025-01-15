@@ -19,16 +19,16 @@ class Recorder:
         assert hasattr(self.model.agents, "V"), "Recorder: model agents needs to have a 'V' (vaccinated) attribute."
         assert hasattr(self.model.agents, "N"), "Recorder: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(self.model, "patches"), "Recorder: model needs to have a 'patches' attribute."
-        assert hasattr(
-            self.model.patches, "LAMDA"
-        ), "Recorder: model patches needs to have a 'LAMDA' (human-to-human transmission rate) attribute."
-        assert hasattr(
-            self.model.patches, "PSI"
-        ), "Recorder: model patches needs to have a 'PSI' (environment-to-human transmission rate) attribute."
+        assert hasattr(self.model.patches, "LAMDA"), (
+            "Recorder: model patches needs to have a 'LAMDA' (human-to-human transmission rate) attribute."
+        )
+        assert hasattr(self.model.patches, "PSI"), (
+            "Recorder: model patches needs to have a 'PSI' (environment-to-human transmission rate) attribute."
+        )
         assert hasattr(self.model.patches, "W"), "Recorder: model patches needs to have a 'W' (environmental contamination) attribute."
-        assert hasattr(
-            self.model.patches, "beta_env"
-        ), "Recorder: model patches needs to have a 'beta_env' (environment-to-human transmission rate) attribute."
+        assert hasattr(self.model.patches, "beta_env"), (
+            "Recorder: model patches needs to have a 'beta_env' (environment-to-human transmission rate) attribute."
+        )
         assert hasattr(self.model.patches, "delta"), "Recorder: model patches needs to have a 'delta' (environmental decay rate) attribute."
         # assert hasattr(
         #     self.model.patches, "theta"

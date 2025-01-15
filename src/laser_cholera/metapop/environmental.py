@@ -18,9 +18,9 @@ class Environmental:
         model.patches.add_vector_property("delta", length=365, dtype=np.float32, default=0.0)
 
         assert hasattr(model, "params"), "Environmental: model needs to have a 'params' attribute."
-        assert hasattr(
-            model.params, "psi_jt"
-        ), "Environmental: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
+        assert hasattr(model.params, "psi_jt"), (
+            "Environmental: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
+        )
         assert hasattr(model.params, "delta_max"), "Environmental: model params needs to have a 'delta_max' (suitability decay) parameter."
         assert hasattr(model.params, "delta_min"), "Environmental: model params needs to have a 'delta_min' (suitability decay) parameter."
 
@@ -32,9 +32,9 @@ class Environmental:
     def check(self):
         assert hasattr(self.model, "agents"), "Environmental: model needs to have a 'agents' attribute."
         assert hasattr(self.model.agents, "I"), "Environmental: model agents needs to have a 'I' (infectious) attribute."
-        assert hasattr(
-            self.model.params, "zeta"
-        ), "Environmental: model params needs to have a 'zeta' (environmental transmission rate) parameter."
+        assert hasattr(self.model.params, "zeta"), (
+            "Environmental: model params needs to have a 'zeta' (environmental transmission rate) parameter."
+        )
 
         return
 
@@ -90,9 +90,9 @@ class Environmental:
         component = Environmental(no_decay := Model(psi_jt=baseline.params.psi_jt, delta_max=0.0, delta_min=0.0, zeta=baseline.params.zeta))
         component.check()
         component(no_decay, 0)
-        assert np.all(
-            no_decay.patches.W[1] > baseline.patches.W[0]
-        ), f"Expected more environmental contagion with no decay.\n\t{no_decay.patches.W[1]}\n\t{baseline.patches.W[0]}"
+        assert np.all(no_decay.patches.W[1] > baseline.patches.W[0]), (
+            f"Expected more environmental contagion with no decay.\n\t{no_decay.patches.W[1]}\n\t{baseline.patches.W[0]}"
+        )
 
         component = Environmental(
             increased_shedding := Model(
@@ -104,9 +104,9 @@ class Environmental:
         )
         component.check()
         component(increased_shedding, 0)
-        assert np.all(
-            increased_shedding.patches.W[1] > baseline.patches.W[0]
-        ), f"Expected more environmental contagion with increased shedding.\n\t{increased_shedding.patches.W[1]}\n\t{baseline.patches.W[0]}"
+        assert np.all(increased_shedding.patches.W[1] > baseline.patches.W[0]), (
+            f"Expected more environmental contagion with increased shedding.\n\t{increased_shedding.patches.W[1]}\n\t{baseline.patches.W[0]}"
+        )
 
         component = Environmental(
             more_infected := Model(
@@ -119,9 +119,9 @@ class Environmental:
         more_infected.agents.I[0] *= 2
         component.check()
         component(more_infected, 0)
-        assert np.all(
-            more_infected.patches.W[1] > baseline.patches.W[0]
-        ), f"Expected more environmental contagion with more infected agents.\n\t{more_infected.patches.W[1]}\n\t{baseline.patches.W[0]}"
+        assert np.all(more_infected.patches.W[1] > baseline.patches.W[0]), (
+            f"Expected more environmental contagion with more infected agents.\n\t{more_infected.patches.W[1]}\n\t{baseline.patches.W[0]}"
+        )
 
         print("PASSED Environmental.test()")
         return

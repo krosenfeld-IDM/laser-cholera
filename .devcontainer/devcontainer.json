@@ -17,6 +17,16 @@
                 "mathematic.vscode-pdf",
                 "vscode-icons-team.vscode-icons"
             ]
+        },
+        "codespaces": {
+            "repositories": {
+                "InstituteforDiseaseModeling/mosaic-data": {
+                    "permissions": "read-all"
+                },
+                "InstituteforDiseaseModeling/mosaic-pkg": {
+                    "permissions": "read-all"
+                }
+            }
         }
     },
     "postCreateCommand": {

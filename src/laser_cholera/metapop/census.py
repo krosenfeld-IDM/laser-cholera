@@ -69,9 +69,9 @@ class Census:
         I1 = model.agents.I[1]
         R1 = model.agents.R[1]
         V1 = model.agents.V[1]
-        assert np.all(
-            model.agents.N[1] == S1 + I1 + R1 + V1
-        ), f"N[1] didn't match S[1] + I[1] + R[1] + V[1].\n\t{model.agents.N[1]}\n\t{S1+I1+R1+V1}"
+        assert np.all(model.agents.N[1] == S1 + I1 + R1 + V1), (
+            f"N[1] didn't match S[1] + I[1] + R[1] + V[1].\n\t{model.agents.N[1]}\n\t{S1 + I1 + R1 + V1}"
+        )
 
         print("PASSED Census.test()")
 

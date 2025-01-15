@@ -72,41 +72,41 @@ class Vaccinated:
         component.check()
         model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
         component(model, 0)
-        assert np.all(
-            model.agents.V[1] < model.agents.V[0]
-        ), f"Some populations didn't shrink with natural mortality.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        assert np.all(model.agents.V[1] < model.agents.V[0]), (
+            f"Some populations didn't shrink with natural mortality.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        )
 
         component = Vaccinated(model := Model(omega=0.06))
         component.check()
         model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
         component(model, 0)
-        assert np.all(
-            model.agents.V[1] < model.agents.V[0]
-        ), f"Some populations didn't shrink with waning vaccine immunity.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        assert np.all(model.agents.V[1] < model.agents.V[0]), (
+            f"Some populations didn't shrink with waning vaccine immunity.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        )
 
         component = Vaccinated(model := Model(phi=0.0, nu_jt=0.1 * np.ones((4, 8))))
         component.check()
         model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
         component(model, 0)
-        assert np.all(
-            model.agents.V[1] == model.agents.V[0]
-        ), f"Some populations changed with vaccine take = 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        assert np.all(model.agents.V[1] == model.agents.V[0]), (
+            f"Some populations changed with vaccine take = 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        )
 
         component = Vaccinated(model := Model(phi=0.64, nu_jt=np.zeros((4, 8))))
         component.check()
         model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
         component(model, 0)
-        assert np.all(
-            model.agents.V[1] == model.agents.V[0]
-        ), f"Some populations changed with vaccination rate = 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        assert np.all(model.agents.V[1] == model.agents.V[0]), (
+            f"Some populations changed with vaccination rate = 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        )
 
         component = Vaccinated(model := Model(phi=0.64, nu_jt=0.1 * np.ones((4, 8))))
         component.check()
         model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
         component(model, 0)
-        assert np.all(
-            model.agents.V[1] > model.agents.V[0]
-        ), f"Some populations didn't increase with vaccine take > 0 and vaccination rate > 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        assert np.all(model.agents.V[1] > model.agents.V[0]), (
+            f"Some populations didn't increase with vaccine take > 0 and vaccination rate > 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
+        )
 
         print("PASSED Vaccinated.test()")
 

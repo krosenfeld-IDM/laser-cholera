@@ -15,9 +15,9 @@ class Infectious:
         assert hasattr(model, "agents"), "Infectious: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("I", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Infectious: model needs to have a 'params' attribute."
-        assert hasattr(
-            self.model.params, "I_j_initial"
-        ), "Infectious: model params needs to have a 'I_j_initial' (initial infectious population) parameter."
+        assert hasattr(self.model.params, "I_j_initial"), (
+            "Infectious: model params needs to have a 'I_j_initial' (initial infectious population) parameter."
+        )
         model.agents.I[0] = model.params.I_j_initial
 
         return
@@ -64,17 +64,17 @@ class Infectious:
         component.check()
         component(model, 0)
         assert np.all(model.agents.I[0] == model.params.I_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.I[1] < model.agents.I[0]
-        ), f"Some populations didn't shrink with natural mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
+        assert np.all(model.agents.I[1] < model.agents.I[0]), (
+            f"Some populations didn't shrink with natural mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
+        )
 
         component = Infectious(model := Model(mu=0.015, sigma=0.24))
         component.check()
         component(model, 0)
         assert np.all(model.agents.I[0] == model.params.I_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.I[1] < model.agents.I[0]
-        ), f"Some populations didn't shrink with disease mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
+        assert np.all(model.agents.I[1] < model.agents.I[0]), (
+            f"Some populations didn't shrink with disease mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
+        )
 
         print("PASSED Infectious.test()")
 

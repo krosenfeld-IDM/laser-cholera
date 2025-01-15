@@ -61,17 +61,17 @@ class Susceptible:
         component.check()
         component(model, 0)
         assert np.all(model.agents.S[0] == model.params.S_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.S[1] > model.agents.S[0]
-        ), f"Some populations didn't grow with births.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
+        assert np.all(model.agents.S[1] > model.agents.S[0]), (
+            f"Some populations didn't grow with births.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
+        )
 
         component = Susceptible(model := Model(d_j=1.0 / 80.0))
         component.check()
         component(model, 0)
         assert np.all(model.agents.S[0] == model.params.S_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.S[1] < model.agents.S[0]
-        ), f"Some populations didn't shrink with deaths.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
+        assert np.all(model.agents.S[1] < model.agents.S[0]), (
+            f"Some populations didn't shrink with deaths.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
+        )
 
         print("PASSED Susceptible.test()")
 

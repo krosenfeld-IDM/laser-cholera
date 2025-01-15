@@ -18,9 +18,9 @@ class EnvToHuman:
         model.patches.add_vector_property("PSI", length=model.params.nticks + 1, dtype=np.float32, default=np.float32(0.0))
 
         assert hasattr(model, "params"), "EnvToHuman: model needs to have a 'params' attribute."
-        assert hasattr(
-            model.params, "psi_jt"
-        ), "EnvToHuman: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
+        assert hasattr(model.params, "psi_jt"), (
+            "EnvToHuman: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
+        )
 
         model.patches.add_vector_property("beta_env", length=365, dtype=np.float32, default=0.0)
         assert model.patches.beta_env.shape[1] == model.params.psi_jt.shape[0]
@@ -37,15 +37,15 @@ class EnvToHuman:
         assert hasattr(self.model.agents, "I"), "EnvToHuman: model agents needs to have a 'I' (infected) attribute."
         assert hasattr(self.model, "patches"), "EnvToHuman: model needs to have a 'patches' attribute."
         assert hasattr(self.model.patches, "W"), "EnvToHuman: model patches needs to have a 'W' (environmental) attribute."
-        assert hasattr(
-            self.model.params, "tau_i"
-        ), "HumanToHuman: model.params needs to have a 'tau_i' (emmigration probability) parameter."
-        assert hasattr(
-            self.model.params, "theta_j"
-        ), "EnvToHuman: model params needs to have a 'theta_j' (fraction of population with WASH) attribute."
-        assert hasattr(
-            self.model.params, "kappa"
-        ), "EnvToHuman: model params needs to have a 'kappa' (environmental transmission rate) parameter."
+        assert hasattr(self.model.params, "tau_i"), (
+            "HumanToHuman: model.params needs to have a 'tau_i' (emmigration probability) parameter."
+        )
+        assert hasattr(self.model.params, "theta_j"), (
+            "EnvToHuman: model params needs to have a 'theta_j' (fraction of population with WASH) attribute."
+        )
+        assert hasattr(self.model.params, "kappa"), (
+            "EnvToHuman: model params needs to have a 'kappa' (environmental transmission rate) parameter."
+        )
 
         return
 
@@ -120,12 +120,12 @@ class EnvToHuman:
         )
         component.check()
         component(baseline, 0)
-        assert np.all(
-            baseline.agents.S[1] < baseline.agents.S[0]
-        ), f"Some susceptible populations didn't decrease with environmental transmission.\n\t{baseline.agents.S[0]}\n\t{baseline.agents.S[1]}"
-        assert np.all(
-            baseline.agents.I[1] > baseline.agents.I[0]
-        ), f"Some infected populations didn't increase with environmental transmission.\n\t{baseline.agents.I[0]}\n\t{baseline.agents.I[1]}"
+        assert np.all(baseline.agents.S[1] < baseline.agents.S[0]), (
+            f"Some susceptible populations didn't decrease with environmental transmission.\n\t{baseline.agents.S[0]}\n\t{baseline.agents.S[1]}"
+        )
+        assert np.all(baseline.agents.I[1] > baseline.agents.I[0]), (
+            f"Some infected populations didn't increase with environmental transmission.\n\t{baseline.agents.I[0]}\n\t{baseline.agents.I[1]}"
+        )
 
         component = EnvToHuman(
             increased_tau := Model(
@@ -138,12 +138,12 @@ class EnvToHuman:
         )
         component.check()
         component(increased_tau, 0)
-        assert np.all(
-            increased_tau.agents.S[1] > baseline.agents.S[1]
-        ), f"Expected larger remaining susceptible populations with higher tau_i (migrating fraction).\n\t{baseline.agents.S[1]=}\n\t{increased_tau.agents.S[1]=}"
-        assert np.all(
-            increased_tau.agents.I[1] < baseline.agents.I[1]
-        ), f"Expected smaller infected populations with higher tau_i (migrating fraction).\n\t{baseline.agents.I[1]=}\n\t{increased_tau.agents.I[1]=}"
+        assert np.all(increased_tau.agents.S[1] > baseline.agents.S[1]), (
+            f"Expected larger remaining susceptible populations with higher tau_i (migrating fraction).\n\t{baseline.agents.S[1]=}\n\t{increased_tau.agents.S[1]=}"
+        )
+        assert np.all(increased_tau.agents.I[1] < baseline.agents.I[1]), (
+            f"Expected smaller infected populations with higher tau_i (migrating fraction).\n\t{baseline.agents.I[1]=}\n\t{increased_tau.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             zero_wash := Model(
@@ -156,12 +156,12 @@ class EnvToHuman:
         )
         component.check()
         component(zero_wash, 0)
-        assert np.all(
-            zero_wash.agents.S[1] < baseline.agents.S[1]
-        ), f"Expected smaller remaining susceptible populations with lower theta_j (WASH fraction).\n\t{baseline.agents.S[1]=}\n\t{zero_wash.agents.S[1]=}"
-        assert np.all(
-            zero_wash.agents.I[1] > baseline.agents.I[1]
-        ), f"Expected larger infected populations with lower theta_j (WASH fraction).\n\t{baseline.agents.I[1]=}\n\t{zero_wash.agents.I[1]=}"
+        assert np.all(zero_wash.agents.S[1] < baseline.agents.S[1]), (
+            f"Expected smaller remaining susceptible populations with lower theta_j (WASH fraction).\n\t{baseline.agents.S[1]=}\n\t{zero_wash.agents.S[1]=}"
+        )
+        assert np.all(zero_wash.agents.I[1] > baseline.agents.I[1]), (
+            f"Expected larger infected populations with lower theta_j (WASH fraction).\n\t{baseline.agents.I[1]=}\n\t{zero_wash.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             high_wash := Model(
@@ -174,12 +174,12 @@ class EnvToHuman:
         )
         component.check()
         component(high_wash, 0)
-        assert np.all(
-            high_wash.agents.S[1] > baseline.agents.S[1]
-        ), f"Expected larger remaining susceptible populations with higher theta_j (WASH fraction).\n\t{baseline.agents.S[1]=}\n\t{high_wash.agents.S[1]=}"
-        assert np.all(
-            high_wash.agents.I[1] < baseline.agents.I[1]
-        ), f"Expected smaller infected populations with higher theta_j (WASH fraction).\n\t{baseline.agents.I[1]=}\n\t{high_wash.agents.I[1]=}"
+        assert np.all(high_wash.agents.S[1] > baseline.agents.S[1]), (
+            f"Expected larger remaining susceptible populations with higher theta_j (WASH fraction).\n\t{baseline.agents.S[1]=}\n\t{high_wash.agents.S[1]=}"
+        )
+        assert np.all(high_wash.agents.I[1] < baseline.agents.I[1]), (
+            f"Expected smaller infected populations with higher theta_j (WASH fraction).\n\t{baseline.agents.I[1]=}\n\t{high_wash.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             perfect_wash := Model(
@@ -192,12 +192,12 @@ class EnvToHuman:
         )
         component.check()
         component(perfect_wash, 0)
-        assert np.all(
-            perfect_wash.agents.S[1] == perfect_wash.agents.S[0]
-        ), f"Expected no environmental transmission with theta_j (WASH fraction) = 1.0.\n\t{perfect_wash.agents.S[0]=}\n\t{perfect_wash.agents.S[1]=}"
-        assert np.all(
-            perfect_wash.agents.I[1] == perfect_wash.agents.I[0]
-        ), f"Expected no environmental transmission with theta_j (WASH fraction) = 1.0.\n\t{perfect_wash.agents.I[0]=}\n\t{perfect_wash.agents.I[1]=}"
+        assert np.all(perfect_wash.agents.S[1] == perfect_wash.agents.S[0]), (
+            f"Expected no environmental transmission with theta_j (WASH fraction) = 1.0.\n\t{perfect_wash.agents.S[0]=}\n\t{perfect_wash.agents.S[1]=}"
+        )
+        assert np.all(perfect_wash.agents.I[1] == perfect_wash.agents.I[0]), (
+            f"Expected no environmental transmission with theta_j (WASH fraction) = 1.0.\n\t{perfect_wash.agents.I[0]=}\n\t{perfect_wash.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             smaller_kappa := Model(
@@ -210,12 +210,12 @@ class EnvToHuman:
         )
         component.check()
         component(smaller_kappa, 0)
-        assert np.all(
-            smaller_kappa.agents.S[1] < baseline.agents.S[1]
-        ), f"Expected smaller remaining susceptible populations with lower kappa (50% probability concentration level).\n\t{baseline.agents.S[1]=}\n\t{smaller_kappa.agents.S[1]=}"
-        assert np.all(
-            smaller_kappa.agents.I[1] > baseline.agents.I[1]
-        ), f"Expected larger infected populations with lower kappa (50% probability concentration level).\n\t{baseline.agents.I[1]=}\n\t{smaller_kappa.agents.I[1]=}"
+        assert np.all(smaller_kappa.agents.S[1] < baseline.agents.S[1]), (
+            f"Expected smaller remaining susceptible populations with lower kappa (50% probability concentration level).\n\t{baseline.agents.S[1]=}\n\t{smaller_kappa.agents.S[1]=}"
+        )
+        assert np.all(smaller_kappa.agents.I[1] > baseline.agents.I[1]), (
+            f"Expected larger infected populations with lower kappa (50% probability concentration level).\n\t{baseline.agents.I[1]=}\n\t{smaller_kappa.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             larger_kappa := Model(
@@ -228,12 +228,12 @@ class EnvToHuman:
         )
         component.check()
         component(larger_kappa, 0)
-        assert np.all(
-            larger_kappa.agents.S[1] > baseline.agents.S[1]
-        ), f"Expected larger remaining susceptible populations with larger kappa (50% probability concentration level).\n\t{baseline.agents.S[1]=}\n\t{larger_kappa.agents.S[1]=}"
-        assert np.all(
-            larger_kappa.agents.I[1] < baseline.agents.I[1]
-        ), f"Expected smaller infected populations with larger kappa (50% probability concentration level).\n\t{baseline.agents.I[1]=}\n\t{larger_kappa.agents.I[1]=}"
+        assert np.all(larger_kappa.agents.S[1] > baseline.agents.S[1]), (
+            f"Expected larger remaining susceptible populations with larger kappa (50% probability concentration level).\n\t{baseline.agents.S[1]=}\n\t{larger_kappa.agents.S[1]=}"
+        )
+        assert np.all(larger_kappa.agents.I[1] < baseline.agents.I[1]), (
+            f"Expected smaller infected populations with larger kappa (50% probability concentration level).\n\t{baseline.agents.I[1]=}\n\t{larger_kappa.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             smaller_w := Model(
@@ -247,12 +247,12 @@ class EnvToHuman:
         )
         component.check()
         component(smaller_w, 0)
-        assert np.all(
-            smaller_w.agents.S[1] > baseline.agents.S[1]
-        ), f"Expected larger remaining susceptible populations with smaller W (environmental contagion).\n\t{baseline.agents.S[1]=}\n\t{smaller_w.agents.S[1]=}"
-        assert np.all(
-            smaller_w.agents.I[1] < baseline.agents.I[1]
-        ), f"Expected smaller infected populations with smaller W (environmental contagion).\n\t{baseline.agents.I[1]=}\n\t{smaller_w.agents.I[1]=}"
+        assert np.all(smaller_w.agents.S[1] > baseline.agents.S[1]), (
+            f"Expected larger remaining susceptible populations with smaller W (environmental contagion).\n\t{baseline.agents.S[1]=}\n\t{smaller_w.agents.S[1]=}"
+        )
+        assert np.all(smaller_w.agents.I[1] < baseline.agents.I[1]), (
+            f"Expected smaller infected populations with smaller W (environmental contagion).\n\t{baseline.agents.I[1]=}\n\t{smaller_w.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             larger_w := Model(
@@ -266,12 +266,12 @@ class EnvToHuman:
         )
         component.check()
         component(larger_w, 0)
-        assert np.all(
-            larger_w.agents.S[1] < baseline.agents.S[1]
-        ), f"Expected smaller remaining susceptible populations with larger W (environmental contagion).\n\t{baseline.agents.S[1]=}\n\t{larger_w.agents.S[1]=}"
-        assert np.all(
-            larger_w.agents.I[1] > baseline.agents.I[1]
-        ), f"Expected larger infected populations with larger W (environmental contagion).\n\t{baseline.agents.I[1]=}\n\t{larger_w.agents.I[1]=}"
+        assert np.all(larger_w.agents.S[1] < baseline.agents.S[1]), (
+            f"Expected smaller remaining susceptible populations with larger W (environmental contagion).\n\t{baseline.agents.S[1]=}\n\t{larger_w.agents.S[1]=}"
+        )
+        assert np.all(larger_w.agents.I[1] > baseline.agents.I[1]), (
+            f"Expected larger infected populations with larger W (environmental contagion).\n\t{baseline.agents.I[1]=}\n\t{larger_w.agents.I[1]=}"
+        )
 
         component = EnvToHuman(
             smaller_beta := Model(
@@ -285,12 +285,12 @@ class EnvToHuman:
         )
         component.check()
         component(smaller_beta, 0)
-        assert np.all(
-            smaller_beta.agents.S[1] > baseline.agents.S[1]
-        ), f"Expected larger remaining susceptible populations with smaller beta_env (seasonal factor).\n\t{baseline.agents.S[1]=}\n\t{smaller_beta.agents.S[1]=}"
-        assert np.all(
-            smaller_beta.agents.I[1] < baseline.agents.I[1]
-        ), f"Expected smaller infected populations with smaller beta_env (seasonal factor).\n\t{baseline.agents.I[1]=}\n\t{smaller_beta.agents.I[1]=}"
+        assert np.all(smaller_beta.agents.S[1] > baseline.agents.S[1]), (
+            f"Expected larger remaining susceptible populations with smaller beta_env (seasonal factor).\n\t{baseline.agents.S[1]=}\n\t{smaller_beta.agents.S[1]=}"
+        )
+        assert np.all(smaller_beta.agents.I[1] < baseline.agents.I[1]), (
+            f"Expected smaller infected populations with smaller beta_env (seasonal factor).\n\t{baseline.agents.I[1]=}\n\t{smaller_beta.agents.I[1]=}"
+        )
 
         # component = EnvToHuman(
         #     larger_beta := Model(

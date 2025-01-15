@@ -138,7 +138,7 @@ class Model:
             for key in sum_columns.index:
                 print(f"{key:{width}}: {sum_columns[key]:13,} µs")
             print("=" * (width + 2 + 13 + 3))
-            print(f"{'Total:':{width+1}} {sum_columns.sum():13,} microseconds")
+            print(f"{'Total:':{width + 1}} {sum_columns.sum():13,} microseconds")
 
         return
 

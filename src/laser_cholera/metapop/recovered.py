@@ -15,9 +15,9 @@ class Recovered:
         assert hasattr(model, "agents"), "Recovered: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("R", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Recovered: model needs to have a 'params' attribute."
-        assert hasattr(
-            self.model.params, "R_j_initial"
-        ), "Recovered: model params needs to have a 'R_j_initial' (initial recovered population) parameter."
+        assert hasattr(self.model.params, "R_j_initial"), (
+            "Recovered: model params needs to have a 'R_j_initial' (initial recovered population) parameter."
+        )
         model.agents.R[0] = model.params.R_j_initial
 
         return
@@ -77,25 +77,25 @@ class Recovered:
         component.check()
         component(model, 0)
         assert np.all(model.agents.R[0] == model.params.R_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.R[1] < model.agents.R[0]
-        ), f"Some populations didn't shrink with natural mortality.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
+        assert np.all(model.agents.R[1] < model.agents.R[0]), (
+            f"Some populations didn't shrink with natural mortality.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
+        )
 
         component = Recovered(model := Model(epsilon=0.04))
         component.check()
         component(model, 0)
         assert np.all(model.agents.R[0] == model.params.R_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.R[1] < model.agents.R[0]
-        ), f"Some populations didn't shrink with waning natural immunity.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
+        assert np.all(model.agents.R[1] < model.agents.R[0]), (
+            f"Some populations didn't shrink with waning natural immunity.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
+        )
 
         component = Recovered(model := Model(gamma=0.1))
         component.check()
         component(model, 0)
         assert np.all(model.agents.R[0] == model.params.R_j_initial), "Initial populations didn't match."
-        assert np.all(
-            model.agents.R[1] > model.agents.R[0]
-        ), f"Some populations didn't increase with recovery from infection.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
+        assert np.all(model.agents.R[1] > model.agents.R[0]), (
+            f"Some populations didn't increase with recovery from infection.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
+        )
 
         print("PASSED Recovered.test()")
 

@@ -9,10 +9,18 @@ laser\_cholera.metapop package
 Submodules
 ----------
 
-laser\_cholera.metapop.births module
+laser\_cholera.metapop.analyzer module
+--------------------------------------
+
+.. automodule:: laser_cholera.metapop.analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+laser\_cholera.metapop.census module
 ------------------------------------
 
-.. automodule:: laser_cholera.metapop.births
+.. automodule:: laser_cholera.metapop.census
    :members:
    :undoc-members:
    :show-inheritance:
@@ -25,18 +33,26 @@ laser\_cholera.metapop.environmental module
    :undoc-members:
    :show-inheritance:
 
-laser\_cholera.metapop.infected module
---------------------------------------
+laser\_cholera.metapop.envtohuman module
+----------------------------------------
 
-.. automodule:: laser_cholera.metapop.infected
+.. automodule:: laser_cholera.metapop.envtohuman
    :members:
    :undoc-members:
    :show-inheritance:
 
-laser\_cholera.metapop.lambda\_ module
---------------------------------------
+laser\_cholera.metapop.humantohuman module
+------------------------------------------
 
-.. automodule:: laser_cholera.metapop.lambda_
+.. automodule:: laser_cholera.metapop.humantohuman
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+laser\_cholera.metapop.infectious module
+----------------------------------------
+
+.. automodule:: laser_cholera.metapop.infectious
    :members:
    :undoc-members:
    :show-inheritance:
@@ -57,18 +73,10 @@ laser\_cholera.metapop.params module
    :undoc-members:
    :show-inheritance:
 
-laser\_cholera.metapop.population module
-----------------------------------------
+laser\_cholera.metapop.recorder module
+--------------------------------------
 
-.. automodule:: laser_cholera.metapop.population
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-laser\_cholera.metapop.psi module
----------------------------------
-
-.. automodule:: laser_cholera.metapop.psi
+.. automodule:: laser_cholera.metapop.recorder
    :members:
    :undoc-members:
    :show-inheritance:
@@ -89,18 +97,10 @@ laser\_cholera.metapop.scenario module
    :undoc-members:
    :show-inheritance:
 
-laser\_cholera.metapop.susceptibles module
-------------------------------------------
+laser\_cholera.metapop.susceptible module
+-----------------------------------------
 
-.. automodule:: laser_cholera.metapop.susceptibles
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-laser\_cholera.metapop.transmission module
-------------------------------------------
-
-.. automodule:: laser_cholera.metapop.transmission
+.. automodule:: laser_cholera.metapop.susceptible
    :members:
    :undoc-members:
    :show-inheritance:
