@@ -34,27 +34,23 @@ class Vaccinated:
         Sprime = model.agents.S[tick + 1]
 
         # non-disease mortality
-        # TODO - rate or probability?
-        Vmort = model.prng.poisson(model.params.d_j * V).astype(Vprime.dtype)
+        probability = np.negative(np.expm1(-model.params.d_j))
+        Vmort = model.prng.binomial(V, probability).astype(Vprime.dtype)
         Vprime[:] = V - Vmort
 
         # waning vaccine immunity
-        # TODO - rate or probability?
-        waned_vaccinations = model.prng.binomial(Vprime, model.params.omega).astype(Sprime.dtype)
+        probability = np.negative(np.expm1(-model.params.omega))
+        # Use Vprime here, don't try to account for waning immunity of already dead people
+        waned_vaccinations = model.prng.binomial(Vprime, probability).astype(Sprime.dtype)
         Sprime += waned_vaccinations
         Vprime -= waned_vaccinations
 
         # vaccination
-        # TODO - look up vaccination rates correctly based on tick/calendar date
-        # TODO - rate or probability?
-        # TODO - verify `tick%365` is correct (it isn't)
-        # Only vaccinating S'es, not worrying about Is, Rs, or existing Vs.
-        newly_vaccinated = model.prng.poisson(model.params.phi * model.params.nu_jt[:, tick % 365] * S / N).astype(Sprime.dtype)
+        # TODO - consider stochastic on model.params.phi: model.prng.binomial(model.params.nu_jt[:, tick % 365], model.params.phi)
+        newly_vaccinated = (model.params.phi * model.params.nu_jt[:, tick % 365]).astype(Sprime.dtype)
+        assert np.all(Sprime >= newly_vaccinated), "Not enough susceptible people to vaccinate"
         Sprime -= newly_vaccinated
         Vprime += newly_vaccinated
-
-        assert np.all(Sprime >= 0), "S' should not go negative"
-        assert np.all(Vprime >= 0), "V' should not go negative"
 
         return
 

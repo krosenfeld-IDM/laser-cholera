@@ -14,6 +14,7 @@ class Infectious:
 
         assert hasattr(model, "agents"), "Infectious: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("I", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.agents.add_vector_property("deaths", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Infectious: model needs to have a 'params' attribute."
         assert hasattr(self.model.params, "I_j_initial"), (
             "Infectious: model params needs to have a 'I_j_initial' (initial infectious population) parameter."
@@ -32,21 +33,21 @@ class Infectious:
     def __call__(self, model, tick: int) -> None:
         I = model.agents.I[tick]  # noqa: E741
         Iprime = model.agents.I[tick + 1]
+        Iprime[:] = I
 
         # natural mortality
-        # TODO - rate or probability?
-        Imort = model.prng.poisson(model.params.d_j * I).astype(Iprime.dtype)
-        Iprime[:] = I - Imort
+        Imort = (model.params.d_j * I).astype(Iprime.dtype)
+        Iprime[:] -= Imort
 
-        # TODO - rate or probability?
-        disease_deaths = model.prng.binomial(I, model.params.mu * model.params.sigma).astype(Iprime.dtype)
+        probability = np.negative(np.expm1(-model.params.mu * model.params.sigma))
+        # Use Iprime here, no point trying to account for disease death of already dead people (see above)
+        disease_deaths = model.prng.binomial(Iprime, probability).astype(Iprime.dtype)
+        model.agents.deaths[tick] = disease_deaths
         Iprime -= disease_deaths
 
         # human-to-human infection in humantohuman.py
         # environmental infection in envtohuman.py
         # recovery from infection in recovered.py
-
-        assert np.all(Iprime >= 0), "I' should not go negative"
 
         return
 

@@ -46,7 +46,8 @@ class HumanToHuman:
         r"""
         Calculate the current human-to-human transmission rate per patch.
 
-        $\Lambda_{j,t+1} = \frac {\beta^{hum}_{jt}((S_{jt}(1 - \tau_j))(I_{jt}(1 - \tau_j) + \sum_{\forall i \neq j (\pi_{ij} \tau_j I_{it})}))^{\alpha}} {N_{jt}}$
+        $\Lambda_{j,t+1} = \frac {\beta^{hum}_{jt}((S_{jt}(1 - \tau_j))(I_{jt}(1 - \tau_j) + \sum_{\forall i \neq j (\pi_{ij} \tau_j I_{it})}))^{\alpha_1}} {N^{\alpha_2}_{jt}}$
+
         """
 
         Lprime = model.patches.LAMDA[tick + 1]
@@ -56,40 +57,30 @@ class HumanToHuman:
         Iprime = model.agents.I[tick + 1]
         N = model.agents.N[tick]
 
-        # # "lambda" is a reserved keyword in Python
-        # Lprime[:] = (I * (1 - model.params.tau_i)).astype(Lprime.dtype)
-        # # TODO - sum over axis=0 or axis=1?
-        # Lprime += (model.params.pi_ij * (model.params.tau_i * I)).sum(axis=0).astype(Lprime.dtype)
-        # Lprime *= (S * (1 - model.params.tau_i)).astype(Lprime.dtype)
-        # np.power(Lprime, model.params.alpha, out=Lprime)
-        # # TODO - look up seasonality correctly based on tick/calendar date
-        # Lprime *= (model.params.beta_j0_hum + model.params.beta_j_seasonality[:, tick % 365]).astype(Lprime.dtype)
-        # Lprime /= N
-
-        t1 = (I * (1 - model.params.tau_i)).astype(Lprime.dtype)
-        lp1 = t1
+        local_i = (I * (1 - model.params.tau_i)).astype(Lprime.dtype)
         # TODO - sum over axis=0 or axis=1?
-        t2 = (model.params.pi_ij * (model.params.tau_i * I)).sum(axis=1).astype(Lprime.dtype)
-        lp2 = lp1 + t2
-        t3 = (S * (1 - model.params.tau_i)).astype(Lprime.dtype)
-        lp3 = lp2 * t3
-        t4 = np.power(lp3, model.params.alpha).astype(Lprime.dtype)
-        lp4 = t4
-        # TODO - look up seasonality correctly based on tick/calendar date
-        # TODO - fix use of "maximum"
-        t5 = np.maximum(0, (model.params.beta_j0_hum + model.params.beta_j_seasonality[:, tick % 365])).astype(Lprime.dtype)
-        lp5 = lp4 * t5
-        lp6 = lp5 / N
-        Lprime[:] = lp6
+        immigrating_i = (model.params.pi_ij * (model.params.tau_i * I)).sum(axis=1).astype(Lprime.dtype)
+        effective_i = local_i + immigrating_i
+        power_adjusted = np.power(effective_i, model.params.alpha1).astype(Lprime.dtype)
+        seasonality = (model.params.beta_j0_hum + model.params.beta_j_seasonality[:, tick]).astype(Lprime.dtype)
+        adjusted = seasonality * power_adjusted
+        denominator = np.power(N, model.params.alpha2).astype(Lprime.dtype)
+        rate = adjusted / denominator
+        Lprime[:] = rate
 
-        # TODO - rate (Poisson) or probability (binomial)?
-        newly_infected = model.prng.poisson(Lprime).astype(Sprime.dtype)
+        # TODO - still relevant?
+        assert np.all(Lprime >= 0), "λ' should not go negative"
+
+        local_s = np.round(S * (1 - model.params.tau_i)).astype(Lprime.dtype)
+        probability = np.negative(np.expm1(-Lprime))
+        newly_infected = model.prng.binomial(local_s, probability).astype(Sprime.dtype)
+
+        psymptomatic = np.negative(np.expm1(model.params.sigma))
+        newly_symptomatic = model.prng.binomial(newly_infected, psymptomatic).astype(Iprime.dtype)
+        newly_asymptomatic = newly_infected - newly_symptomatic
+
         Sprime -= newly_infected
         Iprime += newly_infected
-
-        assert np.all(Sprime >= 0), "S' should not go negative"
-        assert np.all(Iprime >= 0), "I' should not go negative"
-        assert np.all(Lprime >= 0), "λ' should not go negative"
 
         return
 

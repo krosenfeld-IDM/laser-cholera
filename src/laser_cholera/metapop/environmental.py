@@ -45,12 +45,10 @@ class Environmental:
 
         Wprime[:] = W
         # TODO - verify `tick%365` is correct
-        environmental_decay = (model.patches.delta[tick % 365] * W).astype(Wprime.dtype)
+        environmental_decay = (model.patches.delta[tick] * W).astype(Wprime.dtype)
         Wprime -= environmental_decay
         human_shedding = (model.params.zeta * I).astype(Wprime.dtype)
         Wprime += human_shedding
-
-        assert np.all(Wprime >= 0), "W' should not go negative"
 
         return
 

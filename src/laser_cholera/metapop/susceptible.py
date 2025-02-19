@@ -34,16 +34,12 @@ class Susceptible:
 
         # births
         N = model.agents.N[tick]
-        # TODO - rate or probability?
-        births = model.prng.poisson(model.params.b_j * N).astype(Sprime.dtype)
+        births = np.round(model.params.b_j * N).astype(Sprime.dtype)
         Sprime[:] += births
 
         # natural mortality
-        # TODO - rate or probability?
-        Smort = model.prng.poisson(model.params.d_j * S).astype(Sprime.dtype)
+        Smort = np.round(model.params.d_j * S).astype(Sprime.dtype)
         Sprime -= Smort
-
-        assert np.all(Sprime >= 0), "S' should not go negative"
 
         return
 

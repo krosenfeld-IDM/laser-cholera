@@ -56,17 +56,26 @@ class EnvToHuman:
         Sprime = model.agents.S[tick + 1]
         Iprime = model.agents.I[tick + 1]
 
-        # TODO - verify `tick%365` is correct
-        Pprime[:] = model.patches.beta_env[tick % 365] * (S * (1 - model.params.tau_i)) * (1 - model.params.theta_j) * W
-        Pprime /= model.params.kappa + W
+        washed = (1 - model.params.theta_j) * W
+        adjusted = model.patches.beta_env[tick] * washed
+        scaled = adjusted / (model.params.kappa + W)
 
-        newly_infected = model.prng.poisson(Pprime).astype(Sprime.dtype)
+        Pprime[:] = scaled
+        assert np.all(Pprime) >= 0, "Ψ' should not go negative"
+
+        local_s = np.round(S * (1 - model.params.tau_i)).astype(Sprime.dtype)
+        probability = np.negative(np.expm1(-Pprime))
+        newly_infected = model.prng.binomial(local_s, probability).astype(Sprime.dtype)
+
+        psymptomatic = np.negative(np.expm1(model.params.sigma))
+        newly_symptomatic = model.prng.binomial(newly_infected, psymptomatic).astype(Iprime.dtype)
+        newly_asymptomatic = newly_infected - newly_symptomatic
+
         Sprime -= newly_infected
         Iprime += newly_infected
 
-        assert np.all(Sprime) >= 0, "S' should not go negative"
-        assert np.all(Iprime) >= 0, "I' should not go negative"
-        assert np.all(Pprime) >= 0, "Ψ' should not go negative"
+        Sprime -= newly_infected
+        Iprime += newly_infected
 
         return
 

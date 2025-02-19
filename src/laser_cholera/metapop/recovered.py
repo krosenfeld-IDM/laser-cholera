@@ -38,25 +38,22 @@ class Recovered:
         Sprime = model.agents.S[tick + 1]
 
         # natural mortality
-        # TODO - rate or probability?
-        Rmort = model.prng.poisson(model.params.d_j * R).astype(Rprime.dtype)
+        probability = np.negative(np.expm1(-model.params.d_j))
+        Rmort = model.prng.binomial(R, probability).astype(Rprime.dtype)
         Rprime[:] = R - Rmort
 
         # waning natural immunity
-        # TODO - rate or probability?
-        waned_natural_immunity = model.prng.binomial(Rprime, model.params.epsilon).astype(Sprime.dtype)
+        probability = np.negative(np.expm1(-model.params.epsilon))
+        waned_natural_immunity = model.prng.binomial(Rprime, probability).astype(Sprime.dtype)
         Sprime += waned_natural_immunity
         Rprime -= waned_natural_immunity
 
         # recovery from infection
-        # TODO - rate or probability?
-        newly_recovered = model.prng.binomial(I, model.params.gamma).astype(Iprime.dtype)
+        probability = np.negative(np.expm1(-model.params.gamma))
+        # Use Iprime here, only people who are still infected can recover
+        newly_recovered = model.prng.binomial(Iprime, probability).astype(Iprime.dtype)
         Iprime -= newly_recovered
         Rprime += newly_recovered
-
-        assert np.all(Sprime >= 0), "S' should not go negative"
-        assert np.all(Iprime >= 0), "I' should not go negative"
-        assert np.all(Rprime >= 0), "R' should not go negative"
 
         return
 

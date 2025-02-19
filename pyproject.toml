@@ -36,13 +36,13 @@ classifiers = [
 dependencies = [
     "click",
     "laser-core==0.1.1",
-    # "numpy>=1.26.4,<2.0.0", # depend on laser-core
-    # "numba~=0.59.1",  # depend on laser-core
+    "numpy",
+    "numba",
     "pandas",
     "geopandas",
     "tqdm",
     "matplotlib",
-    "pyyaml",
+    "h5py",
 ]
 
 [project.optional-dependencies]
