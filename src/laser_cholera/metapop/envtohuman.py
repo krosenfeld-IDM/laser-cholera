@@ -15,13 +15,14 @@ class EnvToHuman:
         self.verbose = verbose
 
         assert hasattr(model, "agents"), "EnvToHuman: model needs to have a 'agents' attribute."
-        model.patches.add_vector_property("PSI", length=model.params.nticks + 1, dtype=np.float32, default=np.float32(0.0))
+        model.patches.add_vector_property("Psi", length=model.params.nticks + 1, dtype=np.float32, default=np.float32(0.0))
 
         assert hasattr(model, "params"), "EnvToHuman: model needs to have a 'params' attribute."
         assert hasattr(model.params, "psi_jt"), (
             "EnvToHuman: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
         )
 
+        raise AssertionError("Need to check model.params.beta_j0_env shape.")
         model.patches.add_vector_property("beta_env", length=365, dtype=np.float32, default=0.0)
         assert model.patches.beta_env.shape[1] == model.params.psi_jt.shape[0]
         assert model.patches.beta_env.shape[1] == model.params.beta_j0_env.shape[0]
@@ -34,48 +35,63 @@ class EnvToHuman:
 
     def check(self):
         assert hasattr(self.model.agents, "S"), "EnvToHuman: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "I"), "EnvToHuman: model agents needs to have a 'I' (infected) attribute."
+        assert hasattr(self.model.agents, "E"), "EnvToHuman: model agents needs to have a 'E' (exposed) attribute."
+        assert hasattr(self.model.agents, "V1sus"), "EnvToHuman: model agents needs to have a 'V1sus' (vaccinated 1 susceptible) attribute."
+        assert hasattr(self.model.agents, "V1inf"), "EnvToHuman: model agents needs to have a 'V1inf' (vaccinated 1 infected) attribute."
+        assert hasattr(self.model.agents, "V2sus"), "EnvToHuman: model agents needs to have a 'V2sus' (vaccinated 2 susceptible) attribute."
+        assert hasattr(self.model.agents, "V2inf"), "EnvToHuman: model agents needs to have a 'V2inf' (vaccinated 2 infected) attribute."
+
         assert hasattr(self.model, "patches"), "EnvToHuman: model needs to have a 'patches' attribute."
         assert hasattr(self.model.patches, "W"), "EnvToHuman: model patches needs to have a 'W' (environmental) attribute."
-        assert hasattr(self.model.params, "tau_i"), (
-            "HumanToHuman: model.params needs to have a 'tau_i' (emmigration probability) parameter."
-        )
-        assert hasattr(self.model.params, "theta_j"), (
+
+        assert "tau_i" in self.model.params, "EnvToHuman: model params needs to have a 'tau_i' (emmigration probability) parameter."
+        assert "theta_j" in self.model.params, (
             "EnvToHuman: model params needs to have a 'theta_j' (fraction of population with WASH) attribute."
         )
-        assert hasattr(self.model.params, "kappa"), (
-            "EnvToHuman: model params needs to have a 'kappa' (environmental transmission rate) parameter."
-        )
+        assert "kappa" in self.model.params, "EnvToHuman: model params needs to have a 'kappa' (environmental transmission rate) parameter."
 
         return
 
     def __call__(self, model, tick: int) -> None:
-        Pprime = model.patches.PSI[tick + 1]
-        S = model.agents.S[tick]
+        Psi = model.patches.Psi[tick + 1]
         W = model.patches.W[tick]
-        Sprime = model.agents.S[tick + 1]
-        Iprime = model.agents.I[tick + 1]
+        tau_i = model.params.tau_i
+        local_frac = 1 - tau_i
 
-        washed = (1 - model.params.theta_j) * W
-        adjusted = model.patches.beta_env[tick] * washed
-        scaled = adjusted / (model.params.kappa + W)
+        non_wash = (1 - model.params.theta_j) * W
+        seasonal = model.patches.beta_env[tick] * non_wash
+        denominator = model.params.kappa + W
+        normalized = seasonal / denominator
+        Psi[:] = normalized
 
-        Pprime[:] = scaled
-        assert np.all(Pprime) >= 0, "Ψ' should not go negative"
+        # PsiS
+        S = model.agents.S[tick]
+        Snext = model.agents.S[tick + 1]
+        Enext = model.agents.E[tick + 1]
+        local_s = np.round(S * local_frac).astype(S.dtype)
+        infections_s = np.binomial(local_s, -np.expm1(-Psi)).astype(Snext.dtype)
+        Snext -= infections_s
+        Enext += infections_s
 
-        local_s = np.round(S * (1 - model.params.tau_i)).astype(Sprime.dtype)
-        probability = np.negative(np.expm1(-Pprime))
-        newly_infected = model.prng.binomial(local_s, probability).astype(Sprime.dtype)
+        # PsiV1
+        V1sus = model.agents.V1sus[tick]
+        V1sus_next = model.agents.V1sus[tick + 1]
+        V1inf_next = model.agents.V1inf[tick + 1]
+        local_v1 = np.round(local_frac * V1sus).astype(V1sus.dtype)
+        infections_v1 = np.binomial(local_v1, -np.expm1(-Psi)).astype(V1sus.dtype)
+        V1sus_next -= infections_v1
+        V1inf_next += infections_v1
+        Enext += infections_v1
 
-        psymptomatic = np.negative(np.expm1(model.params.sigma))
-        newly_symptomatic = model.prng.binomial(newly_infected, psymptomatic).astype(Iprime.dtype)
-        newly_asymptomatic = newly_infected - newly_symptomatic
-
-        Sprime -= newly_infected
-        Iprime += newly_infected
-
-        Sprime -= newly_infected
-        Iprime += newly_infected
+        # PsiV2
+        V2sus = model.agents.V2sus[tick]
+        V2sus_next = model.agents.V2sus[tick + 1]
+        V2inf_next = model.agents.V2inf[tick + 1]
+        local_v2 = np.round(local_frac * V2sus).astype(V2sus.dtype)
+        infections_v2 = np.binomial(local_v2, -np.expm1(-Psi)).astype(V2sus.dtype)
+        V2sus_next -= infections_v2
+        V2inf_next += infections_v2
+        Enext += infections_v2
 
         return
 

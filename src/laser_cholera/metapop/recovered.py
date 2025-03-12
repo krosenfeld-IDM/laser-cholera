@@ -14,63 +14,54 @@ class Recovered:
 
         assert hasattr(model, "agents"), "Recovered: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("R", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        assert hasattr(self.model, "params"), "Recovered: model needs to have a 'params' attribute."
-        assert hasattr(self.model.params, "R_j_initial"), (
+        assert hasattr(model, "params"), "Recovered: model needs to have a 'params' attribute."
+        assert "R_j_initial" in model.params, (
             "Recovered: model params needs to have a 'R_j_initial' (initial recovered population) parameter."
         )
+
         model.agents.R[0] = model.params.R_j_initial
 
         return
 
     def check(self):
         assert hasattr(self.model.agents, "S"), "Recovered: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "I"), "Recovered: model agents needs to have a 'I' (infectious) attribute."
-        assert hasattr(self.model.params, "d_j"), "Recovered: model params needs to have a 'd_j' (mortality rate) parameter."
-        assert hasattr(self.model.params, "epsilon"), "Recovered: model params needs to have a 'epsilon' (waning immunity rate) parameter."
-        assert hasattr(self.model.params, "gamma"), "Recovered: model params needs to have a 'gamma' (infection recovery rate) parameter."
+        assert "d_jt" in self.model.params, "Recovered: model params needs to have a 'd_jt' (mortality rate) parameter."
+        assert "epsilon" in self.model.params, "Recovered: model params needs to have a 'epsilon' (waning immunity rate) parameter."
         return
 
     def __call__(self, model, tick: int) -> None:
-        I = model.agents.I[tick]  # noqa: E741
-        Iprime = model.agents.I[tick + 1]
         R = model.agents.R[tick]
         Rprime = model.agents.R[tick + 1]
         Sprime = model.agents.S[tick + 1]
 
+        Rprime[:] = R
+
         # natural mortality
-        probability = np.negative(np.expm1(-model.params.d_j))
-        Rmort = model.prng.binomial(R, probability).astype(Rprime.dtype)
-        Rprime[:] = R - Rmort
+        deaths = np.binomial(Rprime, -np.expm1(-model.params.d_jt[:, tick])).astype(Rprime.dtype)
+        Rprime -= deaths
 
         # waning natural immunity
-        probability = np.negative(np.expm1(-model.params.epsilon))
-        waned_natural_immunity = model.prng.binomial(Rprime, probability).astype(Sprime.dtype)
-        Sprime += waned_natural_immunity
-        Rprime -= waned_natural_immunity
-
-        # recovery from infection
-        probability = np.negative(np.expm1(-model.params.gamma))
-        # Use Iprime here, only people who are still infected can recover
-        newly_recovered = model.prng.binomial(Iprime, probability).astype(Iprime.dtype)
-        Iprime -= newly_recovered
-        Rprime += newly_recovered
+        waned = np.binomial(Rprime, -np.expm1(-model.params.epsilon)).astype(Rprime.dtype)
+        Rprime -= waned
+        Sprime += waned
 
         return
 
     @staticmethod
     def test():
         class Model:
-            def __init__(self, d_j: float = 0.0, epsilon: float = 0.0, gamma: float = 0.0):
+            def __init__(self, d_jt: np.ndarray = None, epsilon: float = 0.0, gamma: float = 0.0):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
                 self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
                 self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
                 self.agents.I[0] = [1_000, 10_000, 100_000, 1_000_000]
+                d_jt = d_jt if d_jt is not None else np.full((4, 1), 1.0 / 80.0)
                 self.params = PropertySet(
-                    {"d_j": d_j, "epsilon": epsilon, "gamma": gamma, "R_j_initial": [1_000, 10_000, 100_000, 1_000_000], "nticks": 8}
+                    {"d_jt": d_jt, "epsilon": epsilon, "gamma": gamma, "R_j_initial": [1_000, 10_000, 100_000, 1_000_000], "nticks": 8}
                 )
 
-        component = Recovered(model := Model(d_j=1.0 / 80.0))
+        component = Recovered(model := Model(d_jt=np.full((4, 1), 1.0 / 80.0)))
         component.check()
         component(model, 0)
         assert np.all(model.agents.R[0] == model.params.R_j_initial), "Initial populations didn't match."

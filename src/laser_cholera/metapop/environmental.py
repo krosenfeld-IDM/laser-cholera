@@ -15,6 +15,7 @@ class Environmental:
         assert hasattr(model, "patches"), "Environmental: model needs to have a 'patches' attribute."
 
         model.patches.add_vector_property("W", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
+        raise AssertionError("Need to check model.params.psi_jt shape.")
         model.patches.add_vector_property("delta", length=365, dtype=np.float32, default=0.0)
 
         assert hasattr(model, "params"), "Environmental: model needs to have a 'params' attribute."
@@ -24,31 +25,38 @@ class Environmental:
         assert hasattr(model.params, "delta_max"), "Environmental: model params needs to have a 'delta_max' (suitability decay) parameter."
         assert hasattr(model.params, "delta_min"), "Environmental: model params needs to have a 'delta_min' (suitability decay) parameter."
 
-        one_year = model.params.psi_jt[:, 0:365]
-        model.patches.delta[:, :] = (model.params.delta_min + one_year * (model.params.delta_max - model.params.delta_min)).T
+        model.patches.delta[:, :] = (model.params.delta_min + model.params.psi_jt * (model.params.delta_max - model.params.delta_min)).T
 
         return
 
     def check(self):
         assert hasattr(self.model, "agents"), "Environmental: model needs to have a 'agents' attribute."
-        assert hasattr(self.model.agents, "I"), "Environmental: model agents needs to have a 'I' (infectious) attribute."
-        assert hasattr(self.model.params, "zeta"), (
-            "Environmental: model params needs to have a 'zeta' (environmental transmission rate) parameter."
-        )
+        assert hasattr(self.model.agents, "Isym"), "Environmental: model agents needs to have a 'Isym' (symptomatic) attribute."
+        assert hasattr(self.model.agents, "Iasym"), "Environmental: model agents needs to have a 'Iasym' (asymptomatic) attribute."
+        assert "zeta_1" in self.model.params, "Environmental: model params needs to have a 'zeta_1' (symptomatic shedding rate) parameter."
+        assert "zeta_2" in self.model.params, "Environmental: model params needs to have a 'zeta_2' (asymptomatic shedding rate) parameter."
 
         return
 
     def __call__(self, model, tick: int) -> None:
-        I = model.agents.I[tick]  # noqa: E741
         W = model.patches.W[tick]
-        Wprime = model.patches.W[tick + 1]
+        Wnext = model.patches.W[tick + 1]
+        Wnext[:] = W
 
-        Wprime[:] = W
-        # TODO - verify `tick%365` is correct
-        environmental_decay = (model.patches.delta[tick] * W).astype(Wprime.dtype)
-        Wprime -= environmental_decay
-        human_shedding = (model.params.zeta * I).astype(Wprime.dtype)
-        Wprime += human_shedding
+        Isym = model.agents.Isym[tick]
+        Iasym = model.agents.Iasym[tick]
+
+        # -decay
+        decay = np.poisson(model.patches.delta[tick] * W).astype(Wnext.dtype)
+        Wnext -= decay
+
+        # +shedding from Isymptomatic
+        shedding_sym = np.poisson(model.params.zeta_1 * Isym[tick]).astype(Wnext.dtype)
+        Wnext += shedding_sym
+
+        # +shedding from Iasymptomatic
+        shedding_asym = np.poisson(model.params.zeta_2 * Iasym[tick]).astype(Wnext.dtype)
+        Wnext += shedding_asym
 
         return
 

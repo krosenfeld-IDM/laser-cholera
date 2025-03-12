@@ -19,8 +19,8 @@ class Recorder:
         assert hasattr(self.model.agents, "V"), "Recorder: model agents needs to have a 'V' (vaccinated) attribute."
         assert hasattr(self.model.agents, "N"), "Recorder: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(self.model, "patches"), "Recorder: model needs to have a 'patches' attribute."
-        assert hasattr(self.model.patches, "LAMDA"), (
-            "Recorder: model patches needs to have a 'LAMDA' (human-to-human transmission rate) attribute."
+        assert hasattr(self.model.patches, "Lambda"), (
+            "Recorder: model patches needs to have a 'Lambda' (human-to-human transmission rate) attribute."
         )
         assert hasattr(self.model.patches, "PSI"), (
             "Recorder: model patches needs to have a 'PSI' (environment-to-human transmission rate) attribute."
@@ -45,15 +45,20 @@ class Recorder:
                 agents = file.create_group("agents")
                 # write the following NumPy arrays to the file: S, I, R, V, N
                 agents.create_dataset("S", data=model.agents.S)
-                agents.create_dataset("I", data=model.agents.I)
+                agents.create_dataset("Isym", data=model.agents.Isym)
+                agents.create_dataset("Iasym", data=model.agents.Iasym)
                 agents.create_dataset("R", data=model.agents.R)
-                agents.create_dataset("V", data=model.agents.V)
+                agents.create_dataset("V1imm", data=model.agents.V)
+                agents.create_dataset("V1sus", data=model.agents.V)
+                agents.create_dataset("V1inf", data=model.agents.V)
+                agents.create_dataset("V2imm", data=model.agents.V)
+                agents.create_dataset("V2sus", data=model.agents.V)
                 agents.create_dataset("N", data=model.agents.N)
                 # create a group in the HDF5 file called "patches"
                 patches = file.create_group("patches")
-                # write the following NumPy arrays to the file: LAMDA, PSI, W, beta_env, delta, theta
-                patches.create_dataset("LAMDA", data=model.patches.LAMDA)
-                patches.create_dataset("PSI", data=model.patches.PSI)
+                # write the following NumPy arrays to the file: Lambda, PSI, W, beta_env, delta, theta
+                patches.create_dataset("Lambda", data=model.patches.Lambda)
+                patches.create_dataset("Psi", data=model.patches.Psi)
                 patches.create_dataset("W", data=model.patches.W)
                 patches.create_dataset("beta_env", data=model.patches.beta_env)
                 patches.create_dataset("delta", data=model.patches.delta)

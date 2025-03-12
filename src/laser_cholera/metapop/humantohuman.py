@@ -15,30 +15,41 @@ class HumanToHuman:
         self.verbose = verbose
 
         assert hasattr(model, "patches"), "HumanToHuman: model needs to have a 'patches' attribute."
-        model.patches.add_vector_property("LAMDA", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
+        model.patches.add_vector_property("Lambda", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
 
         return
 
     def check(self):
         assert hasattr(self.model, "agents"), "HumanToHuman: model needs to have a 'agents' attribute."
-        assert hasattr(self.model.agents, "S"), "HumanToHuman: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "I"), "HumanToHuman: model agents needs to have a 'I' (infectious) attribute."
+        assert hasattr(self.model.agents, "Isym"), "HumanToHuman: model agents needs to have a 'Isym' (symptomatic) attribute."
+        assert hasattr(self.model.agents, "Iasym"), "HumanToHuman: model agents needs to have a 'Iasym' (asymptomatic) attribute."
         assert hasattr(self.model.agents, "N"), "HumanToHuman: model agents needs to have a 'N' (current agents) attribute."
+        assert hasattr(self.model.agents, "S"), "HumanToHuman: model agents needs to have a 'S' (susceptible) attribute."
+        assert hasattr(self.model.agents, "E"), "HumanToHuman: model agents needs to have a 'E' (exposed) attribute."
+        assert hasattr(self.model.agents, "V1sus"), (
+            "HumanToHuman: model agents needs to have a 'V1sus' (vaccinated 1 susceptible) attribute."
+        )
+        assert hasattr(self.model.agents, "V1inf"), (
+            "HumanToHuman: model agents needs to have a 'V1inf' (vaccinated 1 infectious) attribute."
+        )
+        assert hasattr(self.model.agents, "V2sus"), (
+            "HumanToHuman: model agents needs to have a 'V2sus' (vaccinated 2 susceptible) attribute."
+        )
+        assert hasattr(self.model.agents, "V2inf"), (
+            "HumanToHuman: model agents needs to have a 'V2inf' (vaccinated 2 infectious) attribute."
+        )
+
         assert hasattr(self.model, "params"), "HumanToHuman: model needs to have a 'params' attribute."
-        assert "alpha" in self.model.params, "HumanToHuman: model params needs to have an 'alpha' parameter."
-        assert hasattr(self.model.params, "tau_i"), (
-            "HumanToHuman: model.params needs to have a 'tau_i' (emmigration probability) parameter."
+        assert "tau_i" in self.model.params, "HumanToHuman: model params needs to have a 'tau_i' (emmigration probability) parameter."
+        assert "pi_ij" in self.model.params, "HumanToHuman: model params needs to have a 'pi_ij' (connectivity probability) parameter."
+        assert "beta_j0_hum" in self.model.params, (
+            "HumanToHuman: model params needs to have a 'beta_j0_hum' (baseline transmission rate) parameter."
         )
-        assert hasattr(self.model.params, "pi_ij"), (
-            "HumanToHuman: model.params needs to have a 'pi_ij' (connectivity probability) parameter."
+        assert "beta_j_seasonality" in self.model.params, (
+            "HumanToHuman: model params needs to have a 'beta_j_seasonality' (seasonal transmission rate) parameter."
         )
-        assert hasattr(self.model.params, "alpha"), "HumanToHuman: model.params needs to have a 'alpha' (population mixing) parameter."
-        assert hasattr(self.model.params, "beta_j0_hum"), (
-            "HumanToHuman: model.params needs to have a 'beta_j0_hum' (baseline transmission rate) parameter."
-        )
-        assert hasattr(self.model.params, "beta_j_seasonality"), (
-            "HumanToHuman: model.params needs to have a 'beta_j_seasonality' (seasonal transmission rate) parameter."
-        )
+        assert "alpha_1" in self.model.params, "HumanToHuman: model params needs to have an 'alpha_1' (numerator power) parameter."
+        assert "alpha_2" in self.model.params, "HumanToHuman: model params needs to have an 'alpha_2' (denominator power) parameter."
 
         return
 
@@ -50,37 +61,50 @@ class HumanToHuman:
 
         """
 
-        Lprime = model.patches.LAMDA[tick + 1]
-        I = model.agents.I[tick]  # noqa: E741
-        S = model.agents.S[tick]
-        Sprime = model.agents.S[tick + 1]
-        Iprime = model.agents.I[tick + 1]
+        # LambdaS
+        Lambda = model.patches.Lambda[tick + 1]
+        Isym = model.agents.Isym[tick]
+        Iasym = model.agents.Iasym[tick]
         N = model.agents.N[tick]
+        S = model.agents.S[tick]
+        Snext = model.agents.S[tick + 1]
+        Enext = model.agents.E[tick + 1]
 
-        local_i = (I * (1 - model.params.tau_i)).astype(Lprime.dtype)
+        total_i = Isym + Iasym
+        local_i = (total_i * (1 - model.params.tau_i)).astype(Lambda.dtype)
         # TODO - sum over axis=0 or axis=1?
-        immigrating_i = (model.params.pi_ij * (model.params.tau_i * I)).sum(axis=1).astype(Lprime.dtype)
+        immigrating_i = (model.params.pi_ij * (model.params.tau_i * total_i)).sum(axis=1).astype(Lambda.dtype)
         effective_i = local_i + immigrating_i
-        power_adjusted = np.power(effective_i, model.params.alpha1).astype(Lprime.dtype)
-        seasonality = (model.params.beta_j0_hum + model.params.beta_j_seasonality[:, tick]).astype(Lprime.dtype)
+        power_adjusted = np.power(effective_i, model.params.alpha_1).astype(Lambda.dtype)
+        seasonality = (model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[:, tick])).astype(Lambda.dtype)
         adjusted = seasonality * power_adjusted
-        denominator = np.power(N, model.params.alpha2).astype(Lprime.dtype)
-        rate = adjusted / denominator
-        Lprime[:] = rate
+        denominator = np.power(N, model.params.alpha_2).astype(Lambda.dtype)
+        rate = (adjusted / denominator).astype(Lambda.dtype)
+        Lambda[:] = rate
+        local = np.round((1 - model.params.tau_i) * S).astype(S.dtype)
+        infections = np.binomial(local, -np.expm1(-rate)).astype(S.dtype)
+        Snext -= infections
+        Enext += infections
 
-        # TODO - still relevant?
-        assert np.all(Lprime >= 0), "λ' should not go negative"
+        # LambdaV1
+        V1sus = model.agents.V1sus[tick]
+        local = np.round((1 - model.params.tau_i) * V1sus).astype(V1sus.dtype)
+        infections = np.binomial(local, -np.expm1(-rate)).astype(V1sus.dtype)
+        V1sus_next = model.agents.V1sus[tick + 1]
+        V1inf_next = model.agents.V1inf[tick + 1]
+        V1sus_next -= infections
+        V1inf_next += infections
+        Enext += infections
 
-        local_s = np.round(S * (1 - model.params.tau_i)).astype(Lprime.dtype)
-        probability = np.negative(np.expm1(-Lprime))
-        newly_infected = model.prng.binomial(local_s, probability).astype(Sprime.dtype)
-
-        psymptomatic = np.negative(np.expm1(model.params.sigma))
-        newly_symptomatic = model.prng.binomial(newly_infected, psymptomatic).astype(Iprime.dtype)
-        newly_asymptomatic = newly_infected - newly_symptomatic
-
-        Sprime -= newly_infected
-        Iprime += newly_infected
+        # LambdaV2
+        V2sus = model.agents.V2sus[tick]
+        local = np.round((1 - model.params.tau_i) * V2sus).astype(V2sus.dtype)
+        infections = np.binomial(local, -np.expm1(-rate)).astype(V2sus.dtype)
+        V2sus_next = model.agents.V2sus[tick + 1]
+        V2inf_next = model.agents.V2inf[tick + 1]
+        V2sus_next -= infections
+        V2inf_next += infections
+        Enext += infections
 
         return
 
@@ -88,7 +112,13 @@ class HumanToHuman:
     def test():
         class Model:
             def __init__(
-                self, alpha: float = 0.0, tau_i: float = 0.0, pi_ij: float = 0.0, beta_j0_hum: float = 0.0, beta_j_seasonality: float = 0.0
+                self,
+                alpha1: float = 1.0,
+                alpha2: float = 1.0,
+                tau_i: float = 0.0,
+                pi_ij: float = 0.0,
+                beta_j0_hum: float = 0.0,
+                beta_j_seasonality: float = 0.0,
             ):
                 self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
                 self.agents = LaserFrame(4)
@@ -98,10 +128,11 @@ class HumanToHuman:
                 self.agents.S[0] = self.agents.S[1] = [250, 2_500, 25_000, 250_000]  # 25%
                 self.agents.I[0] = self.agents.I[1] = [100, 1_000, 10_000, 100_000]  # 10%
                 self.agents.N[0] = self.agents.N[1] = [1_000, 10_000, 100_000, 1_000_000]
-                self.patches = LaserFrame(4)  # required for HumanToHuman to add LAMDA
+                self.patches = LaserFrame(4)  # required for HumanToHuman to add Lambda
                 self.params = PropertySet(
                     {
-                        "alpha": alpha,
+                        "alpha1": alpha1,
+                        "alpha2": alpha2,
                         "tau_i": tau_i,
                         "pi_ij": pi_ij,
                         "beta_j0_hum": beta_j0_hum,
@@ -112,7 +143,8 @@ class HumanToHuman:
 
         component = HumanToHuman(
             model := Model(
-                alpha=0.95,
+                alpha1=0.95,
+                alpha2=0.95,
                 tau_i=np.array([1.2521719e-03, 4.1985715e-04, 2.0205112e-02, 9.2022895e-03]),  # 1000x some actual values
                 pi_ij=np.array(
                     [
@@ -153,7 +185,7 @@ class HumanToHuman:
 
         plt.title("Human-to-Human Transmission Rate")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.patches.LAMDA[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.patches.Lambda[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
         plt.legend()
 

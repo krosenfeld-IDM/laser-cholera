@@ -1,7 +1,9 @@
 from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 
 import click
+import numpy as np
 import pandas as pd
 from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
@@ -15,6 +17,7 @@ from laser_cholera.metapop import Analyzer
 from laser_cholera.metapop import Census
 from laser_cholera.metapop import Environmental
 from laser_cholera.metapop import EnvToHuman
+from laser_cholera.metapop import Exposed
 from laser_cholera.metapop import HumanToHuman
 from laser_cholera.metapop import Infectious
 from laser_cholera.metapop import Recorder
@@ -47,6 +50,9 @@ class Model:
         _istart, _iend = self.agents.add(npatches)
         self.patches = LaserFrame(npatches)
         _istart, _iend = self.patches.add(npatches)
+
+        doy = [(parameters.date_start + timedelta(days=i)).timetuple().tm_yday - 1 for i in range(parameters.nticks)]
+        self.doy = np.array(doy, dtype=np.int32)
 
         return
 
@@ -216,7 +222,7 @@ class Model:
 
 
 @click.command()
-@click.option("--nticks", default=365, help="Number of ticks to run the simulation")
+# @click.option("--nticks", default=365, help="Number of ticks to run the simulation")
 @click.option("--seed", default=20241107, help="Random seed")
 @click.option("--verbose", is_flag=True, help="Print verbose output")
 @click.option("--no-viz", is_flag=True, default=False, help="Suppress displaying visualizations")
@@ -250,7 +256,19 @@ def run(**kwargs):
     parameters = get_parameters(overrides=kwargs)
     model = Model(parameters)
 
-    model.components = [Susceptible, Infectious, Recovered, Vaccinated, Census, HumanToHuman, EnvToHuman, Environmental, Analyzer, Recorder]
+    model.components = [
+        Susceptible,
+        Exposed,
+        Recovered,
+        Infectious,
+        Vaccinated,
+        Census,
+        HumanToHuman,
+        EnvToHuman,
+        Environmental,
+        Analyzer,
+        Recorder,
+    ]
 
     model.run()
 
@@ -262,4 +280,5 @@ def run(**kwargs):
 
 if __name__ == "__main__":
     ctx = click.Context(run)
-    ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, no_viz=False, pdf=False)
+    # ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, no_viz=False, pdf=False)
+    ctx.invoke(run, seed=20241107, verbose=True, no_viz=False, pdf=False)
