@@ -2,7 +2,10 @@ from .analyzer import Analyzer
 from .census import Census
 from .environmental import Environmental
 from .envtohuman import EnvToHuman
+from .envtohumanvax import EnvToHumanVax
+from .exposed import Exposed
 from .humantohuman import HumanToHuman
+from .humantohumanvax import HumanToHumanVax
 from .infectious import Infectious
 from .params import get_parameters
 from .recorder import Recorder
@@ -15,8 +18,11 @@ __all__ = [
     "Analyzer",
     "Census",
     "EnvToHuman",
+    "EnvToHumanVax",
     "Environmental",
+    "Exposed",
     "HumanToHuman",
+    "HumanToHumanVax",
     "Infectious",
     "Recorder",
     "Recovered",

@@ -32,8 +32,8 @@ class Vaccinated:
         assert "phi_2" in self.model.params, "Vaccinated: model params needs to have a 'phi_2' parameter."
         assert "omega_1" in self.model.params, "Vaccinated: model params needs to have a 'omega_1' parameter."
         assert "omega_2" in self.model.params, "Vaccinated: model params needs to have a 'omega_2' parameter."
-        assert "nu_1jt" in self.model.params, "Vaccinated: model params needs to have a 'nu_1jt' parameter."
-        assert "nu_2jt" in self.model.params, "Vaccinated: model params needs to have a 'nu_2jt' parameter."
+        assert "nu_1_jt" in self.model.params, "Vaccinated: model params needs to have a 'nu_1_jt' parameter."
+        assert "nu_2_jt" in self.model.params, "Vaccinated: model params needs to have a 'nu_2_jt' parameter."
 
         assert hasattr(self.model.params, "d_jt"), "Susceptible: model.params needs to have a 'd_jt' attribute."
 
@@ -56,6 +56,7 @@ class Vaccinated:
         V2inf_next = model.agents.V2inf[tick + 1]
         S = model.agents.S[tick]
         E = model.agents.E[tick]
+        S_next = model.agents.S[tick + 1]
 
         V1imm_next[:] = V1imm
         V1sus_next[:] = V1sus
@@ -65,32 +66,36 @@ class Vaccinated:
         V2inf_next[:] = V2inf
 
         # -natural mortality
-        deaths = np.binomial(V1imm, -np.expm1(-model.params.d_jt[:, tick])).astype(V1imm.dtype)
+        deaths = model.prng.binomial(V1imm, -np.expm1(-model.params.d_jt[:, tick])).astype(V1imm.dtype)
         V1imm_next -= deaths
-        deaths = np.binomial(V1sus, -np.expm1(-model.params.d_jt[:, tick])).astype(V1sus.dtype)
+        deaths = model.prng.binomial(V1sus, -np.expm1(-model.params.d_jt[:, tick])).astype(V1sus.dtype)
         V1sus_next -= deaths
-        deaths = np.binomial(V1inf, -np.expm1(-model.params.d_jt[:, tick])).astype(V1inf.dtype)
+        deaths = model.prng.binomial(V1inf, -np.expm1(-model.params.d_jt[:, tick])).astype(V1inf.dtype)
         V1inf_next -= deaths
 
-        deaths = np.binomial(V2imm, -np.expm1(-model.params.d_jt[:, tick])).astype(V2imm.dtype)
+        deaths = model.prng.binomial(V2imm, -np.expm1(-model.params.d_jt[:, tick])).astype(V2imm.dtype)
         V2imm_next -= deaths
-        deaths = np.binomial(V2sus, -np.expm1(-model.params.d_jt[:, tick])).astype(V2sus.dtype)
+        deaths = model.prng.binomial(V2sus, -np.expm1(-model.params.d_jt[:, tick])).astype(V2sus.dtype)
         V2sus_next -= deaths
-        deaths = np.binomial(V2inf, -np.expm1(-model.params.d_jt[:, tick])).astype(V2inf.dtype)
+        deaths = model.prng.binomial(V2inf, -np.expm1(-model.params.d_jt[:, tick])).astype(V2inf.dtype)
         V2inf_next -= deaths
 
         # -waning immunity
-        waned = np.binomial(V1imm_next, -np.expm1(-model.params.omega_1)).astype(V1imm_next.dtype)
+        waned = model.prng.binomial(V1imm_next, -np.expm1(-model.params.omega_1)).astype(V1imm_next.dtype)
         V1imm_next -= waned
         V1sus_next += waned
 
-        waned = np.binomial(V2imm_next, -np.expm1(-model.params.omega_2)).astype(V2imm_next.dtype)
+        waned = model.prng.binomial(V2imm_next, -np.expm1(-model.params.omega_2)).astype(V2imm_next.dtype)
         V2imm_next -= waned
         V2sus_next += waned
 
         # +newly vaccinated (successful take)
-        new_one_doses = np.poisson(model.params.nu_1jt[tick] * S / (S + E)).astype(V1imm.dtype)
-        S -= new_one_doses
+        new_one_doses = model.prng.poisson(model.params.nu_1_jt[tick] * S / (S + E)).astype(V1imm.dtype)
+        if np.any(new_one_doses > S):
+            print(f"WARNING: new_one_doses > S ({tick=}\n\t{new_one_doses=}\n\t{S=})")
+            new_one_doses = np.minimum(new_one_doses, S)
+        S_next -= new_one_doses
+        assert np.all(S_next >= 0), f"S' should not go negative ({tick=}\n\t{S_next})"
         # effective doses
         new_immunized = np.round(model.params.phi_1 * new_one_doses).astype(V1imm.dtype)
         V1imm_next += new_immunized
@@ -100,13 +105,18 @@ class Vaccinated:
 
         # -second dose recipients
         V1 = (V1imm + V1sus + V1inf).astype(V1imm.dtype)
-        new_two_doses = np.poisson(model.params.nu_2jt[tick] * V1).astype(V1imm.dtype)
+        new_two_doses = model.prng.poisson(model.params.nu_2_jt[tick] * V1).astype(V1imm.dtype)
         v1imm_contribution = np.round((V1imm / V1) * new_two_doses).astype(V1imm.dtype)
         V1imm_next -= v1imm_contribution
         v1sus_contribution = np.round((V1sus / V1) * new_two_doses).astype(V1sus.dtype)
         V1sus_next -= v1sus_contribution
         v1inf_contribution = new_two_doses - v1imm_contribution - v1sus_contribution
         V1inf_next -= v1inf_contribution
+
+        assert np.all(V1imm_next >= 0), f"V1imm' should not go negative ({tick=}\n\t{V1imm_next})"
+        assert np.all(V1sus_next >= 0), f"V1sus' should not go negative ({tick=}\n\t{V1sus_next})"
+        assert np.all(V1inf_next >= 0), f"V1inf' should not go negative ({tick=}\n\t{V1inf_next})"
+
         # effective doses
         # TODO - use new_two_doses here or (v1imm_contribution + v1sus_contribution)?
         new_immunized = np.round(model.params.phi_2 * ((V1imm + V1sus) / V1) * new_two_doses).astype(V2imm.dtype)
@@ -184,9 +194,17 @@ class Vaccinated:
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        plt.title("Vaccinated")
+        plt.title("Vaccinated (One Dose)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.V[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.agents.V1[:, ipatch], label=f"Patch {ipatch}")
+        plt.xlabel("Tick")
+        plt.legend()
+
+        yield
+
+        plt.title("Vaccinated (Two Doses)")
+        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+            plt.plot(self.model.agents.V2[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
         plt.legend()
 

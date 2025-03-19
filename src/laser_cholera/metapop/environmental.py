@@ -15,13 +15,15 @@ class Environmental:
         assert hasattr(model, "patches"), "Environmental: model needs to have a 'patches' attribute."
 
         model.patches.add_vector_property("W", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
-        raise AssertionError("Need to check model.params.psi_jt shape.")
-        model.patches.add_vector_property("delta", length=365, dtype=np.float32, default=0.0)
-
         assert hasattr(model, "params"), "Environmental: model needs to have a 'params' attribute."
         assert hasattr(model.params, "psi_jt"), (
             "Environmental: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
         )
+        psi = model.params.psi_jt  # convenience
+        # psi_jt comes in as a 2D array with shape (npatches, nticks), we want to transpose it to (nticks, npatches)
+        # TODO - use newer laser_core with add_array_property and psi.shape[::-1] to transpose
+        model.patches.add_vector_property("delta", length=psi.shape[1], dtype=np.float32, default=0.0)
+
         assert hasattr(model.params, "delta_max"), "Environmental: model params needs to have a 'delta_max' (suitability decay) parameter."
         assert hasattr(model.params, "delta_min"), "Environmental: model params needs to have a 'delta_min' (suitability decay) parameter."
 
@@ -47,15 +49,15 @@ class Environmental:
         Iasym = model.agents.Iasym[tick]
 
         # -decay
-        decay = np.poisson(model.patches.delta[tick] * W).astype(Wnext.dtype)
+        decay = model.prng.poisson(model.patches.delta[tick] * W).astype(Wnext.dtype)
         Wnext -= decay
 
         # +shedding from Isymptomatic
-        shedding_sym = np.poisson(model.params.zeta_1 * Isym[tick]).astype(Wnext.dtype)
+        shedding_sym = model.prng.poisson(model.params.zeta_1 * Isym).astype(Wnext.dtype)
         Wnext += shedding_sym
 
         # +shedding from Iasymptomatic
-        shedding_asym = np.poisson(model.params.zeta_2 * Iasym[tick]).astype(Wnext.dtype)
+        shedding_asym = model.prng.poisson(model.params.zeta_2 * Iasym).astype(Wnext.dtype)
         Wnext += shedding_asym
 
         return

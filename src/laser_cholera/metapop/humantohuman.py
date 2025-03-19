@@ -26,18 +26,6 @@ class HumanToHuman:
         assert hasattr(self.model.agents, "N"), "HumanToHuman: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(self.model.agents, "S"), "HumanToHuman: model agents needs to have a 'S' (susceptible) attribute."
         assert hasattr(self.model.agents, "E"), "HumanToHuman: model agents needs to have a 'E' (exposed) attribute."
-        assert hasattr(self.model.agents, "V1sus"), (
-            "HumanToHuman: model agents needs to have a 'V1sus' (vaccinated 1 susceptible) attribute."
-        )
-        assert hasattr(self.model.agents, "V1inf"), (
-            "HumanToHuman: model agents needs to have a 'V1inf' (vaccinated 1 infectious) attribute."
-        )
-        assert hasattr(self.model.agents, "V2sus"), (
-            "HumanToHuman: model agents needs to have a 'V2sus' (vaccinated 2 susceptible) attribute."
-        )
-        assert hasattr(self.model.agents, "V2inf"), (
-            "HumanToHuman: model agents needs to have a 'V2inf' (vaccinated 2 infectious) attribute."
-        )
 
         assert hasattr(self.model, "params"), "HumanToHuman: model needs to have a 'params' attribute."
         assert "tau_i" in self.model.params, "HumanToHuman: model params needs to have a 'tau_i' (emmigration probability) parameter."
@@ -67,8 +55,8 @@ class HumanToHuman:
         Iasym = model.agents.Iasym[tick]
         N = model.agents.N[tick]
         S = model.agents.S[tick]
-        Snext = model.agents.S[tick + 1]
-        Enext = model.agents.E[tick + 1]
+        S_next = model.agents.S[tick + 1]
+        E_next = model.agents.E[tick + 1]
 
         total_i = Isym + Iasym
         local_i = (total_i * (1 - model.params.tau_i)).astype(Lambda.dtype)
@@ -76,35 +64,21 @@ class HumanToHuman:
         immigrating_i = (model.params.pi_ij * (model.params.tau_i * total_i)).sum(axis=1).astype(Lambda.dtype)
         effective_i = local_i + immigrating_i
         power_adjusted = np.power(effective_i, model.params.alpha_1).astype(Lambda.dtype)
-        seasonality = (model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[:, tick])).astype(Lambda.dtype)
+        seasonality = (model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[:, tick % 366])).astype(Lambda.dtype)
         adjusted = seasonality * power_adjusted
         denominator = np.power(N, model.params.alpha_2).astype(Lambda.dtype)
         rate = (adjusted / denominator).astype(Lambda.dtype)
+
+        # TODO - check seasonality and power_adjusted for negative values so we don't have to do this
+        rate = np.maximum(rate, 0.0)
+
         Lambda[:] = rate
         local = np.round((1 - model.params.tau_i) * S).astype(S.dtype)
-        infections = np.binomial(local, -np.expm1(-rate)).astype(S.dtype)
-        Snext -= infections
-        Enext += infections
+        infections = model.prng.binomial(local, -np.expm1(-rate)).astype(S.dtype)
+        S_next -= infections
+        E_next += infections
 
-        # LambdaV1
-        V1sus = model.agents.V1sus[tick]
-        local = np.round((1 - model.params.tau_i) * V1sus).astype(V1sus.dtype)
-        infections = np.binomial(local, -np.expm1(-rate)).astype(V1sus.dtype)
-        V1sus_next = model.agents.V1sus[tick + 1]
-        V1inf_next = model.agents.V1inf[tick + 1]
-        V1sus_next -= infections
-        V1inf_next += infections
-        Enext += infections
-
-        # LambdaV2
-        V2sus = model.agents.V2sus[tick]
-        local = np.round((1 - model.params.tau_i) * V2sus).astype(V2sus.dtype)
-        infections = np.binomial(local, -np.expm1(-rate)).astype(V2sus.dtype)
-        V2sus_next = model.agents.V2sus[tick + 1]
-        V2inf_next = model.agents.V2inf[tick + 1]
-        V2sus_next -= infections
-        V2inf_next += infections
-        Enext += infections
+        assert np.all(S_next >= 0), f"Negative susceptible populations at tick {tick + 1}.\n\t{S_next=}"
 
         return
 

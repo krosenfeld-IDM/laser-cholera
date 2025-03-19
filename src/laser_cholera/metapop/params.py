@@ -107,26 +107,34 @@ def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optio
     # TODO - sanity check values of d_jt
     # assert params.d_jt
 
-    width = max(map(len, params.nu_1_jt.values()))
-    height = len(params.nu_1_jt)
-    assert width == params.nticks, f"Number of nu_1_jt values ({width}) does not match number of ticks ({params.nticks})"
-    assert height == num_patches, f"Number of nu_1_jt keys ({height}) does not match number of locations ({num_patches})"
-    nu_1_jt = np.zeros((height, width), dtype=np.float32)
+    cticks = max(map(len, params.nu_1_jt.values()))
+    cnodes = len(params.nu_1_jt)
+    assert cticks == params.nticks, f"Number of nu_1_jt values ({cticks}) does not match number of ticks ({params.nticks})"
+    assert cnodes == num_patches, f"Number of nu_1_jt keys ({cnodes}) does not match number of locations ({num_patches})"
+    assert all(len(row) == cticks for row in params.nu_1_jt.values()), (
+        f"Some nu_1_jt row value counts do not match number of ticks ({params.nticks})"
+    )
+    # Transpose here for more efficient access by tick
+    nu_1_jt = np.zeros((cticks, cnodes), dtype=np.float32)
     for key, values in params.nu_1_jt.items():
-        nu_1_jt[strid_to_numidx_map[key], : len(values)] = values
-    params.nu_1_jt = nu_1_jt
+        nu_1_jt[:, strid_to_numidx_map[key]] = values
+    params.nu_1_jt = nu_1_jt  # Change from dict to np.ndarray
 
     # TODO - sanity check values of nu_1_jt
     # assert params.nu_1_jt
 
-    width = max(map(len, params.nu_2_jt.values()))
-    height = len(params.nu_2_jt)
-    assert width == params.nticks, f"Number of nu_2_jt values ({width}) does not match number of ticks ({params.nticks})"
-    assert height == num_patches, f"Number of nu_2_jt keys ({height}) does not match number of locations ({num_patches})"
-    nu_2_jt = np.zeros((height, width), dtype=np.float32)
+    cticks = max(map(len, params.nu_2_jt.values()))
+    cnodes = len(params.nu_2_jt)
+    assert cticks == params.nticks, f"Number of nu_2_jt values ({cticks}) does not match number of ticks ({params.nticks})"
+    assert cnodes == num_patches, f"Number of nu_2_jt keys ({cnodes}) does not match number of locations ({num_patches})"
+    assert all(len(row) == cticks for row in params.nu_2_jt.values()), (
+        f"Some nu_2_jt row value counts do not match number of ticks ({params.nticks})"
+    )
+    # Transpose here for more efficient access by tick
+    nu_2_jt = np.zeros((cticks, cnodes), dtype=np.float32)
     for key, values in params.nu_2_jt.items():
-        nu_2_jt[strid_to_numidx_map[key], : len(values)] = values
-    params.nu_2_jt = nu_2_jt
+        nu_2_jt[:, strid_to_numidx_map[key]] = values
+    params.nu_2_jt = nu_2_jt  # Change from dict to np.ndarray
 
     # TODO - sanity check values of nu_2_jt
     # assert params.nu_2_jt
@@ -192,7 +200,7 @@ def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optio
     # TODO - validate the following
     # assert params.pi
 
-    params.beta_j0_env = np.array(params.beta_j0_env, dtype=np.float32)
+    params.beta_j0_env = np.array(params.beta_j0_env, dtype=np.float32).reshape(-1, 1)
     params.theta_j = np.array(params.theta_j, dtype=np.float32)
 
     assert len(params.beta_j0_env) == num_patches, (

@@ -25,13 +25,13 @@ class Exposed:
         return
 
     def __call__(self, model, tick: int) -> None:
-        Eprime = model.agents.E[tick + 1]
+        E_next = model.agents.E[tick + 1]
         E = model.agents.E[tick]
-        Eprime[:] = E
+        E_next[:] = E
 
         # Do non-disease mortality first
-        deaths = np.binomial(E, -np.expm1(-model.params.d_jt[:, tick])).astype(Eprime.dtype)
-        Eprime -= deaths
+        deaths = model.prng.binomial(E, -np.expm1(-model.params.d_jt[:, tick])).astype(E_next.dtype)
+        E_next -= deaths
 
         return
 

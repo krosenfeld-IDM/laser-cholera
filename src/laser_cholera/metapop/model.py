@@ -17,8 +17,10 @@ from laser_cholera.metapop import Analyzer
 from laser_cholera.metapop import Census
 from laser_cholera.metapop import Environmental
 from laser_cholera.metapop import EnvToHuman
+from laser_cholera.metapop import EnvToHumanVax
 from laser_cholera.metapop import Exposed
 from laser_cholera.metapop import HumanToHuman
+from laser_cholera.metapop import HumanToHumanVax
 from laser_cholera.metapop import Infectious
 from laser_cholera.metapop import Recorder
 from laser_cholera.metapop import Recovered
@@ -264,7 +266,9 @@ def run(**kwargs):
         Vaccinated,
         Census,
         HumanToHuman,
+        HumanToHumanVax,
         EnvToHuman,
+        EnvToHumanVax,
         Environmental,
         Analyzer,
         Recorder,

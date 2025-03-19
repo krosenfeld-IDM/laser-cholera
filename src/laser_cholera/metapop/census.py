@@ -22,26 +22,39 @@ class Census:
 
     def check(self):
         assert hasattr(self.model.agents, "S"), "Census: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "I"), "Census: model agents needs to have a 'I' (infectious) attribute."
+        assert hasattr(self.model.agents, "E"), "Census: model agents needs to have a 'E' (exposed) attribute."
+        assert hasattr(self.model.agents, "Isym"), "Census: model agents needs to have a 'Isym' (infectious - symptomatic) attribute."
+        assert hasattr(self.model.agents, "Iasym"), "Census: model agents needs to have a 'Iasym' (infectious - asymptomatic) attribute."
         assert hasattr(self.model.agents, "R"), "Census: model agents needs to have a 'R' (recovered) attribute."
-        assert hasattr(self.model.agents, "V"), "Census: model agents needs to have a 'v' (vaccinated) attribute."
+        assert hasattr(self.model.agents, "V1"), "Census: model agents needs to have a 'V1' (vaccinated - one dose) attribute."
+        assert hasattr(self.model.agents, "V2"), "Census: model agents needs to have a 'V2' (vaccinated - two dose) attribute."
 
         assert np.all(
-            self.model.agents.N[0] == self.model.agents.S[0] + self.model.agents.I[0] + self.model.agents.R[0] + self.model.agents.V[0]
+            self.model.agents.N[0]
+            == self.model.agents.S[0]
+            + self.model.agents.E[0]
+            + self.model.agents.Isym[0]
+            + self.model.agents.Iasym[0]
+            + self.model.agents.R[0]
+            + self.model.agents.V1[0]
+            + self.model.agents.V2[0]
         )
 
         return
 
     def __call__(self, model, tick: int) -> None:
-        Sprime = model.agents.S[tick + 1]
-        Iprime = model.agents.I[tick + 1]
-        Rprime = model.agents.R[tick + 1]
-        Vprime = model.agents.V[tick + 1]
-        Nprime = model.agents.N[tick + 1]
+        S_next = model.agents.S[tick + 1]
+        E_next = model.agents.E[tick + 1]
+        Is_next = model.agents.Isym[tick + 1]
+        Ia_next = model.agents.Iasym[tick + 1]
+        R_next = model.agents.R[tick + 1]
+        V1_next = model.agents.V1[tick + 1]
+        V2_next = model.agents.V2[tick + 1]
+        N_next = model.agents.N[tick + 1]
 
-        Nprime[:] = Sprime + Vprime + Iprime + Rprime
+        N_next[:] = S_next + E_next + Is_next + Ia_next + R_next + V1_next + V2_next
 
-        assert np.all(Nprime >= 0), "N' should not go negative"
+        assert np.all(N_next >= 0), "N' should not go negative"
 
         return
 

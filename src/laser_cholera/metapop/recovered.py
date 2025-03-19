@@ -31,19 +31,19 @@ class Recovered:
 
     def __call__(self, model, tick: int) -> None:
         R = model.agents.R[tick]
-        Rprime = model.agents.R[tick + 1]
-        Sprime = model.agents.S[tick + 1]
+        R_next = model.agents.R[tick + 1]
+        S_next = model.agents.S[tick + 1]
 
-        Rprime[:] = R
+        R_next[:] = R
 
         # natural mortality
-        deaths = np.binomial(Rprime, -np.expm1(-model.params.d_jt[:, tick])).astype(Rprime.dtype)
-        Rprime -= deaths
+        deaths = model.prng.binomial(R_next, -np.expm1(-model.params.d_jt[:, tick])).astype(R_next.dtype)
+        R_next -= deaths
 
         # waning natural immunity
-        waned = np.binomial(Rprime, -np.expm1(-model.params.epsilon)).astype(Rprime.dtype)
-        Rprime -= waned
-        Sprime += waned
+        waned = model.prng.binomial(R_next, -np.expm1(-model.params.epsilon)).astype(R_next.dtype)
+        R_next -= waned
+        S_next += waned
 
         return
 

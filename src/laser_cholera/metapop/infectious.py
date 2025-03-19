@@ -21,7 +21,7 @@ class Infectious:
             "Infectious: model params needs to have a 'I_j_initial' (initial infectious population) parameter."
         )
         assert "sigma" in self.model.params, "Infectious: model params needs to have a 'sigma' (symptomatic fraction) parameter."
-        model.agents.Isym[0] = np.round(model.params.sigma * model.params.I_j_initial).astype(model.agents.Isym)
+        model.agents.Isym[0] = np.round(model.params.sigma * model.params.I_j_initial).astype(model.agents.Isym.dtype)
         model.agents.Iasym[0] = model.params.I_j_initial - model.agents.Isym[0]
 
         return
@@ -39,50 +39,56 @@ class Infectious:
 
     def __call__(self, model, tick: int) -> None:
         # Symptomatic
-        Isym = model.agents.I[tick]
-        Isprime = model.agents.I[tick + 1]
-        Isprime[:] = Isym
+        Isym = model.agents.Isym[tick]
+        Is_next = model.agents.Isym[tick + 1]
+        Is_next[:] = Isym
 
         ## natural deaths (d_jt)
-        natural_deaths = np.binomial(Isprime, -np.expm1(-model.params.d_jt[:, tick])).astype(Isprime.dtype)
-        Isprime -= natural_deaths
+        natural_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.d_jt[:, tick])).astype(Is_next.dtype)
+        Is_next -= natural_deaths
+        assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
         ## disease deaths (mu)
-        disease_deaths = np.binomial(Isprime, -np.expm1(-model.params.mu)).astype(Isprime.dtype)
+        disease_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.mu)).astype(Is_next.dtype)
         model.agents.deaths[tick] = disease_deaths
-        Isprime -= disease_deaths
+        Is_next -= disease_deaths
+        assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
         ## recovery (gamma)
-        recovered = np.binomial(Isprime, -np.expm1(-model.params.gamma_1)).astype(Isprime.dtype)
-        Isprime -= recovered
-        Rprime = model.agents.R[tick + 1]
-        Rprime += recovered
+        recovered = model.prng.binomial(Is_next, -np.expm1(-model.params.gamma_1)).astype(Is_next.dtype)
+        Is_next -= recovered
+        R_next = model.agents.R[tick + 1]
+        R_next += recovered
+        assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
         # Asymptomatic
         Iasym = model.agents.Iasym[tick]
-        Iaprime = model.agents.Iasym[tick + 1]
-        Iaprime[:] = Iasym
+        Ia_next = model.agents.Iasym[tick + 1]
+        Ia_next[:] = Iasym
 
         ## natural deaths (d_jt)
-        natural_deaths = np.binomial(Iaprime, -np.expm1(-model.params.d_jt[:, tick])).astype(Iaprime.dtype)
-        Iaprime -= natural_deaths
+        natural_deaths = model.prng.binomial(Ia_next, -np.expm1(-model.params.d_jt[:, tick])).astype(Ia_next.dtype)
+        Ia_next -= natural_deaths
+        assert np.all(Ia_next >= 0), f"Ia_next should not go negative ({tick=}\n\t{Ia_next=})"
 
         ## recovery
-        recovered = np.binomial(Iaprime, -np.expm1(-model.params.gamma_2)).astype(Iaprime.dtype)
-        Iaprime -= recovered
-        # Rprime = model.agents.R[tick + 1]
-        Rprime += recovered
+        recovered = model.prng.binomial(Ia_next, -np.expm1(-model.params.gamma_2)).astype(Ia_next.dtype)
+        Ia_next -= recovered
+        # R_next = model.agents.R[tick + 1]
+        R_next += recovered
+        assert np.all(Ia_next >= 0), f"Ia_next should not go negative ({tick=}\n\t{Ia_next=})"
 
-        # Use Eprime here, can't progress deceased individuals
-        Eprime = model.agents.E[tick + 1]
-        progress = np.binomial(Eprime, -np.expm1(-model.params.iota)).astype(Eprime.dtype)
-        Eprime -= progress
+        # Use E_next here, can't progress deceased individuals
+        E_next = model.agents.E[tick + 1]
+        progress = model.prng.binomial(E_next, -np.expm1(-model.params.iota)).astype(E_next.dtype)
+        E_next -= progress
+        assert np.all(E_next >= 0), f"E_next should not go negative ({tick=}\n\t{E_next=})"
 
         ## new symptomatic infections
-        new_symptomatic = np.round(model.params.sigma * progress).astype(Isprime.dtype)
+        new_symptomatic = np.round(model.params.sigma * progress).astype(Is_next.dtype)
         new_asymptomatic = progress - new_symptomatic
-        Isprime += new_symptomatic
-        Iaprime += new_asymptomatic
+        Is_next += new_symptomatic
+        Ia_next += new_asymptomatic
 
         # human-to-human infection in humantohuman.py
         # environmental infection in envtohuman.py

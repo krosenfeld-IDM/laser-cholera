@@ -31,18 +31,18 @@ class Susceptible(Component):
         return
 
     def __call__(self, model, tick: int) -> None:
-        Sprime = model.agents.S[tick + 1]
+        S_next = model.agents.S[tick + 1]
         S = model.agents.S[tick]
-        Sprime[:] = S
+        S_next[:] = S
 
         # natural mortality
-        deaths = np.binomial(S, -np.expm1(-model.params.d_jt[:, tick])).astype(Sprime.dtype)
-        Sprime -= deaths
+        deaths = model.prng.binomial(S, -np.expm1(-model.params.d_jt[:, tick])).astype(S_next.dtype)
+        S_next -= deaths
 
         # births
         N = model.agents.N[tick]
-        births = np.binomial(N, -np.expm1(-model.params.b_jt[:, tick])).astype(Sprime.dtype)
-        Sprime[:] += births
+        births = model.prng.binomial(N, -np.expm1(-model.params.b_jt[:, tick])).astype(S_next.dtype)
+        S_next[:] += births
 
         return
 

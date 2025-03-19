@@ -9,32 +9,15 @@ from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
 
-class EnvToHuman:
+class EnvToHumanVax:
     def __init__(self, model, verbose: bool = False) -> None:
         self.model = model
         self.verbose = verbose
 
-        assert hasattr(model, "agents"), "EnvToHuman: model needs to have a 'agents' attribute."
-        model.patches.add_vector_property("Psi", length=model.params.nticks + 1, dtype=np.float32, default=np.float32(0.0))
-
-        assert hasattr(model, "params"), "EnvToHuman: model needs to have a 'params' attribute."
-        assert hasattr(model.params, "psi_jt"), (
-            "EnvToHuman: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
-        )
-
-        psi = model.params.psi_jt  # convenience
-        # psi_jt comes in as a 2D array with shape (npatches, nticks), we want to transpose it to (nticks, npatches)
-        # TODO - use newer laser_core with add_array_property and psi.shape[::-1] to transpose
-        model.patches.add_vector_property("beta_env", length=psi.shape[1], dtype=np.float32, default=0.0)
-        assert model.patches.beta_env.shape == model.params.psi_jt.T.shape
-        assert model.params.beta_j0_env.shape[0] == model.patches.beta_env.shape[1]
-        psi_bar = psi.mean(axis=1, keepdims=True)
-        model.patches.beta_env[:, :] = (model.params.beta_j0_env * (1.0 + (psi - psi_bar) / psi_bar)).T
-
         return
 
     def check(self):
-        assert hasattr(self.model.agents, "S"), "EnvToHuman: model agents needs to have a 'S' (susceptible) attribute."
+        assert hasattr(self.model, "agents"), "EnvToHuman: model needs to have a 'agents' attribute."
         assert hasattr(self.model.agents, "E"), "EnvToHuman: model agents needs to have a 'E' (exposed) attribute."
         assert hasattr(self.model.agents, "V1sus"), "EnvToHuman: model agents needs to have a 'V1sus' (vaccinated 1 susceptible) attribute."
         assert hasattr(self.model.agents, "V1inf"), "EnvToHuman: model agents needs to have a 'V1inf' (vaccinated 1 infected) attribute."
@@ -42,39 +25,45 @@ class EnvToHuman:
         assert hasattr(self.model.agents, "V2inf"), "EnvToHuman: model agents needs to have a 'V2inf' (vaccinated 2 infected) attribute."
 
         assert hasattr(self.model, "patches"), "EnvToHuman: model needs to have a 'patches' attribute."
-        assert hasattr(self.model.patches, "W"), "EnvToHuman: model patches needs to have a 'W' (environmental) attribute."
-
-        assert "tau_i" in self.model.params, "EnvToHuman: model params needs to have a 'tau_i' (emmigration probability) parameter."
-        assert "theta_j" in self.model.params, (
-            "EnvToHuman: model params needs to have a 'theta_j' (fraction of population with WASH) attribute."
+        assert hasattr(self.model.patches, "Psi"), (
+            "EnvToHuman: model patches needs to have a 'Psi' (environmental transmission rate) attribute."
         )
-        assert "kappa" in self.model.params, "EnvToHuman: model params needs to have a 'kappa' (environmental transmission rate) parameter."
+
+        assert hasattr(self.model, "params"), "EnvToHuman: model needs to have a 'params' attribute."
+        assert "tau_i" in self.model.params, "EnvToHuman: model params needs to have a 'tau_i' (emmigration probability) parameter."
 
         return
 
     def __call__(self, model, tick: int) -> None:
         Psi = model.patches.Psi[tick + 1]
-        W = model.patches.W[tick]
         tau_i = model.params.tau_i
         local_frac = 1 - tau_i
 
-        non_wash = (1 - model.params.theta_j) * W
-        seasonal = model.patches.beta_env[tick] * non_wash
-        denominator = model.params.kappa + W
-        normalized = seasonal / denominator
-        Psi[:] = normalized
+        Enext = model.agents.E[tick + 1]
 
-        # PsiS
-        S = model.agents.S[tick]
-        S_next = model.agents.S[tick + 1]
-        E_next = model.agents.E[tick + 1]
-        # Use S_next here since some S will have been removed by natural mortality and by human-to-human transmission
-        local_s = np.round(S_next * local_frac).astype(S.dtype)
-        infections_s = model.prng.binomial(local_s, -np.expm1(-Psi)).astype(S_next.dtype)
-        S_next -= infections_s
-        E_next += infections_s
+        # PsiV1
+        V1sus = model.agents.V1sus[tick]
+        V1sus_next = model.agents.V1sus[tick + 1]
+        V1inf_next = model.agents.V1inf[tick + 1]
+        local_v1 = np.round(local_frac * V1sus).astype(V1sus.dtype)
+        infections_v1 = model.prng.binomial(local_v1, -np.expm1(-Psi)).astype(V1sus.dtype)
+        V1sus_next -= infections_v1
+        V1inf_next += infections_v1
+        Enext += infections_v1
 
-        assert np.all(S_next >= 0), f"Negative susceptible populations at tick {tick + 1}.\n\t{S_next=}"
+        assert np.all(V1sus_next >= 0), f"V1sus' should not go negative ({tick=}\n\t{V1sus_next})"
+
+        # PsiV2
+        V2sus = model.agents.V2sus[tick]
+        V2sus_next = model.agents.V2sus[tick + 1]
+        V2inf_next = model.agents.V2inf[tick + 1]
+        local_v2 = np.round(local_frac * V2sus).astype(V2sus.dtype)
+        infections_v2 = model.prng.binomial(local_v2, -np.expm1(-Psi)).astype(V2sus.dtype)
+        V2sus_next -= infections_v2
+        V2inf_next += infections_v2
+        Enext += infections_v2
+
+        assert np.all(V2sus_next >= 0), f"V2sus' should not go negative ({tick=}\n\t{V2sus_next})"
 
         return
 
@@ -117,7 +106,7 @@ class EnvToHuman:
         psi_jt[2, 8:] = psi_jt[2, 0:8].mean()
         psi_jt[3, 8:] = psi_jt[3, 0:8].mean()
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             baseline := Model(
                 psi_jt=psi_jt,
                 beta_j0_env=np.array([0.4, 0.4, 0.4, 0.4]),
@@ -135,7 +124,7 @@ class EnvToHuman:
             f"Some infected populations didn't increase with environmental transmission.\n\t{baseline.agents.I[0]}\n\t{baseline.agents.I[1]}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             increased_tau := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -153,7 +142,7 @@ class EnvToHuman:
             f"Expected smaller infected populations with higher tau_i (migrating fraction).\n\t{baseline.agents.I[1]=}\n\t{increased_tau.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             zero_wash := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -171,7 +160,7 @@ class EnvToHuman:
             f"Expected larger infected populations with lower theta_j (WASH fraction).\n\t{baseline.agents.I[1]=}\n\t{zero_wash.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             high_wash := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -189,7 +178,7 @@ class EnvToHuman:
             f"Expected smaller infected populations with higher theta_j (WASH fraction).\n\t{baseline.agents.I[1]=}\n\t{high_wash.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             perfect_wash := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -207,7 +196,7 @@ class EnvToHuman:
             f"Expected no environmental transmission with theta_j (WASH fraction) = 1.0.\n\t{perfect_wash.agents.I[0]=}\n\t{perfect_wash.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             smaller_kappa := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -225,7 +214,7 @@ class EnvToHuman:
             f"Expected larger infected populations with lower kappa (50% probability concentration level).\n\t{baseline.agents.I[1]=}\n\t{smaller_kappa.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             larger_kappa := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -243,7 +232,7 @@ class EnvToHuman:
             f"Expected smaller infected populations with larger kappa (50% probability concentration level).\n\t{baseline.agents.I[1]=}\n\t{larger_kappa.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             smaller_w := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -262,7 +251,7 @@ class EnvToHuman:
             f"Expected smaller infected populations with smaller W (environmental contagion).\n\t{baseline.agents.I[1]=}\n\t{smaller_w.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             larger_w := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -281,7 +270,7 @@ class EnvToHuman:
             f"Expected larger infected populations with larger W (environmental contagion).\n\t{baseline.agents.I[1]=}\n\t{larger_w.agents.I[1]=}"
         )
 
-        component = EnvToHuman(
+        component = EnvToHumanVax(
             smaller_beta := Model(
                 psi_jt=baseline.params.psi_jt,
                 beta_j0_env=baseline.params.beta_j0_env,
@@ -300,7 +289,7 @@ class EnvToHuman:
             f"Expected smaller infected populations with smaller beta_env (seasonal factor).\n\t{baseline.agents.I[1]=}\n\t{smaller_beta.agents.I[1]=}"
         )
 
-        # component = EnvToHuman(
+        # component = EnvToHumanVax(
         #     larger_beta := Model(
         #         psi_jt=baseline.params.psi_jt,
         #         beta_j0_env=baseline.params.beta_j0_env,
@@ -319,7 +308,7 @@ class EnvToHuman:
         #     larger_beta.agents.I[1] > baseline.agents.I[1]
         # ), f"Expected larger infected populations with larger beta_env (seasonal factor).\n\t{baseline.agents.I[1]=}\n\t{larger_beta.agents.I[1]=}"
 
-        print("PASSED EnvToHuman.test()")
+        print("PASSED EnvToHumanVax.test()")
         return
 
     def plot(self, fig: Figure = None):
@@ -336,5 +325,5 @@ class EnvToHuman:
 
 
 if __name__ == "__main__":
-    EnvToHuman.test()
+    EnvToHumanVax.test()
     # plt.show()
