@@ -6,6 +6,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class Infectious:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -29,7 +31,7 @@ class Infectious:
     def check(self):
         assert hasattr(self.model.agents, "R"), "Infectious: model.agents needs to have a 'S' attribute."
         assert "d_jt" in self.model.params, "Infectious: model params needs to have a 'd_jt' (mortality rate) parameter."
-        assert "mu" in self.model.params, "Infectious: model params needs to have a 'mu' (disease mortality rate) parameter."
+        assert "mu_jt" in self.model.params, "Infectious: model params needs to have a 'mu_jt' (disease mortality rate) parameter."
         assert "gamma_1" in self.model.params, "Infectious: model params needs to have a 'gamma_1' (recovery rate) parameter."
         assert "gamma_2" in self.model.params, "Infectious: model params needs to have a 'gamma_2' (recovery rate) parameter."
         assert "iota" in self.model.params, "Infectious: model params needs to have a 'iota' (progression rate) parameter."
@@ -44,12 +46,12 @@ class Infectious:
         Is_next[:] = Isym
 
         ## natural deaths (d_jt)
-        natural_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.d_jt[:, tick])).astype(Is_next.dtype)
+        natural_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.d_jt[tick])).astype(Is_next.dtype)
         Is_next -= natural_deaths
         assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
         ## disease deaths (mu)
-        disease_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.mu)).astype(Is_next.dtype)
+        disease_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.mu_jt[tick])).astype(Is_next.dtype)
         model.agents.deaths[tick] = disease_deaths
         Is_next -= disease_deaths
         assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
@@ -67,7 +69,7 @@ class Infectious:
         Ia_next[:] = Iasym
 
         ## natural deaths (d_jt)
-        natural_deaths = model.prng.binomial(Ia_next, -np.expm1(-model.params.d_jt[:, tick])).astype(Ia_next.dtype)
+        natural_deaths = model.prng.binomial(Ia_next, -np.expm1(-model.params.d_jt[tick])).astype(Ia_next.dtype)
         Ia_next -= natural_deaths
         assert np.all(Ia_next >= 0), f"Ia_next should not go negative ({tick=}\n\t{Ia_next=})"
 
@@ -125,7 +127,7 @@ class Infectious:
         #     f"Some populations didn't shrink with disease mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
         # )
 
-        print("PASSED Infectious.test()")
+        printgreen("PASSED Infectious.test()")
 
         return
 
@@ -156,3 +158,7 @@ class Infectious:
 
         yield
         return
+
+
+if __name__ == "__main__":
+    Infectious.test()

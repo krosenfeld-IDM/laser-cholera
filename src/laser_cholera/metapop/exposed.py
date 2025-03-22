@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class Exposed:
     def __init__(self, model, verbose: bool = False):
@@ -30,7 +32,7 @@ class Exposed:
         E_next[:] = E
 
         # Do non-disease mortality first
-        deaths = model.prng.binomial(E, -np.expm1(-model.params.d_jt[:, tick])).astype(E_next.dtype)
+        deaths = model.prng.binomial(E, -np.expm1(-model.params.d_jt[tick])).astype(E_next.dtype)
         E_next -= deaths
 
         return
@@ -48,7 +50,7 @@ class Exposed:
             f"Some populations didn't shrink with deaths.\n\t{model.agents.E[0]}\n\t{model.agents.E[1]}"
         )
 
-        print("PASSED Susceptible.test()")
+        printgreen("PASSED Susceptible.test()")
 
         return
 
@@ -63,3 +65,7 @@ class Exposed:
 
         yield
         return
+
+
+if __name__ == "__main__":
+    Exposed.test()

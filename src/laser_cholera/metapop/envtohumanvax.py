@@ -2,11 +2,12 @@
 
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 import numpy as np
 from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
+
+from laser_cholera.utils import printgreen
 
 
 class EnvToHumanVax:
@@ -308,22 +309,21 @@ class EnvToHumanVax:
         #     larger_beta.agents.I[1] > baseline.agents.I[1]
         # ), f"Expected larger infected populations with larger beta_env (seasonal factor).\n\t{baseline.agents.I[1]=}\n\t{larger_beta.agents.I[1]=}"
 
-        print("PASSED EnvToHumanVax.test()")
+        printgreen("PASSED EnvToHumanVax.test()")
         return
 
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        plt.title("Environmental Transmission Rate")
-        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.patches.PSI[:, ipatch], label=f"Patch {ipatch}")
-        plt.xlabel("Tick")
-        plt.legend()
+        # plt.title("Environmental Transmission Rate (Vax)")
+        # for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+        #     plt.plot(self.model.patches.Psi[:, ipatch], label=f"Patch {ipatch}")
+        # plt.xlabel("Tick")
+        # plt.legend()
 
-        yield
+        # yield
         return
 
 
 if __name__ == "__main__":
     EnvToHumanVax.test()
-    # plt.show()

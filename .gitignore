@@ -74,4 +74,4 @@ docs/_build
 .mypy_cache/
 
 tmp/
-*h5*
+/*h5*

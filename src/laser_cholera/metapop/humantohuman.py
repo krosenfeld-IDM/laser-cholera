@@ -8,6 +8,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class HumanToHuman:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -64,7 +66,7 @@ class HumanToHuman:
         immigrating_i = (model.params.pi_ij * (model.params.tau_i * total_i)).sum(axis=1).astype(Lambda.dtype)
         effective_i = local_i + immigrating_i
         power_adjusted = np.power(effective_i, model.params.alpha_1).astype(Lambda.dtype)
-        seasonality = (model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[:, tick % 366])).astype(Lambda.dtype)
+        seasonality = (model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[tick % 366, :])).astype(Lambda.dtype)
         adjusted = seasonality * power_adjusted
         denominator = np.power(N, model.params.alpha_2).astype(Lambda.dtype)
         rate = (adjusted / denominator).astype(Lambda.dtype)
@@ -151,7 +153,7 @@ class HumanToHuman:
             f"S and I population changes don't match.\n\t{model.agents.S[0]=}\n\t{model.agents.S[1]=}\n\t{model.agents.I[0]=}\n\t{model.agents.I[1]=}"
         )
 
-        print("PASSED HumanToHuman.test()")
+        printgreen("PASSED HumanToHuman.test()")
         return
 
     def plot(self, fig: Figure = None):
@@ -169,4 +171,3 @@ class HumanToHuman:
 
 if __name__ == "__main__":
     HumanToHuman.test()
-    # plt.show()

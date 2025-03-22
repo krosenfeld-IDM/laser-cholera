@@ -6,6 +6,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class Component: ...
 
@@ -36,12 +38,12 @@ class Susceptible(Component):
         S_next[:] = S
 
         # natural mortality
-        deaths = model.prng.binomial(S, -np.expm1(-model.params.d_jt[:, tick])).astype(S_next.dtype)
+        deaths = model.prng.binomial(S, -np.expm1(-model.params.d_jt[tick])).astype(S_next.dtype)
         S_next -= deaths
 
         # births
         N = model.agents.N[tick]
-        births = model.prng.binomial(N, -np.expm1(-model.params.b_jt[:, tick])).astype(S_next.dtype)
+        births = model.prng.binomial(N, -np.expm1(-model.params.b_jt[tick])).astype(S_next.dtype)
         S_next[:] += births
 
         return
@@ -66,7 +68,7 @@ class Susceptible(Component):
             f"Some populations didn't grow with births.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
         )
 
-        component = Susceptible(model := Model(d_jt=np.full((4, 1), 1.0 / 80.0)))
+        component = Susceptible(model := Model(b_jt=np.zeros((4, 1)), d_jt=np.full((4, 1), 1.0 / 80.0)))
         component.check()
         component(model, 0)
         assert np.all(model.agents.S[0] == model.params.S_j_initial), "Initial populations didn't match."
@@ -74,7 +76,7 @@ class Susceptible(Component):
             f"Some populations didn't shrink with deaths.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
         )
 
-        print("PASSED Susceptible.test()")
+        printgreen("PASSED Susceptible.test()")
 
         return
 
@@ -88,4 +90,9 @@ class Susceptible(Component):
         plt.legend()
 
         yield
+
         return
+
+
+if __name__ == "__main__":
+    Susceptible.test()

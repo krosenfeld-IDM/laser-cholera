@@ -6,6 +6,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class Recovered:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -37,7 +39,7 @@ class Recovered:
         R_next[:] = R
 
         # natural mortality
-        deaths = model.prng.binomial(R_next, -np.expm1(-model.params.d_jt[:, tick])).astype(R_next.dtype)
+        deaths = model.prng.binomial(R_next, -np.expm1(-model.params.d_jt[tick])).astype(R_next.dtype)
         R_next -= deaths
 
         # waning natural immunity
@@ -85,7 +87,7 @@ class Recovered:
             f"Some populations didn't increase with recovery from infection.\n\t{model.agents.R[0]}\n\t{model.agents.R[1]}"
         )
 
-        print("PASSED Recovered.test()")
+        printgreen("PASSED Recovered.test()")
 
         return
 
@@ -100,3 +102,7 @@ class Recovered:
 
         yield
         return
+
+
+if __name__ == "__main__":
+    Recovered.test()

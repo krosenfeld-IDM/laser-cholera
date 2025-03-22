@@ -6,6 +6,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class Environmental:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -20,14 +22,13 @@ class Environmental:
             "Environmental: model params needs to have a 'psi_jt' (environmental contamination rate) parameter."
         )
         psi = model.params.psi_jt  # convenience
-        # psi_jt comes in as a 2D array with shape (npatches, nticks), we want to transpose it to (nticks, npatches)
-        # TODO - use newer laser_core with add_array_property and psi.shape[::-1] to transpose
-        model.patches.add_vector_property("delta", length=psi.shape[1], dtype=np.float32, default=0.0)
+        # TODO - use newer laser_core with add_array_property and psi.shape
+        model.patches.add_vector_property("delta_jt", length=psi.shape[0], dtype=np.float32, default=0.0)
 
         assert hasattr(model.params, "delta_max"), "Environmental: model params needs to have a 'delta_max' (suitability decay) parameter."
         assert hasattr(model.params, "delta_min"), "Environmental: model params needs to have a 'delta_min' (suitability decay) parameter."
 
-        model.patches.delta[:, :] = (model.params.delta_min + model.params.psi_jt * (model.params.delta_max - model.params.delta_min)).T
+        model.patches.delta_jt[:, :] = model.params.delta_min + model.params.psi_jt * (model.params.delta_max - model.params.delta_min)
 
         return
 
@@ -49,7 +50,7 @@ class Environmental:
         Iasym = model.agents.Iasym[tick]
 
         # -decay
-        decay = model.prng.poisson(model.patches.delta[tick] * W).astype(Wnext.dtype)
+        decay = model.prng.poisson(model.patches.delta_jt[tick] * W).astype(Wnext.dtype)
         Wnext -= decay
 
         # +shedding from Isymptomatic
@@ -131,7 +132,7 @@ class Environmental:
             f"Expected more environmental contagion with more infected agents.\n\t{more_infected.patches.W[1]}\n\t{baseline.patches.W[0]}"
         )
 
-        print("PASSED Environmental.test()")
+        printgreen("PASSED Environmental.test()")
         return
 
     def plot(self, fig: Figure = None):
@@ -149,4 +150,3 @@ class Environmental:
 
 if __name__ == "__main__":
     Environmental.test()
-    # plt.show()

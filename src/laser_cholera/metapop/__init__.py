@@ -7,6 +7,7 @@ from .exposed import Exposed
 from .humantohuman import HumanToHuman
 from .humantohumanvax import HumanToHumanVax
 from .infectious import Infectious
+from .params import Parameters
 from .params import get_parameters
 from .recorder import Recorder
 from .recovered import Recovered
@@ -24,6 +25,7 @@ __all__ = [
     "HumanToHuman",
     "HumanToHumanVax",
     "Infectious",
+    "Parameters",
     "Recorder",
     "Recovered",
     "Susceptible",

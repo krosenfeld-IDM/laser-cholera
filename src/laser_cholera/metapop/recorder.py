@@ -47,10 +47,9 @@ class Recorder:
         assert hasattr(self.model.patches, "beta_env"), (
             "Recorder: model patches needs to have a 'beta_env' (environment-to-human transmission rate) attribute."
         )
-        assert hasattr(self.model.patches, "delta"), "Recorder: model patches needs to have a 'delta' (environmental decay rate) attribute."
-        # assert hasattr(
-        #     self.model.patches, "theta"
-        # ), "Recorder: model patches needs to have a 'theta' (environmental decontamination rate) attribute."
+        assert hasattr(self.model.patches, "delta_jt"), (
+            "Recorder: model patches needs to have a 'delta_jt' (environmental decay rate) attribute."
+        )
 
         return
 
@@ -75,13 +74,12 @@ class Recorder:
                 agents.create_dataset("N", data=model.agents.N)
                 # create a group in the HDF5 file called "patches"
                 patches = file.create_group("patches")
-                # write the following NumPy arrays to the file: Lambda, PSI, W, beta_env, delta, theta
+                # write the following NumPy arrays to the file: Lambda, Psi, W, beta_env, delta, theta
                 patches.create_dataset("Lambda", data=model.patches.Lambda)
                 patches.create_dataset("Psi", data=model.patches.Psi)
                 patches.create_dataset("W", data=model.patches.W)
                 patches.create_dataset("beta_env", data=model.patches.beta_env)
-                patches.create_dataset("delta", data=model.patches.delta)
-                # patches.create_dataset("theta", data=model.patches.theta)
+                patches.create_dataset("delta_jt", data=model.patches.delta_jt)
 
         return
 

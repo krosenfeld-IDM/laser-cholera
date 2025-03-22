@@ -16,11 +16,10 @@ class Analyzer:
     def plot(self, fig: Figure = None):
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        plt.title("SIRV Trajectories")
+        plt.title("SIRV Trajectories (Largest Patch)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-1:]:
-            for channel in ["S", "I", "R", "V"]:
+            for channel in ["S", "Isym", "Iasym", "R", "V1", "V2"]:
                 plt.plot(getattr(self.model.agents, channel)[:, ipatch], label=f"{channel}")
-            # plt.plot(self.model.agents.V[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
         plt.legend()
 

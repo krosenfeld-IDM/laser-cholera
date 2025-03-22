@@ -8,6 +8,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class EnvToHuman:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -23,13 +25,12 @@ class EnvToHuman:
         )
 
         psi = model.params.psi_jt  # convenience
-        # psi_jt comes in as a 2D array with shape (npatches, nticks), we want to transpose it to (nticks, npatches)
-        # TODO - use newer laser_core with add_array_property and psi.shape[::-1] to transpose
-        model.patches.add_vector_property("beta_env", length=psi.shape[1], dtype=np.float32, default=0.0)
-        assert model.patches.beta_env.shape == model.params.psi_jt.T.shape
+        # TODO - use newer laser_core with add_array_property and psi.shape
+        model.patches.add_vector_property("beta_env", length=psi.shape[0], dtype=np.float32, default=0.0)
+        assert model.patches.beta_env.shape == model.params.psi_jt.shape
         assert model.params.beta_j0_env.shape[0] == model.patches.beta_env.shape[1]
-        psi_bar = psi.mean(axis=1, keepdims=True)
-        model.patches.beta_env[:, :] = (model.params.beta_j0_env * (1.0 + (psi - psi_bar) / psi_bar)).T
+        psi_bar = psi.mean(axis=0, keepdims=True)
+        model.patches.beta_env[:, :] = model.params.beta_j0_env.T * (1.0 + (psi - psi_bar) / psi_bar)
 
         return
 
@@ -319,7 +320,7 @@ class EnvToHuman:
         #     larger_beta.agents.I[1] > baseline.agents.I[1]
         # ), f"Expected larger infected populations with larger beta_env (seasonal factor).\n\t{baseline.agents.I[1]=}\n\t{larger_beta.agents.I[1]=}"
 
-        print("PASSED EnvToHuman.test()")
+        printgreen("PASSED EnvToHuman.test()")
         return
 
     def plot(self, fig: Figure = None):
@@ -327,7 +328,7 @@ class EnvToHuman:
 
         plt.title("Environmental Transmission Rate")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.patches.PSI[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.patches.Psi[:, ipatch], label=f"Patch {ipatch}")
         plt.xlabel("Tick")
         plt.legend()
 

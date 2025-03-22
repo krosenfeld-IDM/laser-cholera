@@ -1,9 +1,7 @@
 from datetime import datetime
-from datetime import timedelta
 from pathlib import Path
 
 import click
-import numpy as np
 import pandas as pd
 from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
@@ -22,6 +20,7 @@ from laser_cholera.metapop import Exposed
 from laser_cholera.metapop import HumanToHuman
 from laser_cholera.metapop import HumanToHumanVax
 from laser_cholera.metapop import Infectious
+from laser_cholera.metapop import Parameters
 from laser_cholera.metapop import Recorder
 from laser_cholera.metapop import Recovered
 from laser_cholera.metapop import Susceptible
@@ -52,9 +51,6 @@ class Model:
         _istart, _iend = self.agents.add(npatches)
         self.patches = LaserFrame(npatches)
         _istart, _iend = self.patches.add(npatches)
-
-        doy = [(parameters.date_start + timedelta(days=i)).timetuple().tm_yday - 1 for i in range(parameters.nticks)]
-        self.doy = np.array(doy, dtype=np.int32)
 
         return
 
@@ -272,6 +268,7 @@ def run(**kwargs):
         Environmental,
         Analyzer,
         Recorder,
+        Parameters,
     ]
 
     model.run()

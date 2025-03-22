@@ -20,10 +20,13 @@ include LICENSE
 include README.rst
 include README.MD
 
+include src/laser_cholera/metapop/data/default_parameters.*
 recursive-include src *.csv
 
 exclude .gitmodules
+exclude uv.lock
 recursive-exclude .devcontainer *
+recursive-exclude src/laser_cholera/metapop/data/tmp *
 recursive-exclude mosaic-data *
 recursive-exclude mosaic-pkg *
-global-exclude *.py[cod] __pycache__/* *.so *.dylib
+global-exclude *.py[cod] __pycache__/* *.so *.dylib .DS_Store

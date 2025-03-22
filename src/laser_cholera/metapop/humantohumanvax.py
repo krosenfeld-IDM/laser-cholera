@@ -8,6 +8,8 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+
 
 class HumanToHumanVax:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -123,22 +125,21 @@ class HumanToHumanVax:
             f"S and I population changes don't match.\n\t{model.agents.S[0]=}\n\t{model.agents.S[1]=}\n\t{model.agents.I[0]=}\n\t{model.agents.I[1]=}"
         )
 
-        print("PASSED HumanToHuman.test()")
+        printgreen("PASSED HumanToHuman.test()")
         return
 
     def plot(self, fig: Figure = None):
         _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-        plt.title("Human-to-Human Transmission Rate")
-        for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.patches.Lambda[:, ipatch], label=f"Patch {ipatch}")
-        plt.xlabel("Tick")
-        plt.legend()
+        # plt.title("Human-to-Human Transmission Rate (Vax)")
+        # for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
+        #     plt.plot(self.model.patches.Lambda[:, ipatch], label=f"Patch {ipatch}")
+        # plt.xlabel("Tick")
+        # plt.legend()
 
-        yield
+        # yield
         return
 
 
 if __name__ == "__main__":
-    HumanToHuman.test()
-    # plt.show()
+    HumanToHumanVax.test()

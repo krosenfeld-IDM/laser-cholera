@@ -6,6 +6,9 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
+from laser_cholera.utils import printgreen
+from laser_cholera.utils import printred
+
 
 class Vaccinated:
     def __init__(self, model, verbose: bool = False) -> None:
@@ -66,18 +69,18 @@ class Vaccinated:
         V2inf_next[:] = V2inf
 
         # -natural mortality
-        deaths = model.prng.binomial(V1imm, -np.expm1(-model.params.d_jt[:, tick])).astype(V1imm.dtype)
+        deaths = model.prng.binomial(V1imm, -np.expm1(-model.params.d_jt[tick])).astype(V1imm.dtype)
         V1imm_next -= deaths
-        deaths = model.prng.binomial(V1sus, -np.expm1(-model.params.d_jt[:, tick])).astype(V1sus.dtype)
+        deaths = model.prng.binomial(V1sus, -np.expm1(-model.params.d_jt[tick])).astype(V1sus.dtype)
         V1sus_next -= deaths
-        deaths = model.prng.binomial(V1inf, -np.expm1(-model.params.d_jt[:, tick])).astype(V1inf.dtype)
+        deaths = model.prng.binomial(V1inf, -np.expm1(-model.params.d_jt[tick])).astype(V1inf.dtype)
         V1inf_next -= deaths
 
-        deaths = model.prng.binomial(V2imm, -np.expm1(-model.params.d_jt[:, tick])).astype(V2imm.dtype)
+        deaths = model.prng.binomial(V2imm, -np.expm1(-model.params.d_jt[tick])).astype(V2imm.dtype)
         V2imm_next -= deaths
-        deaths = model.prng.binomial(V2sus, -np.expm1(-model.params.d_jt[:, tick])).astype(V2sus.dtype)
+        deaths = model.prng.binomial(V2sus, -np.expm1(-model.params.d_jt[tick])).astype(V2sus.dtype)
         V2sus_next -= deaths
-        deaths = model.prng.binomial(V2inf, -np.expm1(-model.params.d_jt[:, tick])).astype(V2inf.dtype)
+        deaths = model.prng.binomial(V2inf, -np.expm1(-model.params.d_jt[tick])).astype(V2inf.dtype)
         V2inf_next -= deaths
 
         # -waning immunity
@@ -92,7 +95,7 @@ class Vaccinated:
         # +newly vaccinated (successful take)
         new_one_doses = model.prng.poisson(model.params.nu_1_jt[tick] * S / (S + E)).astype(V1imm.dtype)
         if np.any(new_one_doses > S):
-            print(f"WARNING: new_one_doses > S ({tick=}\n\t{new_one_doses=}\n\t{S=})")
+            printred(f"WARNING: new_one_doses > S ({tick=}\n\t{new_one_doses=}\n\t{S=})")
             new_one_doses = np.minimum(new_one_doses, S)
         S_next -= new_one_doses
         assert np.all(S_next >= 0), f"S' should not go negative ({tick=}\n\t{S_next})"
@@ -187,7 +190,7 @@ class Vaccinated:
             f"Some populations didn't increase with vaccine take > 0 and vaccination rate > 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
         )
 
-        print("PASSED Vaccinated.test()")
+        printgreen("PASSED Vaccinated.test()")
 
         return
 
@@ -210,3 +213,7 @@ class Vaccinated:
 
         yield
         return
+
+
+if __name__ == "__main__":
+    Vaccinated.test()
