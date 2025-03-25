@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
-from laser_cholera.utils import printgreen
-
 
 class Exposed:
     def __init__(self, model, verbose: bool = False):
@@ -23,6 +21,8 @@ class Exposed:
     def check(self):
         # Don't bother checking for model.params, we did that in __init__()
         assert "iota" in self.model.params, "Exposed: model params needs to have a 'iota' (progression rate) parameter."
+        if not hasattr(self.model.patches, "non_disease_deaths"):
+            self.model.patches.add_vector_property("non_disease_deaths", length=self.model.params.nticks + 1, dtype=np.int32, default=0)
 
         return
 
@@ -32,25 +32,10 @@ class Exposed:
         E_next[:] = E
 
         # Do non-disease mortality first
-        deaths = model.prng.binomial(E, -np.expm1(-model.params.d_jt[tick])).astype(E_next.dtype)
-        E_next -= deaths
-
-        return
-
-    @staticmethod
-    def test():
-        class Model:
-            def __init__(self): ...
-
-        component = Exposed(model := Model())
-        component.check()
-        component(model, 0)
-        assert np.all(model.agents.E[0] == model.params.E_j_initial), "Initial populations didn't match."
-        assert np.all(model.agents.E[1] < model.agents.E[0]), (
-            f"Some populations didn't shrink with deaths.\n\t{model.agents.E[0]}\n\t{model.agents.E[1]}"
-        )
-
-        printgreen("PASSED Susceptible.test()")
+        non_disease_deaths = model.prng.binomial(E, -np.expm1(-model.params.d_jt[tick])).astype(E_next.dtype)
+        E_next -= non_disease_deaths
+        ndd_next = model.patches.non_disease_deaths[tick + 1]
+        ndd_next += non_disease_deaths
 
         return
 
@@ -65,7 +50,3 @@ class Exposed:
 
         yield
         return
-
-
-if __name__ == "__main__":
-    Exposed.test()

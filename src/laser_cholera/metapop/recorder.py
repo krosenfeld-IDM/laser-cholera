@@ -71,10 +71,12 @@ class Recorder:
                 agents.create_dataset("V2imm", data=model.agents.V2imm)
                 agents.create_dataset("V2sus", data=model.agents.V2sus)
                 agents.create_dataset("V2inf", data=model.agents.V2inf)
-                agents.create_dataset("N", data=model.agents.N)
                 # create a group in the HDF5 file called "patches"
                 patches = file.create_group("patches")
                 # write the following NumPy arrays to the file: Lambda, Psi, W, beta_env, delta, theta
+                patches.create_dataset("N", data=model.patches.N)
+                patches.create_dataset("non_disease_deaths", data=model.patches.non_disease_deaths)
+                patches.create_dataset("disease_deaths", data=model.patches.disease_deaths)
                 patches.create_dataset("Lambda", data=model.patches.Lambda)
                 patches.create_dataset("Psi", data=model.patches.Psi)
                 patches.create_dataset("W", data=model.patches.W)

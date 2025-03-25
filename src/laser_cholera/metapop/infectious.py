@@ -1,12 +1,6 @@
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
-from laser_core.laserframe import LaserFrame
-from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
-
-from laser_cholera.utils import printgreen
 
 
 class Infectious:
@@ -17,7 +11,8 @@ class Infectious:
         assert hasattr(model, "agents"), "Infectious: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("Isym", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.agents.add_vector_property("Iasym", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("deaths", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        assert hasattr(model, "patches"), "Infectious: model needs to have a 'patches' attribute."
+        model.patches.add_vector_property("disease_deaths", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(model, "params"), "Infectious: model needs to have a 'params' attribute."
         assert hasattr(model.params, "I_j_initial"), (
             "Infectious: model params needs to have a 'I_j_initial' (initial infectious population) parameter."
@@ -36,6 +31,8 @@ class Infectious:
         assert "gamma_2" in self.model.params, "Infectious: model params needs to have a 'gamma_2' (recovery rate) parameter."
         assert "iota" in self.model.params, "Infectious: model params needs to have a 'iota' (progression rate) parameter."
         assert "sigma" in self.model.params, "Infectious: model params needs to have a 'sigma' (symptomatic fraction) parameter."
+        if not hasattr(self.model.patches, "non_disease_deaths"):
+            self.model.patches.add_vector_property("non_disease_deaths", length=self.model.params.nticks + 1, dtype=np.int32, default=0)
 
         return
 
@@ -46,13 +43,15 @@ class Infectious:
         Is_next[:] = Isym
 
         ## natural deaths (d_jt)
-        natural_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.d_jt[tick])).astype(Is_next.dtype)
-        Is_next -= natural_deaths
+        non_disease_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.d_jt[tick])).astype(Is_next.dtype)
+        Is_next -= non_disease_deaths
+        ndd_next = model.patches.non_disease_deaths[tick + 1]
+        ndd_next += non_disease_deaths
         assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
         ## disease deaths (mu)
         disease_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.mu_jt[tick])).astype(Is_next.dtype)
-        model.agents.deaths[tick] = disease_deaths
+        model.patches.disease_deaths[tick] = disease_deaths
         Is_next -= disease_deaths
         assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
@@ -69,8 +68,8 @@ class Infectious:
         Ia_next[:] = Iasym
 
         ## natural deaths (d_jt)
-        natural_deaths = model.prng.binomial(Ia_next, -np.expm1(-model.params.d_jt[tick])).astype(Ia_next.dtype)
-        Ia_next -= natural_deaths
+        non_disease_deaths = model.prng.binomial(Ia_next, -np.expm1(-model.params.d_jt[tick])).astype(Ia_next.dtype)
+        Ia_next -= non_disease_deaths
         assert np.all(Ia_next >= 0), f"Ia_next should not go negative ({tick=}\n\t{Ia_next=})"
 
         ## recovery
@@ -95,39 +94,6 @@ class Infectious:
         # human-to-human infection in humantohuman.py
         # environmental infection in envtohuman.py
         # recovery from infection in recovered.py
-
-        return
-
-    @staticmethod
-    def test():
-        class Model:
-            def __init__(self, d_jt: np.ndarray = None, mu: float = 0.0, sigma: float = 0.0):
-                self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
-                self.agents = LaserFrame(4)
-                d_jt = d_jt if d_jt is not None else np.full((4, 1), 1.0 / 80.0)
-                self.params = PropertySet(
-                    {"d_jt": d_jt, "mu": mu, "sigma": sigma, "I_j_initial": [1_000, 10_000, 100_000, 1_000_000], "nticks": 8}
-                )
-
-        # TODO: Add more tests given Isym and Iasym split
-
-        # component = Infectious(model := Model(d_jt=np.full((4, 1), 1.0 / 80.0)))
-        # component.check()
-        # component(model, 0)
-        # assert np.all(model.agents.I[0] == model.params.I_j_initial), "Initial populations didn't match."
-        # assert np.all(model.agents.I[1] < model.agents.I[0]), (
-        #     f"Some populations didn't shrink with natural mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
-        # )
-
-        # component = Infectious(model := Model(mu=0.015, sigma=0.24))
-        # component.check()
-        # component(model, 0)
-        # assert np.all(model.agents.I[0] == model.params.I_j_initial), "Initial populations didn't match."
-        # assert np.all(model.agents.I[1] < model.agents.I[0]), (
-        #     f"Some populations didn't shrink with disease mortality.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
-        # )
-
-        printgreen("PASSED Infectious.test()")
 
         return
 
@@ -158,7 +124,3 @@ class Infectious:
 
         yield
         return
-
-
-if __name__ == "__main__":
-    Infectious.test()

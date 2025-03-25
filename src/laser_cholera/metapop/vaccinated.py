@@ -1,13 +1,8 @@
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
-from laser_core.laserframe import LaserFrame
-from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
-from laser_cholera.utils import printgreen
-from laser_cholera.utils import printred
+from laser_cholera.sc import printred
 
 
 class Vaccinated:
@@ -24,6 +19,22 @@ class Vaccinated:
         model.agents.add_vector_property("V2imm", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.agents.add_vector_property("V2sus", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.agents.add_vector_property("V2inf", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        assert "V1_j_initial" in model.params, (
+            "Vaccinated: model params needs to have a 'V1_j_initial' (initial one dose vaccinated population) parameter."
+        )
+        assert "V2_j_initial" in model.params, (
+            "Vaccinated: model params needs to have a 'V2_j_initial' (initial two dose vaccinated population) parameter."
+        )
+        assert "phi_1" in model.params, "Vaccinated: model params needs to have a 'phi_1' (efficacy of one dose) parameter."
+        assert "phi_2" in model.params, "Vaccinated: model params needs to have a 'phi_2' (efficacy of two doses) parameter."
+        model.agents.V1imm[0] = np.round(model.params.phi_1 * model.params.V1_j_initial)
+        model.agents.V1sus[0] = model.params.V1_j_initial - model.agents.V1imm[0]
+        model.agents.V1inf[0] = 0
+        model.agents.V1[0] = model.agents.V1imm[0] + model.agents.V1sus[0] + model.agents.V1inf[0]
+        model.agents.V2imm[0] = np.round(model.params.phi_2 * model.params.V2_j_initial)
+        model.agents.V2sus[0] = model.params.V2_j_initial - model.agents.V2imm[0]
+        model.agents.V2inf[0] = 0
+        model.agents.V2[0] = model.agents.V2imm[0] + model.agents.V2sus[0] + model.agents.V2inf[0]
 
         return
 
@@ -39,6 +50,9 @@ class Vaccinated:
         assert "nu_2_jt" in self.model.params, "Vaccinated: model params needs to have a 'nu_2_jt' parameter."
 
         assert hasattr(self.model.params, "d_jt"), "Susceptible: model.params needs to have a 'd_jt' attribute."
+
+        if not hasattr(self.model.patches, "non_disease_deaths"):
+            self.model.patches.add_vector_property("non_disease_deaths", length=self.model.params.nticks + 1, dtype=np.int32, default=0)
 
         return
 
@@ -69,19 +83,26 @@ class Vaccinated:
         V2inf_next[:] = V2inf
 
         # -natural mortality
-        deaths = model.prng.binomial(V1imm, -np.expm1(-model.params.d_jt[tick])).astype(V1imm.dtype)
-        V1imm_next -= deaths
-        deaths = model.prng.binomial(V1sus, -np.expm1(-model.params.d_jt[tick])).astype(V1sus.dtype)
-        V1sus_next -= deaths
-        deaths = model.prng.binomial(V1inf, -np.expm1(-model.params.d_jt[tick])).astype(V1inf.dtype)
-        V1inf_next -= deaths
+        non_disease_deaths = model.prng.binomial(V1imm, -np.expm1(-model.params.d_jt[tick])).astype(V1imm.dtype)
+        V1imm_next -= non_disease_deaths
+        ndd_next = model.patches.non_disease_deaths[tick + 1]
+        ndd_next += non_disease_deaths
+        non_disease_deaths = model.prng.binomial(V1sus, -np.expm1(-model.params.d_jt[tick])).astype(V1sus.dtype)
+        V1sus_next -= non_disease_deaths
+        ndd_next += non_disease_deaths
+        non_disease_deaths = model.prng.binomial(V1inf, -np.expm1(-model.params.d_jt[tick])).astype(V1inf.dtype)
+        V1inf_next -= non_disease_deaths
+        ndd_next += non_disease_deaths
 
-        deaths = model.prng.binomial(V2imm, -np.expm1(-model.params.d_jt[tick])).astype(V2imm.dtype)
-        V2imm_next -= deaths
-        deaths = model.prng.binomial(V2sus, -np.expm1(-model.params.d_jt[tick])).astype(V2sus.dtype)
-        V2sus_next -= deaths
-        deaths = model.prng.binomial(V2inf, -np.expm1(-model.params.d_jt[tick])).astype(V2inf.dtype)
-        V2inf_next -= deaths
+        non_disease_deaths = model.prng.binomial(V2imm, -np.expm1(-model.params.d_jt[tick])).astype(V2imm.dtype)
+        V2imm_next -= non_disease_deaths
+        ndd_next += non_disease_deaths
+        non_disease_deaths = model.prng.binomial(V2sus, -np.expm1(-model.params.d_jt[tick])).astype(V2sus.dtype)
+        V2sus_next -= non_disease_deaths
+        ndd_next += non_disease_deaths
+        non_disease_deaths = model.prng.binomial(V2inf, -np.expm1(-model.params.d_jt[tick])).astype(V2inf.dtype)
+        V2inf_next -= non_disease_deaths
+        ndd_next += non_disease_deaths
 
         # -waning immunity
         waned = model.prng.binomial(V1imm_next, -np.expm1(-model.params.omega_1)).astype(V1imm_next.dtype)
@@ -108,12 +129,15 @@ class Vaccinated:
 
         # -second dose recipients
         V1 = (V1imm + V1sus + V1inf).astype(V1imm.dtype)
-        new_two_doses = model.prng.poisson(model.params.nu_2_jt[tick] * V1).astype(V1imm.dtype)
+        new_two_doses = model.prng.poisson(model.params.nu_2_jt[tick]).astype(V1imm.dtype)
+        if np.any(new_two_doses > V1):
+            printred(f"WARNING: new_two_doses > V1 ({tick=}\n\t{new_two_doses=}\n\t{V1=})")
+            new_two_doses = np.minimum(new_two_doses, V1)
         v1imm_contribution = np.round((V1imm / V1) * new_two_doses).astype(V1imm.dtype)
         V1imm_next -= v1imm_contribution
         v1sus_contribution = np.round((V1sus / V1) * new_two_doses).astype(V1sus.dtype)
         V1sus_next -= v1sus_contribution
-        v1inf_contribution = new_two_doses - v1imm_contribution - v1sus_contribution
+        v1inf_contribution = np.round((new_two_doses - v1imm_contribution - v1sus_contribution) * (V1inf / V1)).astype(V1inf.dtype)
         V1inf_next -= v1inf_contribution
 
         assert np.all(V1imm_next >= 0), f"V1imm' should not go negative ({tick=}\n\t{V1imm_next})"
@@ -129,6 +153,9 @@ class Vaccinated:
         V2sus_next += new_infective
         # doses applied to previously infected one dose recipients
         v2inf_delta = new_two_doses - new_immunized - new_infective
+        if np.any(v2inf_delta < 0):
+            printred(f"WARNING: v2inf_delta < 0 ({tick=}\n\t{v2inf_delta=})")
+            v2inf_delta = np.maximum(v2inf_delta, 0)
         V2inf_next += v2inf_delta
 
         # V1 total
@@ -136,61 +163,6 @@ class Vaccinated:
 
         # V2 total
         V2_next[:] = V2imm_next + V2sus_next + V2inf_next
-
-        return
-
-    @staticmethod
-    def test():
-        class Model:
-            def __init__(self, d_jt: np.ndarray = None, omega: float = 0.0, phi: float = 0.0, nu_jt: np.ndarray = np.zeros((4, 8))):  # noqa: B008
-                self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
-                self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
-                self.agents.S[0] = [1_000, 10_000, 100_000, 1_000_000]
-                d_jt = d_jt if d_jt is not None else np.full((4, 8), 1.0 / 80.0)
-                self.params = PropertySet({"d_jt": d_jt, "omega": omega, "phi": phi, "nu_jt": nu_jt, "nticks": 8})
-
-        component = Vaccinated(model := Model(d_jt=np.full((4, 1), 1.0 / 80.0)))
-        component.check()
-        model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
-        component(model, 0)
-        assert np.all(model.agents.V[1] < model.agents.V[0]), (
-            f"Some populations didn't shrink with natural mortality.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
-        )
-
-        component = Vaccinated(model := Model(omega=0.06))
-        component.check()
-        model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
-        component(model, 0)
-        assert np.all(model.agents.V[1] < model.agents.V[0]), (
-            f"Some populations didn't shrink with waning vaccine immunity.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
-        )
-
-        component = Vaccinated(model := Model(phi=0.0, nu_jt=0.1 * np.ones((4, 8))))
-        component.check()
-        model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
-        component(model, 0)
-        assert np.all(model.agents.V[1] == model.agents.V[0]), (
-            f"Some populations changed with vaccine take = 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
-        )
-
-        component = Vaccinated(model := Model(phi=0.64, nu_jt=np.zeros((4, 8))))
-        component.check()
-        model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
-        component(model, 0)
-        assert np.all(model.agents.V[1] == model.agents.V[0]), (
-            f"Some populations changed with vaccination rate = 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
-        )
-
-        component = Vaccinated(model := Model(phi=0.64, nu_jt=0.1 * np.ones((4, 8))))
-        component.check()
-        model.agents.V[0] = [1_000, 10_000, 100_000, 1_000_000]
-        component(model, 0)
-        assert np.all(model.agents.V[1] > model.agents.V[0]), (
-            f"Some populations didn't increase with vaccine take > 0 and vaccination rate > 0.\n\t{model.agents.V[0]}\n\t{model.agents.V[1]}"
-        )
-
-        printgreen("PASSED Vaccinated.test()")
 
         return
 
@@ -213,7 +185,3 @@ class Vaccinated:
 
         yield
         return
-
-
-if __name__ == "__main__":
-    Vaccinated.test()

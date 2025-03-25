@@ -14,8 +14,8 @@ import numpy as np
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
-from laser_cholera.utils import printcyan
-from laser_cholera.utils import printred
+from laser_cholera.sc import printcyan
+from laser_cholera.sc import printred
 
 
 def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optional[dict] = None) -> PropertySet:
@@ -37,6 +37,9 @@ def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optio
     params = load_fn(file_path)
 
     validate(params)
+
+    if "verbose" not in params:
+        params.verbose = False
 
     if overrides is not None:
         params += overrides
@@ -184,7 +187,7 @@ def load_hdf5(h5file) -> PropertySet:
     # date_start and date_stop
     start = h5file["date_start"][()][0]
     stop = h5file["date_stop"][()][0]
-    epoch = datetime(year=1970, month=1, day=1)  # noqa: DTZ001
+    epoch = datetime(year=1970, month=1, day=1)
     ps.date_start = epoch + timedelta(days=start)
     ps.date_stop = epoch + timedelta(days=stop)
     nticks = ps.nticks = (ps.date_stop - ps.date_start).days + 1  # +1 to include stop date

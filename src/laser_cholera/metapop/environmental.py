@@ -6,7 +6,7 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
-from laser_cholera.utils import printgreen
+from laser_cholera.sc import printgreen
 
 
 class Environmental:

@@ -8,7 +8,7 @@ from laser_core.laserframe import LaserFrame
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
-from laser_cholera.utils import printgreen
+from laser_cholera.sc import printgreen
 
 
 class HumanToHumanVax:
@@ -95,7 +95,7 @@ class HumanToHumanVax:
                 self.agents.add_vector_property("N", length=8, dtype=np.int32, default=0)
                 self.agents.S[0] = self.agents.S[1] = [250, 2_500, 25_000, 250_000]  # 25%
                 self.agents.I[0] = self.agents.I[1] = [100, 1_000, 10_000, 100_000]  # 10%
-                self.agents.N[0] = self.agents.N[1] = [1_000, 10_000, 100_000, 1_000_000]
+                self.patches.N[0] = self.patches.N[1] = [1_000, 10_000, 100_000, 1_000_000]
                 self.patches = LaserFrame(4)  # required for HumanToHuman to add Lambda
                 self.params = PropertySet(
                     {
