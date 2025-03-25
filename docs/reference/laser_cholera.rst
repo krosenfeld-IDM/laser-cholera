@@ -49,6 +49,14 @@ laser\_cholera.proppop module
    :show-inheritance:
    :undoc-members:
 
+laser\_cholera.sc module
+------------------------
+
+.. automodule:: laser_cholera.sc
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 laser\_cholera.utils module
 ---------------------------
 

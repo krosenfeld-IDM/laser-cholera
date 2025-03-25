@@ -183,7 +183,7 @@ class Model:
 
         return
 
-    def plot(self, fig: Figure = None):
+    def plot(self, fig: Figure = None):  # pragma: no cover
         _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         _fig.suptitle("Scenario Patches and Populations")

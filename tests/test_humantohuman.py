@@ -11,9 +11,9 @@ from laser_cholera.metapop.model import Model
 from laser_cholera.metapop.params import get_parameters
 from laser_cholera.metapop.recovered import Recovered
 from laser_cholera.metapop.susceptible import Susceptible
-from laser_cholera.utils import test_duration
+from laser_cholera.utils import sim_duration
 
-_ONEYEAR = test_duration(datetime(2024, 1, 1), datetime(2024, 12, 31))
+_ONEYEAR = sim_duration(datetime(2024, 1, 1), datetime(2024, 12, 31))
 
 
 class TestHumanToHuman(unittest.TestCase):

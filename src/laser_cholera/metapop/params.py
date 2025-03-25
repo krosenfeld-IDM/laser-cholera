@@ -469,7 +469,7 @@ class Parameters:
     def __call__(self, _model, _tick):
         pass
 
-    def plot(self, fig: Figure = None):
+    def plot(self, fig: Figure = None):  # pragma: no cover
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         # Stacked bar chart of initial populations

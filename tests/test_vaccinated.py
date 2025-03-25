@@ -2,24 +2,25 @@ import unittest
 
 import numpy as np
 
+from laser_cholera.metapop.census import Census
 from laser_cholera.metapop.exposed import Exposed
 from laser_cholera.metapop.model import Model
 from laser_cholera.metapop.params import get_parameters
 from laser_cholera.metapop.susceptible import Susceptible
 from laser_cholera.metapop.vaccinated import Vaccinated
-from laser_cholera.utils import test_duration
+from laser_cholera.utils import sim_duration
 
 
 class TestVaccinated(unittest.TestCase):
     # Test initial distribution of vaccinated agents - realistic phi_1 and phi_2
     def test_initial_distribution_realistic_phi(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         # Simulate a large vaccinated population
         ps.V1_j_initial += 10_000
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         # model.run() # don't need to run, just check initial distribution
         assert np.all(model.agents.V1imm[0] == np.round(model.params.phi_1 * model.params.V1_j_initial)), (
             "V1_imm: initial distribution not correct."
@@ -40,7 +41,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Test initial distribution of vaccinated agents - phi_1 and phi_2 = 0
     def test_initial_distribution_phi_zero(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.phi_1 = 0
         ps.phi_2 = 0
         # Simulate a large vaccinated population
@@ -48,7 +49,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         # model.run() # don't need to run, just check initial distribution
         assert np.all(model.agents.V1imm[0] == 0), "V1_imm: initial distribution not correct."
         assert np.all(model.agents.V1sus[0] == model.params.V1_j_initial), "V1_sus: initial distribution not correct."
@@ -61,7 +62,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Test initial distribution of vaccinated agents - phi_1 and phi_2 = 1
     def test_initial_distribution_phi_one(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.phi_1 = 1
         ps.phi_2 = 1
         # Simulate a large vaccinated population
@@ -69,7 +70,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         # model.run() # don't need to run, just check initial distribution
         assert np.all(model.agents.V1imm[0] == model.params.V1_j_initial), "V1_imm: initial distribution not correct."
         assert np.all(model.agents.V1sus[0] == 0), "V1_sus: initial distribution not correct."
@@ -82,7 +83,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Steady state
     def test_vaccinated_steadystate(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -93,7 +94,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] == model.agents.V1imm[0]), "V1 immunized: steady state not held."
         assert np.all(model.agents.V1sus[-1] == model.agents.V1sus[0]), "V1 susceptible: steady state not held."
@@ -108,7 +109,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Non-disease mortality
     def test_vaccinated_non_disease_deaths(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 10  # inflate non-disease death rate
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -119,7 +120,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] < model.agents.V1imm[0]), "V1 immunized: non-disease deaths not occurring."
         assert np.all(model.agents.V1sus[-1] < model.agents.V1sus[0]), "V1 susceptible: non-disease deaths not occurring."
@@ -136,7 +137,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Waning immunity - one dose
     def test_vaccinated_waning_one_dose_immunity(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         # leave this on: ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -147,7 +148,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] < model.agents.V1imm[0]), "V1 immunized: missing waning immunity."
         assert np.all(model.agents.V1sus[-1] > model.agents.V1sus[0]), "V1 susceptible: missing waning immunity."
@@ -161,8 +162,8 @@ class TestVaccinated(unittest.TestCase):
         return
 
     # Waning immunity - two doses
-    def test_vaccinated_steadystate(self):
-        ps = get_parameters(overrides=test_duration())
+    def test_vaccinated_waning_two_dose_immunity(self):
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         # leave this on: ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -173,7 +174,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial += 10_000
         ps.S_j_initial -= 20_000
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] == model.agents.V1imm[0]), "V1 immunized: should not change."
         assert np.all(model.agents.V1sus[-1] == model.agents.V1sus[0]), "V1 susceptible: should not change."
@@ -188,7 +189,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Newly vaccinated - one dose, realistic efficacy
     def test_vaccinated_one_dose_vaccination_realistic_efficacy(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -199,7 +200,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V1_j_initial[:] = 0
         ps.V2_j_initial[:] = 0
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] > model.agents.V1imm[0]), "V1 immunized: missing newly vaccinated people."
         assert np.all(model.agents.V1sus[-1] > model.agents.V1sus[0]), "V1 susceptible: missing newly vaccinated people."
@@ -214,7 +215,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Newly vaccinated - one dose, perfect efficacy
     def test_vaccinated_one_dose_vaccination_perfect_efficacy(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -226,7 +227,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V1_j_initial[:] = 0
         ps.V2_j_initial[:] = 0
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] > model.agents.V1imm[0]), "V1 immunized: missing newly vaccinated people."
         assert np.all(model.agents.V1sus[-1] == model.agents.V1sus[0]), "V1 susceptible: should not have newly vaccinated people."
@@ -241,7 +242,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Newly vaccinated - one dose, no efficacy
     def test_vaccinated_one_dose_vaccination_no_efficacy(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -253,7 +254,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V1_j_initial[:] = 0
         ps.V2_j_initial[:] = 0
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] == model.agents.V1imm[0]), "V1 immunized: should not have newly vaccinated people."
         assert np.all(model.agents.V1sus[-1] > model.agents.V1sus[0]), "V1 susceptible: missing newly vaccinated people."
@@ -268,7 +269,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Newly vaccinated - two doses, realistic efficacy
     def test_vaccinated_two_dose_vaccination_realistic_efficacy(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -280,7 +281,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial[:] = 0
         ps.S_j_initial -= ps.V1_j_initial
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] < model.agents.V1imm[0]), "V1 immunized: should be missing newly vaccinated people."
         assert np.all(model.agents.V1sus[-1] < model.agents.V1sus[0]), "V1 susceptible: should be missing newly vaccinated people."
@@ -295,7 +296,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Newly vaccinated - two doses, perfect efficacy
     def test_vaccinated_two_dose_vaccination_perfect_efficacy(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -308,7 +309,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial[:] = 0
         ps.S_j_initial -= ps.V1_j_initial
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] < model.agents.V1imm[0]), "V1 immunized: should be missing newly vaccinated people."
         assert np.all(model.agents.V1sus[-1] < model.agents.V1sus[0]), "V1 susceptible: should be missing newly vaccinated people."
@@ -323,7 +324,7 @@ class TestVaccinated(unittest.TestCase):
 
     # Newly vaccinated - two doses, no efficacy
     def test_vaccinated_two_dose_vaccination_no_efficacy(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.d_jt *= 0  # turn off deaths
         ps.omega_1 = 0  # turn off waning immunity - one dose
         ps.omega_2 = 0  # turn off waning immunity - two dose
@@ -336,7 +337,7 @@ class TestVaccinated(unittest.TestCase):
         ps.V2_j_initial[:] = 0
         ps.S_j_initial -= ps.V1_j_initial
         model = Model(parameters=ps)
-        model.components = [Susceptible, Exposed, Vaccinated]  # , Infectious, Recovered]
+        model.components = [Susceptible, Exposed, Vaccinated, Census]  # , Infectious, Recovered]
         model.run()
         assert np.all(model.agents.V1imm[-1] < model.agents.V1imm[0]), "V1 immunized: should be missing newly vaccinated people."
         assert np.all(model.agents.V1sus[-1] < model.agents.V1sus[0]), "V1 susceptible: should be missing newly vaccinated people."

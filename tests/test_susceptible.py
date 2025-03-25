@@ -7,12 +7,12 @@ from laser_cholera.metapop.census import Census
 from laser_cholera.metapop.model import Model
 from laser_cholera.metapop.params import get_parameters
 from laser_cholera.metapop.susceptible import Susceptible
-from laser_cholera.utils import test_duration
+from laser_cholera.utils import sim_duration
 
 
 class TestSusceptible(unittest.TestCase):
     def test_susceptible_steadystate(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.b_jt *= 0  # turn off births
         ps.d_jt *= 0  # turn off deaths
         model = Model(parameters=ps)
@@ -23,7 +23,7 @@ class TestSusceptible(unittest.TestCase):
         return
 
     def test_susceptible_deaths(self):
-        ps = get_parameters(overrides=test_duration())
+        ps = get_parameters(overrides=sim_duration())
         ps.b_jt *= 0  # turn off births
         model = Model(parameters=ps)
         model.components = [Susceptible, Census]

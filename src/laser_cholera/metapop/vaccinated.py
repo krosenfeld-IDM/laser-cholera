@@ -128,7 +128,8 @@ class Vaccinated:
         V1sus_next += new_ineffective
 
         # -second dose recipients
-        V1 = (V1imm + V1sus + V1inf).astype(V1imm.dtype)
+        # set minimum V1 to 1 to avoid division by zero
+        V1 = np.maximum(V1imm + V1sus + V1inf, 1).astype(V1imm.dtype)
         new_two_doses = model.prng.poisson(model.params.nu_2_jt[tick]).astype(V1imm.dtype)
         if np.any(new_two_doses > V1):
             printred(f"WARNING: new_two_doses > V1 ({tick=}\n\t{new_two_doses=}\n\t{V1=})")
@@ -166,7 +167,7 @@ class Vaccinated:
 
         return
 
-    def plot(self, fig: Figure = None):
+    def plot(self, fig: Figure = None):  # pragma: no cover
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Vaccinated (One Dose)")

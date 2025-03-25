@@ -135,7 +135,7 @@ class Environmental:
         printgreen("PASSED Environmental.test()")
         return
 
-    def plot(self, fig: Figure = None):
+    def plot(self, fig: Figure = None):  # pragma: no cover
         _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Environmental Reservoir")

@@ -85,6 +85,6 @@ class Recorder:
 
         return
 
-    def plot(self, fig: Figure = None):
+    def plot(self, fig: Figure = None):  # pragma: no cover
         yield
         return
