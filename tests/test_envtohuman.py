@@ -18,26 +18,30 @@ from laser_cholera.utils import sim_duration
 class TestEnvToHuman(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.ps = get_parameters(overrides=sim_duration())
-        cls.ps.S_j_initial += cls.ps.I_j_initial  # return initial I to S
-        cls.ps.I_j_initial = 10_000  # fix I at 10,000
-        cls.ps.S_j_initial -= cls.ps.I_j_initial  # remove I from S
-        cls.baseline = Model(cls.ps)
+        cls.params = cls.get_test_parameters()
+        cls.baseline = Model(cls.params)
         cls.baseline.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         cls.baseline.run()
 
         return
 
+    @staticmethod
+    def get_test_parameters():
+        params = get_parameters(overrides=sim_duration())
+        params.S_j_initial += params.I_j_initial  # return initial I to S
+        params.I_j_initial = 10_000  # fix I at 10,000
+        params.S_j_initial -= params.I_j_initial  # remove I from S
+
+        return params
+
     # Test no WASH interventions
     def test_envtohuman_no_wash(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial
-        ps.I_j_initial = 10_000  # fix I at 10,000
-        ps.S_j_initial -= ps.I_j_initial
+        params = self.get_test_parameters()
+
         # Zero out WASH coverage
-        ps.theta_j *= 0.0
-        model = Model(ps)
+        params.theta_j *= 0.0
+
+        model = Model(params)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         model.run()
 
@@ -51,14 +55,12 @@ class TestEnvToHuman(unittest.TestCase):
 
     # Test perfect WASH interventions
     def test_envtohuman_perfect_wash(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial
-        ps.I_j_initial = 10_000  # fix I at 10,000
-        ps.S_j_initial -= ps.I_j_initial
+        params = self.get_test_parameters()
+
         # Perfect WASH coverage
-        ps.theta_j = 1.0
-        model = Model(ps)
+        params.theta_j = 1.0
+
+        model = Model(params)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         model.run()
 
@@ -72,14 +74,12 @@ class TestEnvToHuman(unittest.TestCase):
 
     # Test increased seasonal factors
     def test_envtohuman_increased_seasonality(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial
-        ps.I_j_initial = 10_000
-        ps.S_j_initial -= ps.I_j_initial
+        params = self.get_test_parameters()
+
         # Increase seasonal factors
-        ps.beta_j0_env *= 2.0
-        model = Model(ps)
+        params.beta_j0_env *= 2.0
+
+        model = Model(params)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         model.run()
 
@@ -90,14 +90,12 @@ class TestEnvToHuman(unittest.TestCase):
 
     # Test decreased seasonal factors
     def test_envtohuman_decreased_seasonality(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial
-        ps.I_j_initial = 10_000
-        ps.S_j_initial -= ps.I_j_initial
-        # Increase seasonal factors
-        ps.beta_j0_env /= 2.0
-        model = Model(ps)
+        params = self.get_test_parameters()
+
+        # Decrease seasonal factors
+        params.beta_j0_env /= 2.0
+
+        model = Model(params)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         model.run()
 
@@ -108,14 +106,12 @@ class TestEnvToHuman(unittest.TestCase):
 
     # Test lower infection threshold
     def test_envtohuman_lower_infection_threshold(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial
-        ps.I_j_initial = 10_000
-        ps.S_j_initial -= ps.I_j_initial
-        # Increase seasonal factors
-        ps.kappa /= 2.0
-        model = Model(ps)
+        params = self.get_test_parameters()
+
+        # Decrease infection threshold
+        params.kappa /= 2.0
+
+        model = Model(params)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         model.run()
 
@@ -126,14 +122,12 @@ class TestEnvToHuman(unittest.TestCase):
 
     # Test higher infection threshold
     def test_envtohuman_higher_infection_threshold(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial
-        ps.I_j_initial = 10_000
-        ps.S_j_initial -= ps.I_j_initial
-        # Increase seasonal factors
-        ps.kappa *= 2.0
-        model = Model(ps)
+        params = self.get_test_parameters()
+
+        # Increase infection threshold
+        params.kappa *= 2.0
+
+        model = Model(params)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, EnvToHuman, Census, Environmental]
         model.run()
 

@@ -15,15 +15,23 @@ from laser_cholera.utils import sim_duration
 
 
 class TestEnvironmental(unittest.TestCase):
+    @staticmethod
+    def get_test_parameters():
+        params = get_parameters(overrides=sim_duration())
+        # Manipulate population
+        params.S_j_initial += params.I_j_initial  # return initial I to S
+        params.I_j_initial = 10_000  # fix I at 10,000
+        params.S_j_initial -= params.I_j_initial  # remove I from S
+
+        return params
+
     # Test steady state, delta_jt = 0, pulse of infected individuals
     def test_environmental_steadystate(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial  # return initial I to S
-        ps.I_j_initial = 10_000  # fix I at 10,000
-        ps.S_j_initial -= ps.I_j_initial  # remove I from S
-        # Set environmental parameters
+        ps = self.get_test_parameters()
+
+        # No environmental decay
         ps.delta_min = ps.delta_max = 0.0
+
         model = Model(ps)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         model.run()
@@ -35,20 +43,20 @@ class TestEnvironmental(unittest.TestCase):
 
     # Test higher delta_jt, pulse of infected individuals, faster decay
     def test_environmental_high_delta(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial  # return initial I to S
-        ps.I_j_initial = 10_000  # fix I at 10,000
-        ps.S_j_initial -= ps.I_j_initial  # remove I from S
-        # Set environmental parameters
+        ps = self.get_test_parameters()
+
+        # Baseline environmental parameters
         ps.delta_min = 1.0 / 3.0  # 3 day time constant (fast decay)
         ps.delta_max = 1.0 / 90.0  # 90 day time constant (slow decay)
+
         baseline = Model(ps)
         baseline.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         baseline.run()
 
-        ps.delta_min = 1.0 / 2.0  # 3 day time constant (fast decay)
-        ps.delta_max = 1.0 / 45.0  # 90 day time constant (slow decay)
+        # Run with faster decay
+        ps.delta_min = 1.0 / 2.0  # 2 day time constant (fast decay)
+        ps.delta_max = 1.0 / 45.0  # 45 day time constant (slow decay)
+
         model = Model(ps)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         model.run()
@@ -69,20 +77,20 @@ class TestEnvironmental(unittest.TestCase):
 
     # Test lower delta_jt, pulse of infected individuals, slower decay
     def test_environmental_low_delta(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Manipulate population
-        ps.S_j_initial += ps.I_j_initial  # return initial I to S
-        ps.I_j_initial = 10_000  # fix I at 10,000
-        ps.S_j_initial -= ps.I_j_initial  # remove I from S
-        # Set environmental parameters
+        ps = self.get_test_parameters()
+
+        # Baseline environmental parameters
         ps.delta_min = 1.0 / 3.0  # 3 day time constant (fast decay)
         ps.delta_max = 1.0 / 90.0  # 90 day time constant (slow decay)
+
         baseline = Model(ps)
         baseline.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         baseline.run()
 
-        ps.delta_min = 1.0 / 6.0  # 3 day time constant (fast decay)
-        ps.delta_max = 1.0 / 120.0  # 90 day time constant (slow decay)
+        # Run with slower decay
+        ps.delta_min = 1.0 / 6.0  # 6 day time constant (fast decay)
+        ps.delta_max = 1.0 / 120.0  # 120 day time constant (slow decay)
+
         model = Model(ps)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         model.run()

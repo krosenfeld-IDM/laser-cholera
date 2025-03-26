@@ -9,6 +9,8 @@ source =
     laser_cholera
     tests
 parallel = true
+omit =
+    src/laser_cholera/__main__.py
 
 [report]
 show_missing = true

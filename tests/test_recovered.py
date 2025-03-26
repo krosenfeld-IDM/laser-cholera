@@ -11,38 +11,61 @@ from laser_cholera.utils import sim_duration
 
 
 class TestRecovered(unittest.TestCase):
+    @staticmethod
+    def get_test_parameters():
+        params = get_parameters(overrides=sim_duration())
+        # S - use given susceptible populations
+        # E - move any exposed people back to susceptible
+        params.S_j_initial += params.E_j_initial
+        params.E_j_initial[:] = 0
+        # I - move any infectious people back to susceptible
+        params.S_j_initial += params.I_j_initial
+        params.I_j_initial[:] = 0
+        # R - move any recovered people back to susceptible and set explicitly to 50,000
+        params.S_j_initial += params.R_j_initial
+        params.R_j_initial[:] = 50_000
+        params.S_j_initial -= params.R_j_initial
+        # V1 and V2 - move any vaccinated people back to susceptible
+        params.S_j_initial += params.V1_j_initial + params.V2_j_initial
+        params.V1_j_initial[:] = 0
+        params.V2_j_initial[:] = 0
+
+        return params
+
     def test_recovered_steadystate(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 0  # turn off deaths
-        ps.epsilon = 0  # turn off waning natural immunity
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off deaths
+        params.epsilon = 0  # turn off waning natural immunity
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.R[-1] == model.agents.R[0]), "Recovered: steady state not held."
 
         return
 
     def test_recovered_deaths(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Move some people to the recovered state so we have enough to see deaths
-        ps.R_j_initial += 10_000
-        ps.S_j_initial -= ps.R_j_initial
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.R[-1] < model.agents.R[0]), "Recovered: deaths not occurring."
 
         return
 
     def test_recovered_waning_immunity(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Move some people to the recovered state so we have enough to see waning immunity
-        ps.R_j_initial += 10_000
-        ps.S_j_initial -= ps.R_j_initial
-        ps.d_jt *= 0  # turn off deaths
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off deaths
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.R[-1] < model.agents.R[0]), "Recovered: waning immunity not occurring."
 
         return

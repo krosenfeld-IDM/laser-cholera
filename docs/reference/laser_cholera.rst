@@ -41,18 +41,18 @@ laser\_cholera.iso\_codes module
    :show-inheritance:
    :undoc-members:
 
-laser\_cholera.proppop module
------------------------------
-
-.. automodule:: laser_cholera.proppop
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 laser\_cholera.sc module
 ------------------------
 
 .. automodule:: laser_cholera.sc
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+laser\_cholera.test module
+--------------------------
+
+.. automodule:: laser_cholera.test
    :members:
    :show-inheritance:
    :undoc-members:

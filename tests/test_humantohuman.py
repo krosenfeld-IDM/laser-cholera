@@ -13,67 +13,74 @@ from laser_cholera.metapop.recovered import Recovered
 from laser_cholera.metapop.susceptible import Susceptible
 from laser_cholera.utils import sim_duration
 
-_ONEYEAR = sim_duration(datetime(2024, 1, 1), datetime(2024, 12, 31))
-
 
 class TestHumanToHuman(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        params = get_parameters(overrides=_ONEYEAR)
-        cls.model = Model(params)
-        cls.model.components = [Susceptible, Exposed, Infectious, Recovered, Census, HumanToHuman]
-        cls.model.run()
-
-    # What if tau_i = 0? (no emmigration)
-    def test_humantohuman_tau_i_zero(self):
-        params = get_parameters(overrides=_ONEYEAR)
+    @staticmethod
+    def get_test_parameters():
+        params = get_parameters(overrides=sim_duration(datetime(2024, 1, 1), datetime(2024, 12, 31)))
         iNigeria = params.location_name.index("NGA")
         params.S_j_initial += params.I_j_initial
         params.I_j_initial[:] = 0
         params.I_j_initial[iNigeria] = 100
+        params.S_j_initial[iNigeria] -= 100
+
+        return params, iNigeria
+
+    # What if tau_i = 0? (no emmigration)
+    def test_humantohuman_tau_i_zero(self):
+        params, iNigeria = self.get_test_parameters()
+
+        # Turn off emmigration
         params.tau_i[:] = 0
+
         model = Model(params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census, HumanToHuman]
         model.run()
+
         for index in range(len(params.location_name)):
             if index != iNigeria:
+                # No infected individuals outside Nigeria and no migration, expect Lambda to be zero
                 assert np.all(model.patches.Lambda[:, index] == 0), "HumanToHuman: tau_i = 0, Lambda_jt not zero."
             else:
+                # Infected individuals in Nigeria, expect Lambda to be non-zero
                 assert np.any(model.patches.Lambda[:, index] != 0), "HumanToHuman: tau_i = 0, Lambda_jt zero in Nigeria."
 
         return
 
     # What if tau_i = 1? (total emmigration, no local transmission)
     def test_humantohuman_tau_i_one(self):
-        params = get_parameters(overrides=_ONEYEAR)
-        iNigeria = params.location_name.index("NGA")
-        params.S_j_initial += params.I_j_initial
-        params.I_j_initial[:] = 0
-        params.I_j_initial[iNigeria] = 100
-        params.pi_ij[:, iNigeria] = 0.0  # No immigration into Nigeria
-        params.tau_i[iNigeria] = 1.0  # No local transmission in Nigeria
+        params, iNigeria = self.get_test_parameters()
+
+        # Setup no immigration into Nigeria but no local transmission due to complete emmigration
+        params.pi_ij[:, iNigeria] = 0.0
+        params.tau_i[iNigeria] = 1.0
+
         model = Model(params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census, HumanToHuman]
         model.run()
+
+        # With no immigration and no local transmission, expect Lambda to be zero
         assert np.all(model.patches.Lambda[:, iNigeria] == 0), "HumanToHuman: tau_i = 1, Lambda_jt not zero in Nigeria."
 
         return
 
     # Special cases for pi_ij? (no connectivity)
     def test_humantohuman_pi_ij_zero(self):
-        params = get_parameters(overrides=_ONEYEAR)
-        iNigeria = params.location_name.index("NGA")
-        params.S_j_initial += params.I_j_initial
-        params.I_j_initial[:] = 0
-        params.I_j_initial[iNigeria] = 100
-        params.pi_ij *= 0.0  # No migration at all
+        params, iNigeria = self.get_test_parameters()
+
+        # Turn off all migration
+        params.pi_ij *= 0.0
+
         model = Model(params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census, HumanToHuman]
         model.run()
+
         for index in range(len(params.location_name)):
             if index != iNigeria:
+                # With no infected people and no migration, expect Lambda to be zero outside Nigeria
                 assert np.all(model.patches.Lambda[:, index] == 0), "HumanToHuman: tau_i = 0, Lambda_jt not zero."
             else:
+                # With infected people in Nigeria, expect Lambda to be non-zero
                 assert np.any(model.patches.Lambda[:, index] != 0), "HumanToHuman: tau_i = 0, Lambda_jt zero in Nigeria."
 
         return

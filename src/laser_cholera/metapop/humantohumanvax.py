@@ -1,14 +1,8 @@
 """Human-to-human transmission rate."""
 
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
-from laser_core.laserframe import LaserFrame
-from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
-
-from laser_cholera.sc import printgreen
 
 
 class HumanToHumanVax:
@@ -77,55 +71,6 @@ class HumanToHumanVax:
 
         assert np.all(V2sus_next >= 0), f"V2sus' should not go negative ({tick=}\n\t{V2sus_next})"
 
-        return
-
-    @staticmethod
-    def test():
-        class Model:
-            def __init__(
-                self,
-                alpha1: float = 1.0,
-                alpha2: float = 1.0,
-                tau_i: float = 0.0,
-            ):
-                self.prng = np.random.default_rng(datetime.now().microsecond)  # noqa: DTZ005
-                self.agents = LaserFrame(4)
-                self.agents.add_vector_property("S", length=8, dtype=np.int32, default=0)
-                self.agents.add_vector_property("I", length=8, dtype=np.int32, default=0)
-                self.agents.add_vector_property("N", length=8, dtype=np.int32, default=0)
-                self.agents.S[0] = self.agents.S[1] = [250, 2_500, 25_000, 250_000]  # 25%
-                self.agents.I[0] = self.agents.I[1] = [100, 1_000, 10_000, 100_000]  # 10%
-                self.patches.N[0] = self.patches.N[1] = [1_000, 10_000, 100_000, 1_000_000]
-                self.patches = LaserFrame(4)  # required for HumanToHuman to add Lambda
-                self.params = PropertySet(
-                    {
-                        "alpha1": alpha1,
-                        "alpha2": alpha2,
-                        "tau_i": tau_i,
-                        "nticks": 8,
-                    }
-                )
-
-        component = HumanToHumanVax(
-            model := Model(
-                alpha1=0.95,
-                alpha2=0.95,
-                tau_i=np.array([1.2521719e-03, 4.1985715e-04, 2.0205112e-02, 9.2022895e-03]),  # 1000x some actual values
-            )
-        )
-        component.check()
-        component(model, 0)
-        assert np.all(model.agents.S[1] < model.agents.S[0]), (
-            f"Some susceptible populations didn't decline based on human-human transmission.\n\t{model.agents.S[0]}\n\t{model.agents.S[1]}"
-        )
-        assert np.all(model.agents.I[1] > model.agents.I[0]), (
-            f"Some infected populations didn't increase based on human-human transmission.\n\t{model.agents.I[0]}\n\t{model.agents.I[1]}"
-        )
-        assert np.all(model.agents.S[0] - model.agents.S[1] == model.agents.I[1] - model.agents.I[0]), (
-            f"S and I population changes don't match.\n\t{model.agents.S[0]=}\n\t{model.agents.S[1]=}\n\t{model.agents.I[0]=}\n\t{model.agents.I[1]=}"
-        )
-
-        printgreen("PASSED HumanToHuman.test()")
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover

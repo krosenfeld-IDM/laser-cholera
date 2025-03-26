@@ -136,11 +136,3 @@ laser\_cholera.metapop.vaccinated module
    :members:
    :show-inheritance:
    :undoc-members:
-
-laser\_cholera.metapop.wash module
-----------------------------------
-
-.. automodule:: laser_cholera.metapop.wash
-   :members:
-   :show-inheritance:
-   :undoc-members:

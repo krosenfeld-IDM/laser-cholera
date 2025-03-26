@@ -35,8 +35,8 @@ class Recorder:
         assert hasattr(self.model.agents, "V2inf"), (
             "Recorder: model agents needs to have a 'V2inf' (vaccinated - two dose, infected) attribute."
         )
-        assert hasattr(self.model.agents, "N"), "Recorder: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(self.model, "patches"), "Recorder: model needs to have a 'patches' attribute."
+        assert hasattr(self.model.patches, "N"), "Recorder: model agents needs to have a 'N' (current agents) attribute."
         assert hasattr(self.model.patches, "Lambda"), (
             "Recorder: model patches needs to have a 'Lambda' (human-to-human transmission rate) attribute."
         )

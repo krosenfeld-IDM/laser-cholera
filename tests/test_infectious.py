@@ -13,60 +13,84 @@ from laser_cholera.utils import sim_duration
 
 
 class TestInfectious(unittest.TestCase):
+    @staticmethod
+    def get_test_parameters():
+        params = get_parameters(overrides=sim_duration())
+        # S - use given susceptible populations
+        # E - move any exposed people back to susceptible
+        params.S_j_initial += params.E_j_initial
+        params.E_j_initial[:] = 0
+        # I - move any infectious people back to susceptible, set I explicitly to 10,000
+        params.S_j_initial += params.I_j_initial
+        params.I_j_initial[:] = 10_000
+        params.S_j_initial -= params.I_j_initial
+        # R - move any recovered people back to susceptible
+        params.S_j_initial += params.R_j_initial
+        params.R_j_initial[:] = 0
+        # V1 and V2 - move any vaccinated people back to susceptible
+        params.S_j_initial += params.V1_j_initial + params.V2_j_initial
+        params.V1_j_initial[:] = 0
+        params.V2_j_initial[:] = 0
+
+        return params
+
     # Test initial distribution of infectious agents - realistic sigma
     def test_initial_distribution_realistic_sigma(self):
-        ps = get_parameters(overrides=sim_duration())
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         # model.run() # don't need to run, just check initial distribution
+
         assert np.all(model.agents.Isym[0] == np.round(model.params.sigma * model.params.I_j_initial)), (
             "I symptomatic: initial distribution not correct."
         )
-        assert np.all(model.agents.Iasym[0] == (ps.I_j_initial - model.agents.Isym[0])), "I asymptomatic: initial distribution not correct."
+        assert np.all(model.agents.Iasym[0] == (params.I_j_initial - model.agents.Isym[0])), (
+            "I asymptomatic: initial distribution not correct."
+        )
 
     # Test initial distribution of infectious agents - sigma = 0
     def test_initial_distribution_sigma_zero(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.sigma = 0
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        # Set sigma to 0, no symptomatic infections
+        params.sigma = 0
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         # model.run() # don't need to run, just check initial distribution
+
         assert np.all(model.agents.Isym[0] == 0), "I symptomatic: initial distribution not correct."
-        assert np.all(model.agents.Iasym[0] == ps.I_j_initial), "I asymptomatic: initial distribution not correct."
+        assert np.all(model.agents.Iasym[0] == params.I_j_initial), "I asymptomatic: initial distribution not correct."
 
     # Test initial distribution of infectious agents - sigma = 1
     def test_initial_distribution_sigma_one(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.sigma = 1
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        # Set sigma to 1, all infections are symptomatic
+        params.sigma = 1
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         # model.run() # don't need to run, just check initial distribution
-        assert np.all(model.agents.Isym[0] == ps.I_j_initial), "I symptomatic: initial distribution not correct."
+
+        assert np.all(model.agents.Isym[0] == params.I_j_initial), "I symptomatic: initial distribution not correct."
         assert np.all(model.agents.Iasym[0] == 0), "I asymptomatic: initial distribution not correct."
 
     # Steady state, d_jt = 0, mu = 0, gamma_1 = 0, gamma_2 = 0, iota = 0
     def test_infectous_steadystate(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 0  # turn off deaths
-        ps.mu_jt *= 0  # turn off disease deaths
-        ps.gamma_1 = 0  # turn off symptomatic recovery
-        ps.gamma_2 = 0  # turn off asymptomatic recovery
-        ps.iota = 0  # turn off progression from exposed to infectious
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off deaths
+        params.mu_jt *= 0  # turn off disease deaths
+        params.gamma_1 = 0  # turn off symptomatic recovery
+        params.gamma_2 = 0  # turn off asymptomatic recovery
+        params.iota = 0  # turn off progression from exposed to infectious
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.Isym[-1] == model.agents.Isym[0]), "I symptomatic: steady state not held."
         assert np.all(model.agents.Iasym[-1] == model.agents.Iasym[0]), "I asymptomatic: steady state not held."
 
@@ -74,18 +98,18 @@ class TestInfectious(unittest.TestCase):
 
     # Non-disease deaths
     def test_infectious_non_disease_deaths(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 10  # inflate non-disease death rate
-        ps.mu_jt *= 0  # turn off disease deaths
-        ps.gamma_1 = 0  # turn off symptomatic recovery
-        ps.gamma_2 = 0  # turn off asymptomatic recovery
-        ps.iota = 0  # turn off progression from exposed to infectious
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 10  # inflate non-disease death rate
+        params.mu_jt *= 0  # turn off disease deaths
+        params.gamma_1 = 0  # turn off symptomatic recovery
+        params.gamma_2 = 0  # turn off asymptomatic recovery
+        params.iota = 0  # turn off progression from exposed to infectious
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.Isym[-1] < model.agents.Isym[0]), "I symptomatic: non-disease-deaths not occurring."
         assert np.all(model.agents.Iasym[-1] < model.agents.Iasym[0]), "I asymptomatic: non-disease-deaths not occurring."
 
@@ -93,18 +117,18 @@ class TestInfectious(unittest.TestCase):
 
     # Disease deaths
     def test_infectious_disease_deaths(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 0  # turn off non-disease deaths
-        ps.mu_jt *= 10  # inflate disease death rate
-        ps.gamma_1 = 0  # turn off symptomatic recovery
-        ps.gamma_2 = 0  # turn off asymptomatic recovery
-        ps.iota = 0  # turn off progression from exposed to infectious
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off non-disease deaths
+        params.mu_jt *= 10  # inflate disease death rate
+        params.gamma_1 = 0  # turn off symptomatic recovery
+        params.gamma_2 = 0  # turn off asymptomatic recovery
+        params.iota = 0  # turn off progression from exposed to infectious
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.Isym[-1] < model.agents.Isym[0]), "I symptomatic: disease deaths not occurring."
         assert np.all(model.agents.Iasym[-1] == model.agents.Iasym[0]), (
             "I asymptomatic: disease deaths occurring in the asymptomatic population."
@@ -114,18 +138,18 @@ class TestInfectious(unittest.TestCase):
 
     # Symptomatic Recovery
     def test_infectious_symptomatic_recovery(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 0  # turn off non-disease deaths
-        ps.mu_jt *= 0  # turn off disease deaths
-        # leave this on: ps.gamma_1 = 0 # turn off symptomatic recovery
-        ps.gamma_2 = 0  # turn off asymptomatic recovery
-        ps.iota = 0  # turn off progression from exposed to infectious
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off non-disease deaths
+        params.mu_jt *= 0  # turn off disease deaths
+        # leave this on: params.gamma_1 = 0 # turn off symptomatic recovery
+        params.gamma_2 = 0  # turn off asymptomatic recovery
+        params.iota = 0  # turn off progression from exposed to infectious
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.Isym[-1] < model.agents.Isym[0]), "I symptomatic: recovery not occurring."
         assert np.all(model.agents.Iasym[-1] == model.agents.Iasym[0]), "I asymptomatic: recovery occurring in the asymptomatic population."
 
@@ -133,18 +157,18 @@ class TestInfectious(unittest.TestCase):
 
     # Asymptomatic Recovery
     def test_infectious_asymptomatic_recovery(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 0  # turn off non-disease deaths
-        ps.mu_jt *= 0  # turn off disease deaths
-        ps.gamma_1 = 0  # turn off symptomatic recovery
-        # leave this on: ps.gamma_2 = 0 # turn off asymptomatic recovery
-        ps.iota = 0  # turn off progression from exposed to infectious
-        # Simulate a large infectious population
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 10_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off non-disease deaths
+        params.mu_jt *= 0  # turn off disease deaths
+        params.gamma_1 = 0  # turn off symptomatic recovery
+        # leave this on: params.gamma_2 = 0 # turn off asymptomatic recovery
+        params.iota = 0  # turn off progression from exposed to infectious
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.Isym[-1] == model.agents.Isym[0]), "I symptomatic: recovery occurring in the symptomatic population."
         assert np.all(model.agents.Iasym[-1] < model.agents.Iasym[0]), "I asymptomatic: recovery not occurring."
 
@@ -152,19 +176,21 @@ class TestInfectious(unittest.TestCase):
 
     # Newly infectious
     def test_infectious_newly_infectious(self):
-        ps = get_parameters(overrides=sim_duration())
-        ps.d_jt *= 0  # turn off non-disease deaths
-        ps.mu_jt *= 0  # turn off disease deaths
-        ps.gamma_1 = 0  # turn off symptomatic recovery
-        ps.gamma_2 = 0  # turn off asymptomatic recovery
-        # leave this on: ps.iota = 0 # turn off progression from exposed to infectious
-        # Simulate large exposed and infectious populations
-        ps.E_j_initial += 10_000
-        ps.I_j_initial += 10_000
-        ps.S_j_initial -= 20_000
-        model = Model(parameters=ps)
+        params = self.get_test_parameters()
+
+        params.d_jt *= 0  # turn off non-disease deaths
+        params.mu_jt *= 0  # turn off disease deaths
+        params.gamma_1 = 0  # turn off symptomatic recovery
+        params.gamma_2 = 0  # turn off asymptomatic recovery
+        # leave this on: params.iota = 0 # turn off progression from exposed to infectious
+        # Move 10,000 people from susceptible into exposed
+        params.E_j_initial[:] = 10_000
+        params.S_j_initial -= params.E_j_initial
+
+        model = Model(parameters=params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
+
         assert np.all(model.agents.Isym[-1] > model.agents.Isym[0]), "I symptomatic: progression from exposed to infectious not occurring."
         assert np.all(model.agents.Iasym[-1] > model.agents.Iasym[0]), (
             "I asymptomatic: progression from exposed to infectious not occurring."
