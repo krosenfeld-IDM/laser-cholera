@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import click
 import pandas as pd
@@ -54,6 +55,21 @@ class Model:
 
         return
 
+    def verbose(self, *args, **kwargs) -> None:
+        """
+        Print verbose output if the verbose flag is set in the parameters.
+
+        Args:
+            *args: Positional arguments to be printed.
+            **kwargs: Keyword arguments to be printed.
+
+        Returns:
+            None
+        """
+        if self.params.verbose:
+            click.echo(*args, **kwargs)
+        return
+
     @property
     def components(self) -> list:
         """
@@ -90,6 +106,7 @@ class Model:
             instance = component(self, self.params.verbose)
             self.instances.append(instance)
             if "__call__" in dir(instance):
+                self.verbose(f"Adding {type(instance).__name__} to the model…")
                 self.phases.append(instance)
 
         _ = [instance.check() for instance in self.instances]
@@ -132,7 +149,7 @@ class Model:
             self.metrics.append(timing)
 
         self.tfinish = datetime.now(tz=None)  # noqa: DTZ005
-        print(f"Completed the {self.name} model at {self.tfinish}…")
+        print(f"Completed the {self.name} model at {self.tfinish:%Y-%m-%d %H-%M-%S}…")
 
         if self.params.verbose:
             metrics = pd.DataFrame(self.metrics, columns=["tick"] + [type(phase).__name__ for phase in self.phases])
@@ -146,7 +163,7 @@ class Model:
 
         return
 
-    def visualize(self, pdf: bool = True) -> None:
+    def visualize(self, pdf: bool = True) -> Optional[str]:
         """
         Visualize each compoonent instances either by displaying plots or saving them to a PDF file.
 
@@ -159,29 +176,42 @@ class Model:
             None
         """
 
+        filename = None
+
+        _debugging = [Model, HumanToHumanVax, EnvToHumanVax]
+
         if not pdf:
             for instance in [self, *self.instances]:
-                if hasattr(instance, "plot"):
-                    for _plot in instance.plot():
-                        plt.show()
+                if type(instance) in _debugging:
+                    if hasattr(instance, "plot"):
+                        for _plot in instance.plot():
+                            self.verbose(f"Plotting {type(instance).__name__}…")
+                            plt.show()
+                    else:
+                        click.echo(f"Warning: {type(instance).__name__} does not have a plot method.")
                 else:
-                    click.echo(f"Warning: {type(instance).__name__} does not have a plot method.")
+                    self.verbose(f"Skipping {type(instance).__name__} visualization…")
 
         else:
             click.echo("Generating PDF output…")
             pdf_filename = f"{self.name} {self.tstart:%Y-%m-%d %H%M%S}.pdf"
             with PdfPages(pdf_filename) as pdf:
                 for instance in [self, *self.instances]:
-                    if hasattr(instance, "plot"):
-                        for _plot in instance.plot():
-                            pdf.savefig()
-                            plt.close()
+                    if type(instance) in _debugging:
+                        if hasattr(instance, "plot"):
+                            for _plot in instance.plot():
+                                self.verbose(f"Plotting {type(instance).__name__}…")
+                                pdf.savefig()
+                                plt.close()
+                        else:
+                            click.echo(f"Warning: {type(instance).__name__} does not have a plot method.")
                     else:
-                        click.echo(f"Warning: {type(instance).__name__} does not have a plot method.")
+                        self.verbose(f"Skipping {type(instance).__name__} visualization…")
 
             click.echo(f"PDF output saved to '{pdf_filename}'.")
+            filename = pdf_filename
 
-        return
+        return filename
 
     def plot(self, fig: Figure = None):  # pragma: no cover
         _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig

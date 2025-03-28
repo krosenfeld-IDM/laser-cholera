@@ -10,6 +10,9 @@ class HumanToHumanVax:
         self.model = model
         self.verbose = verbose
 
+        model.patches.add_vector_property("V1_incidence_hum", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.patches.add_vector_property("V2_incidence_hum", length=model.params.nticks + 1, dtype=np.int32, default=0)
+
         return
 
     def check(self):
@@ -74,17 +77,45 @@ class HumanToHumanVax:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        plot_helper(fig, "V1 Incidence (Human Transmission)", self.model.patches.V1_incidence_env, self.model.params.location_name)
 
-        # plt.title("Human-to-Human Transmission Rate (Vax)")
-        # for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-        #     plt.plot(self.model.patches.Lambda[:, ipatch], label=f"Patch {ipatch}")
-        # plt.xlabel("Tick")
-        # plt.legend()
+        yield
+
+        plot_helper(fig, "V2 Incidence (Human Transmission)", self.model.patches.V2_incidence_env, self.model.params.location_name)
 
         yield
         return
 
 
-if __name__ == "__main__":
-    HumanToHumanVax.test()
+# TODO - copy-paste from envtohumanvax.py, should consider consolidating
+def plot_helper(fig, title, data, names):
+    _fig = plt.figure(num=title, figsize=(12, 9), dpi=128) if fig is None else fig
+    rows, cols = 10, 4
+    x_axes_refs = [None] * cols
+    y_axes_refs = [None] * rows
+    ymin, ymax = 0, data.max()
+    for i in range(data.shape[1]):
+        row = i // cols
+        col = i % cols
+        print(f"Plotting {i=}, {row=}, {col=}")
+        sharex = x_axes_refs[col]
+        sharey = y_axes_refs[row]
+        ax = _fig.add_subplot(rows, cols, i + 1, sharex=sharex, sharey=sharey)
+        color = ["green", "red"][np.any(data[:, i] > 0)]
+        ax.plot(data[:, i], color)  # , label=f"Patch {names[i]}")
+        ax.set_ylim(ymin, ymax)
+        ax.set_title(f"{names[i]}", fontsize=8)
+
+        show_xticks = row == rows - 1
+        show_yticks = col == 0
+        ax.tick_params(axis="x", which="both", bottom=show_xticks, labelbottom=show_xticks)
+        ax.tick_params(axis="y", which="both", left=show_yticks, labelleft=show_yticks)
+
+        x_axes_refs[col] = ax if x_axes_refs[col] is None else x_axes_refs[col]
+        y_axes_refs[row] = ax if y_axes_refs[row] is None else y_axes_refs[row]
+
+    _fig.text(0.5, 0.04, "Ticks", ha="center", fontsize=9)  # bottom center
+    _fig.text(0.04, 0.5, "Incidence", va="center", rotation="vertical", fontsize=9)  # left center
+    plt.tight_layout(rect=[0.06, 0.06, 1, 1])  # leave space for global labels
+
+    return
