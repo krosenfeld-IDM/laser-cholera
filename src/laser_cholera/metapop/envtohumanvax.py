@@ -71,5 +71,5 @@ class EnvToHumanVax:
         # plt.xlabel("Tick")
         # plt.legend()
 
-        # yield
+        yield
         return

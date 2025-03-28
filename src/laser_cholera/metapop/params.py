@@ -157,11 +157,6 @@ def sanitize_json(parameters: dict) -> PropertySet:
         psi_jt[:, strid_to_numidx_map[key]] = values
     params.psi_jt = psi_jt
 
-    # TODO - remove this
-    if params.delta_min > params.delta_max:
-        printred("Swapping delta_min and delta_max")
-        params.delta_min, params.delta_max = params.delta_max, params.delta_min
-
     return params
 
 
@@ -209,15 +204,12 @@ def load_hdf5(h5file) -> PropertySet:
         "zeta_1",
         "zeta_2",
         "kappa",
-        "delta_min",
-        "delta_max",
+        "decay_days_short",
+        "decay_days_long",
+        "decay_shape_1",
+        "decay_shape_2",
     ]:
         ps[scalar] = h5file[scalar][()][0]
-
-    # TODO - remove this
-    if ps.delta_min > ps.delta_max:
-        printred("Swapping delta_min and delta_max")
-        ps.delta_min, ps.delta_max = ps.delta_max, ps.delta_min
 
     # per location vectors
     for vector in [
@@ -445,9 +437,12 @@ def validate(params: PropertySet) -> None:
     # kappa must be >= 0
     assert params.kappa >= 0.0, "kappa value must be >= 0"
 
-    # delta_min must be >= 0 and delta_max must be >= delta_min
-    assert params.delta_min >= 0.0, "delta_min value must be >= 0"
-    assert params.delta_max >= params.delta_min, "delta_max value must be >= delta_min"
+    # decay_days_short > 0.0
+    assert params.decay_days_short > 0.0, f"decay_days_short value must be > 0 {params.decay_days_short=}"
+    # decay_days_short <= decay_days_long
+    assert params.decay_days_short <= params.decay_days_long, (
+        f"decay_days_short ({params.decay_days_short}) value must be <= decay_days_long ({params.decay_days_long})"
+    )
 
     return
 

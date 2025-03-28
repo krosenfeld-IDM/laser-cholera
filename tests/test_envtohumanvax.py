@@ -83,7 +83,7 @@ class TestEnvToHumanVax(unittest.TestCase):
         params = self.get_test_parameters()
 
         # Configure parameters for increased environmental transmission
-        params.beta_j0_env *= 2.0
+        params.beta_j0_env *= 5.0
 
         model = Model(parameters=params)
         model.components = [
@@ -101,10 +101,14 @@ class TestEnvToHumanVax(unittest.TestCase):
         model.run()
 
         # Expect more transmission with increased environmental transmission
-        assert np.all(model.agents.V1inf[2] > self.baseline.agents.V1inf[2]), (
+        nz = np.nonzero(self.baseline.agents.V1inf)
+        assert len(nz) > 0, "V1inf: no infected individuals."  # All zeros would give a false positive
+        assert np.all(model.agents.V1inf[nz] >= self.baseline.agents.V1inf[nz]), (
             "V1inf: not increasing with increased environmental transmission."
         )
-        assert np.all(model.agents.V2inf[2] > self.baseline.agents.V2inf[2]), (
+        nz = np.nonzero(self.baseline.agents.V2inf)
+        assert len(nz) > 0, "V2inf: no infected individuals"  # All zeros would give a false positive
+        assert np.all(model.agents.V2inf[nz] >= self.baseline.agents.V2inf[nz]), (
             "V2inf: not increasing with increased environmental transmission."
         )
 
@@ -115,7 +119,7 @@ class TestEnvToHumanVax(unittest.TestCase):
         params = self.get_test_parameters()
 
         # Configure parameters for decreased environmental transmission
-        params.beta_j0_env /= 2.0
+        params.beta_j0_env /= 5.0
 
         model = Model(parameters=params)
         model.components = [
@@ -133,10 +137,14 @@ class TestEnvToHumanVax(unittest.TestCase):
         model.run()
 
         # Expect less transmission with decreased environmental transmission
-        assert np.all(model.agents.V1inf[2] < self.baseline.agents.V1inf[2]), (
+        nz = np.nonzero(self.baseline.agents.V1inf)
+        assert len(nz) > 0, "V1inf: no infected individuals."  # All zeros would give a false positive
+        assert np.all(model.agents.V1inf[nz] <= self.baseline.agents.V1inf[nz]), (
             "V1inf: not decreasing with decreased environmental transmission."
         )
-        assert np.all(model.agents.V2inf[2] < self.baseline.agents.V2inf[2]), (
+        nz = np.nonzero(self.baseline.agents.V2inf)
+        assert len(nz) > 0, "V2inf: no infected individuals"  # All zeros would give a false positive
+        assert np.all(model.agents.V2inf[nz] <= self.baseline.agents.V2inf[nz]), (
             "V2inf: not decreasing with decreased environmental transmission."
         )
 

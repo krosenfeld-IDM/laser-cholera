@@ -29,11 +29,12 @@ class TestEnvironmental(unittest.TestCase):
     def test_environmental_steadystate(self):
         ps = self.get_test_parameters()
 
-        # No environmental decay
-        ps.delta_min = ps.delta_max = 0.0
-
         model = Model(ps)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
+
+        # No environmental decay
+        model.patches.delta_jt *= 0.0
+
         model.run()
 
         # Expect environmental reservoir to be seeded at t = 1
@@ -46,16 +47,16 @@ class TestEnvironmental(unittest.TestCase):
         ps = self.get_test_parameters()
 
         # Baseline environmental parameters
-        ps.delta_min = 1.0 / 3.0  # 3 day time constant (fast decay)
-        ps.delta_max = 1.0 / 90.0  # 90 day time constant (slow decay)
+        ps.decay_days_short = 3.0
+        ps.decay_days_long = 90.0
 
         baseline = Model(ps)
         baseline.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         baseline.run()
 
         # Run with faster decay
-        ps.delta_min = 1.0 / 2.0  # 2 day time constant (fast decay)
-        ps.delta_max = 1.0 / 45.0  # 45 day time constant (slow decay)
+        ps.decay_days_short = 2.0
+        ps.decay_days_long = 45.0
 
         model = Model(ps)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
@@ -80,16 +81,16 @@ class TestEnvironmental(unittest.TestCase):
         ps = self.get_test_parameters()
 
         # Baseline environmental parameters
-        ps.delta_min = 1.0 / 3.0  # 3 day time constant (fast decay)
-        ps.delta_max = 1.0 / 90.0  # 90 day time constant (slow decay)
+        ps.decay_days_short = 3.0
+        ps.decay_days_long = 90.0
 
         baseline = Model(ps)
         baseline.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]
         baseline.run()
 
         # Run with slower decay
-        ps.delta_min = 1.0 / 6.0  # 6 day time constant (fast decay)
-        ps.delta_max = 1.0 / 120.0  # 120 day time constant (slow decay)
+        ps.decay_days_short = 6.0
+        ps.decay_days_long = 120.0
 
         model = Model(ps)
         model.components = [Eradication, Susceptible, Exposed, Infectious, Recovered, Census, Environmental]

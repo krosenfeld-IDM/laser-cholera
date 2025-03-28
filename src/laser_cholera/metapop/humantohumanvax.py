@@ -82,7 +82,7 @@ class HumanToHumanVax:
         # plt.xlabel("Tick")
         # plt.legend()
 
-        # yield
+        yield
         return
 
 
