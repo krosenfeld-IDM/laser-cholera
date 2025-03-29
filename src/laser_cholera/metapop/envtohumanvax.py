@@ -88,11 +88,11 @@ def plot_helper(fig, title, data, names):
     rows, cols = 10, 4
     x_axes_refs = [None] * cols
     y_axes_refs = [None] * rows
-    ymin, ymax = 0, data.max()
+    ymin, ymax = 0, max(data.max(), 100)  # avoid warning about ylim below
     for i in range(data.shape[1]):
         row = i // cols
         col = i % cols
-        print(f"Plotting {i=}, {row=}, {col=}")
+
         sharex = x_axes_refs[col]
         sharey = y_axes_refs[row]
         ax = _fig.add_subplot(rows, cols, i + 1, sharex=sharex, sharey=sharey)

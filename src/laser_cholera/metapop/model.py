@@ -178,11 +178,11 @@ class Model:
 
         filename = None
 
-        _debugging = [Model, HumanToHumanVax, EnvToHumanVax]
+        _debugging = None  # [Model, HumanToHumanVax, EnvToHumanVax]
 
         if not pdf:
             for instance in [self, *self.instances]:
-                if type(instance) in _debugging:
+                if (_debugging is None) or (type(instance) in _debugging):
                     if hasattr(instance, "plot"):
                         for _plot in instance.plot():
                             self.verbose(f"Plotting {type(instance).__name__}…")
@@ -197,7 +197,7 @@ class Model:
             pdf_filename = f"{self.name} {self.tstart:%Y-%m-%d %H%M%S}.pdf"
             with PdfPages(pdf_filename) as pdf:
                 for instance in [self, *self.instances]:
-                    if type(instance) in _debugging:
+                    if (_debugging is None) or (type(instance) in _debugging):
                         if hasattr(instance, "plot"):
                             for _plot in instance.plot():
                                 self.verbose(f"Plotting {type(instance).__name__}…")
