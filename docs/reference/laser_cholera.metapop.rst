@@ -25,6 +25,14 @@ laser\_cholera.metapop.census module
    :show-inheritance:
    :undoc-members:
 
+laser\_cholera.metapop.derivedvalues module
+-------------------------------------------
+
+.. automodule:: laser_cholera.metapop.derivedvalues
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 laser\_cholera.metapop.environmental module
 -------------------------------------------
 

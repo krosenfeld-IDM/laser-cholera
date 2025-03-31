@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from laser_cholera.metapop import Analyzer
 from laser_cholera.metapop import Census
+from laser_cholera.metapop import DerivedValues
 from laser_cholera.metapop import Environmental
 from laser_cholera.metapop import EnvToHuman
 from laser_cholera.metapop import EnvToHumanVax
@@ -49,9 +50,7 @@ class Model:
         # setup the LaserFrame for patches (inputs and reporting)
         npatches = len(parameters.location_id)
         self.agents = LaserFrame(npatches)
-        _istart, _iend = self.agents.add(npatches)
         self.patches = LaserFrame(npatches)
-        _istart, _iend = self.patches.add(npatches)
 
         return
 
@@ -296,6 +295,7 @@ def run(**kwargs):
         EnvToHuman,
         EnvToHumanVax,
         Environmental,
+        DerivedValues,
         Analyzer,
         Recorder,
         Parameters,

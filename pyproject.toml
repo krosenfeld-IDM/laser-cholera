@@ -31,10 +31,11 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "laser-core==0.1.1",
+    "laser-core==0.3.0",
     "geopandas",
     "h5py",
     "scipy",
+    "tqdm",
 ]
 
 [project.optional-dependencies]

@@ -1,5 +1,6 @@
 from .analyzer import Analyzer
 from .census import Census
+from .derivedvalues import DerivedValues
 from .environmental import Environmental
 from .envtohuman import EnvToHuman
 from .envtohumanvax import EnvToHumanVax
@@ -18,6 +19,7 @@ from .vaccinated import Vaccinated
 __all__ = [
     "Analyzer",
     "Census",
+    "DerivedValues",
     "EnvToHuman",
     "EnvToHumanVax",
     "Environmental",
