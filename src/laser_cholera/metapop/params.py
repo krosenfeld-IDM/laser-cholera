@@ -465,7 +465,7 @@ class Parameters:
         pass
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         # Stacked bar chart of initial populations
         # Stacked bar chart of initial populations
@@ -607,15 +607,3 @@ class Parameters:
         yield
 
         return
-
-
-if __name__ == "__main__":
-    # Parameters.test()
-
-    from laser_cholera.metapop.model import Model
-
-    parameters = get_parameters(overrides={"verbose": True})
-    model = Model(parameters)
-    model.components = [Parameters]
-    model.run()
-    model.visualize(pdf=False)

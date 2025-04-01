@@ -12,6 +12,7 @@ class Infectious:
         model.agents.add_vector_property("Isym", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.agents.add_vector_property("Iasym", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(model, "patches"), "Infectious: model needs to have a 'patches' attribute."
+        model.patches.add_vector_property("expected_cases", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.patches.add_vector_property("disease_deaths", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(model, "params"), "Infectious: model needs to have a 'params' attribute."
         assert hasattr(model.params, "I_j_initial"), (
@@ -31,6 +32,7 @@ class Infectious:
         assert "gamma_2" in self.model.params, "Infectious: model params needs to have a 'gamma_2' (recovery rate) parameter."
         assert "iota" in self.model.params, "Infectious: model params needs to have a 'iota' (progression rate) parameter."
         assert "sigma" in self.model.params, "Infectious: model params needs to have a 'sigma' (symptomatic fraction) parameter."
+        assert "rho" in self.model.params, "Infectious: model params needs to have a 'rho' (detected/expected cases) parameter."
         if not hasattr(self.model.patches, "non_disease_deaths"):
             self.model.patches.add_vector_property("non_disease_deaths", length=self.model.params.nticks + 1, dtype=np.int32, default=0)
 
@@ -91,6 +93,10 @@ class Infectious:
         Is_next += new_symptomatic
         Ia_next += new_asymptomatic
 
+        # Update expected cases
+        expected_cases = model.patches.expected_cases[tick + 1]
+        expected_cases += np.round(new_symptomatic / model.params.rho).astype(expected_cases.dtype)
+
         # human-to-human infection in humantohuman.py
         # environmental infection in envtohuman.py
         # recovery from infection in recovered.py
@@ -98,7 +104,7 @@ class Infectious:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Infectious (Symptomatic)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
@@ -108,6 +114,8 @@ class Infectious:
 
         yield
 
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+
         plt.title("Infectious (Asymptomatic)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
             plt.plot(self.model.agents.Iasym[:, ipatch], label=f"Patch {ipatch}")
@@ -115,6 +123,8 @@ class Infectious:
         plt.legend()
 
         yield
+
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Infectious (Total)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:

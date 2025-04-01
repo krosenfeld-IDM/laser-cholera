@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -72,12 +73,18 @@ class DerivedValues:
 
         return
 
-    # def plot(self, fig=None):  # pragma: no cover
-    #     _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
+    def plot(self, fig=None):  # pragma: no cover
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
-    #     plt.title("Derived Values")
-    #     plt.xlabel("Tick")
-    #     plt.legend()
+        # plt.figure(figsize=(12, 6))
+        plt.imshow(self.model.patches.spatial_hazard.T, aspect="auto", cmap="Reds", interpolation="nearest")
+        plt.colorbar(label="Spatial Hazard")
+        plt.xlabel("Time (Days)")
+        plt.ylabel("Location")
+        plt.title("Spatial Hazard by Location Over Time")
+        plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
+        plt.tight_layout()
 
-    #     yield
-    #     return
+        yield
+
+        return

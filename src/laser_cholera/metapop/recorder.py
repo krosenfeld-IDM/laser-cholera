@@ -28,9 +28,9 @@ class Recorder:
             filename = Path.cwd() / f"{datetime.now().strftime('%Y%m%d%H%M%S')}.h5"  # noqa: DTZ005
 
             if True:  # ("compress" in model.params) and model.params.compress:
-                save_compressed_hdf5_parameters(model, filename)
+                filename = save_compressed_hdf5_parameters(model, filename, model.params.verbose)
             else:
-                save_hdf5_parameters(model, filename)
+                filename = save_hdf5_parameters(model, filename, model.params.verbose)
 
             if self.verbose:
                 print(f"Recorder: model state saved to {filename}")
@@ -42,27 +42,28 @@ class Recorder:
     #     return
 
 
-def save_hdf5_parameters(model, filename: Union[str, Path]) -> None:
+def save_hdf5_parameters(model, filename: Union[str, Path], verbose: bool = False) -> Path:
     # Step 1: Write HDF5 content to the file
     with h5.File(filename, "w") as h5file:
-        save_hdf5(h5file, model)
+        save_hdf5(h5file, model, verbose)
 
-    return
+    return filename  # Unmodified
 
 
-def save_compressed_hdf5_parameters(model, filename: Union[str, Path]) -> None:
+def save_compressed_hdf5_parameters(model, filename: Union[str, Path], verbose: bool = False) -> Path:
     # Step 1: Create an in-memory buffer for HDF5
     hdf5_buffer = io.BytesIO()
 
     # Step 2: Write HDF5 content to the buffer
     with h5.File(hdf5_buffer, "w") as h5file:
-        save_hdf5(h5file, model)
+        save_hdf5(h5file, model, verbose)
 
     # Step 3: Compress and save to disk
-    with gzip.open(filename.with_name(filename.name + ".gz"), "wb") as gz_file:
+    filename = filename.with_name(filename.name + ".gz")
+    with gzip.open(filename, "wb") as gz_file:
         gz_file.write(hdf5_buffer.getvalue())
 
-    return
+    return filename  # With .gz extension
 
 
 def save_hdf5(h5file: h5.File, model, verbose=False) -> None:
@@ -72,8 +73,23 @@ def save_hdf5(h5file: h5.File, model, verbose=False) -> None:
 
         lf = getattr(model, frame)
         properties = dir(lf)
+
+        # TODO - automagically write all properties if a subset is not specified
+
         properties = [p for p in properties if not p.startswith("_")]
         properties = [p for p in properties if not isinstance(getattr(lf, p), (MethodType))]
+
+        # TODO - if a subset is specified, don't bother with the filtering above
+
+        properties = [
+            p
+            for p in properties
+            if p
+            in [
+                "disease_deaths",
+                "expected_cases",
+            ]  # ["S", "E", "Isym", "Iasym", "R", "V1imm", "V1sus", "V1inf", "V2imm", "V2sus", "V2inf", "W", "disease_deaths"]
+        ]
 
         group = h5file.create_group(frame)
 

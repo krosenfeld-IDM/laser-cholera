@@ -52,7 +52,7 @@ class Census:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Census")
         # plt.plot(self.model.patches.N[0:-1, :], color="black", label="Total Population")

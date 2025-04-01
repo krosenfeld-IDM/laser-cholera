@@ -177,7 +177,7 @@ class Model:
 
         filename = None
 
-        _debugging = None  # [Model, HumanToHumanVax, EnvToHumanVax]
+        _debugging = None  # [DerivedValues]
 
         if not pdf:
             for instance in [self, *self.instances]:
@@ -257,7 +257,7 @@ class Model:
 @click.option("--outdir", default=Path.cwd(), help="Output file for results")
 @click.option("--paramfile", default=None, help="JSON file with parameters")
 @click.option("--param", "-p", multiple=True, help="Additional parameter overrides (param:value or param=value)")
-def run(**kwargs):
+def cli_run(**kwargs):
     """
     Run the cholera model simulation with the given parameters.
 
@@ -280,6 +280,12 @@ def run(**kwargs):
         None
     """
 
+    run_model(**kwargs)
+
+    return
+
+
+def run_model(**kwargs):
     parameters = get_parameters(overrides=kwargs)
     model = Model(parameters)
 
@@ -310,6 +316,6 @@ def run(**kwargs):
 
 
 if __name__ == "__main__":
-    ctx = click.Context(run)
+    ctx = click.Context(cli_run)
     # ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, no_viz=False, pdf=False)
-    ctx.invoke(run, seed=20241107, verbose=True, no_viz=False, pdf=False)
+    ctx.invoke(cli_run, seed=20241107, verbose=True, no_viz=False, pdf=False)

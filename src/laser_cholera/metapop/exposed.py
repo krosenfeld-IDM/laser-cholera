@@ -40,7 +40,7 @@ class Exposed:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = Figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
 
         plt.title("Exposed")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
