@@ -137,6 +137,14 @@ laser\_cholera.metapop.susceptible module
    :show-inheritance:
    :undoc-members:
 
+laser\_cholera.metapop.utils module
+-----------------------------------
+
+.. automodule:: laser_cholera.metapop.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 laser\_cholera.metapop.vaccinated module
 ----------------------------------------
 
