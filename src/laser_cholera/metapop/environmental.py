@@ -47,6 +47,9 @@ class Environmental:
         assert hasattr(self.model.agents, "Iasym"), "Environmental: model agents needs to have a 'Iasym' (asymptomatic) attribute."
         assert "zeta_1" in self.model.params, "Environmental: model params needs to have a 'zeta_1' (symptomatic shedding rate) parameter."
         assert "zeta_2" in self.model.params, "Environmental: model params needs to have a 'zeta_2' (asymptomatic shedding rate) parameter."
+        assert "theta_j" in self.model.params, (
+            "Environmental: model params needs to have a 'theta_j' (fraction of population with WASH) attribute."
+        )
 
         return
 
@@ -65,11 +68,11 @@ class Environmental:
 
         # +shedding from Isymptomatic
         shedding_sym = model.prng.poisson(model.params.zeta_1 * Isym).astype(Wnext.dtype)
-        Wnext += shedding_sym
+        Wnext += (1 - model.params.theta_j) * shedding_sym
 
         # +shedding from Iasymptomatic
         shedding_asym = model.prng.poisson(model.params.zeta_2 * Iasym).astype(Wnext.dtype)
-        Wnext += shedding_asym
+        Wnext += (1 - model.params.theta_j) * shedding_asym
 
         return
 
