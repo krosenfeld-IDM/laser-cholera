@@ -177,7 +177,7 @@ class Model:
 
         filename = None
 
-        _debugging = None  # [DerivedValues]
+        _debugging = [DerivedValues]
 
         if not pdf:
             for instance in [self, *self.instances]:
@@ -312,7 +312,7 @@ def run_model(**kwargs):
     if not parameters.no_viz:
         model.visualize(pdf=parameters.pdf)
 
-    return
+    return model
 
 
 if __name__ == "__main__":
