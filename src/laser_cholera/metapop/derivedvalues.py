@@ -10,7 +10,7 @@ class DerivedValues:
         assert hasattr(model, "patches"), "DerivedValues: model needs to have a 'patches' attribute."
         assert hasattr(model, "params"), "DerivedValues: model needs to have a 'params' attribute."
 
-        nPatches = len(model.params.location_id)
+        nPatches = len(model.params.location_name)
         model.patches.add_array_property("p_ijt", shape=(model.params.nticks, nPatches, nPatches), dtype=np.float32, default=0.0)
         model.patches.add_vector_property("spatial_hazard", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
         model.patches.add_vector_property("r_effective", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
@@ -28,11 +28,11 @@ class DerivedValues:
             # https://www.mosaicmod.org/model-description.html#the-probability-of-spatial-transmission
             # $p(i,j,t) = 1 - e^{-\beta^{hum}_{jt}(((1 - \tau_j) S_{jt}) / N_{jt}) \pi_{ij} \tau_i I_{it}}$
             for t in range(model.params.nticks):
-                beta_jt = model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[t % 366, :])
+                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % 366, :])
                 tau_j = model.params.tau_i
                 S_j = model.agents.S[t]
                 N_j = model.patches.N[t]
-                pi_ij = model.params.pi_ij
+                pi_ij = model.patches.pi_ij
                 I_i = model.agents.Isym[t] + model.agents.Iasym[t]
                 tau_i = model.params.tau_i
 
@@ -50,11 +50,11 @@ class DerivedValues:
             # https://www.mosaicmod.org/model-description.html#the-spatial-hazard
             # $h(j,t) = \frac {\beta^{hum}_{jt} (1 - e^{-((1 - \tau_j) S_{jt} / N_{jt}) \sum_{\forall i \ne j} \pi_{ij} \tau_i (I_{it} / N_{it})})} {1/(1 + \beta^{hum}_{jt}(1 - \tau_j) S_{jt})}$
             for t in range(model.params.nticks):
-                beta_jt = model.params.beta_j0_hum * (1.0 + model.params.beta_j_seasonality[t % 366, :])
+                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % 366, :])
                 tau_j = model.params.tau_i
                 S_j = model.agents.S[t]
                 N_j = model.patches.N[t]
-                pi_ij = model.params.pi_ij
+                pi_ij = model.patches.pi_ij
                 tau_i = model.params.tau_i
                 I_i = model.agents.Isym[t] + model.agents.Iasym[t]
 

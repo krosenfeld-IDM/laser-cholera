@@ -52,11 +52,13 @@ class TestHumanToHuman(unittest.TestCase):
         params, iNigeria = self.get_test_parameters()
 
         # Setup no immigration into Nigeria but no local transmission due to complete emmigration
-        params.pi_ij[:, iNigeria] = 0.0
         params.tau_i[iNigeria] = 1.0
 
         model = Model(params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census, HumanToHuman]
+        # Have to do this _after_ setting model components because HumanToHuman builds the pi_ij matrix
+        model.patches.pi_ij[:, iNigeria] = 0.0
+
         model.run()
 
         # With no immigration and no local transmission, expect Lambda to be zero
@@ -68,11 +70,12 @@ class TestHumanToHuman(unittest.TestCase):
     def test_humantohuman_pi_ij_zero(self):
         params, iNigeria = self.get_test_parameters()
 
-        # Turn off all migration
-        params.pi_ij *= 0.0
-
         model = Model(params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census, HumanToHuman]
+
+        # Turn off all migration, have to do this _after_ setting model components because HumanToHuman builds the pi_ij matrix
+        model.patches.pi_ij *= 0.0
+
         model.run()
 
         for index in range(len(params.location_name)):

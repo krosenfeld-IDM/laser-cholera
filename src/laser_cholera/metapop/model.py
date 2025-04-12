@@ -42,13 +42,13 @@ class Model:
 
         self.prng = seed_prng(parameters.seed if parameters.seed is not None else self.tinit.microsecond)
 
-        click.echo(f"Initializing the {name} model with {len(parameters.location_id)} patches…")
+        click.echo(f"Initializing the {name} model with {len(parameters.location_name)} patches…")
 
         # https://gilesjohnr.github.io/MOSAIC-docs/model-description.html
 
         # setup the LaserFrame for agents/population (states and dynamics)
         # setup the LaserFrame for patches (inputs and reporting)
-        npatches = len(parameters.location_id)
+        npatches = len(parameters.location_name)
         self.agents = LaserFrame(npatches)
         self.patches = LaserFrame(npatches)
 
@@ -177,7 +177,7 @@ class Model:
 
         filename = None
 
-        _debugging = [DerivedValues]
+        _debugging = None  # [DerivedValues]
 
         if not pdf:
             for instance in [self, *self.instances]:

@@ -58,10 +58,13 @@ class TestHumanToHumanVax(unittest.TestCase):
 
         # Turn off migration
         params.tau_i *= 0.0
-        params.pi_ij *= 0.0
 
         model = Model(params)
         model.components = [Susceptible, Exposed, Infectious, Recovered, Vaccinated, Census, HumanToHuman, HumanToHumanVax]
+
+        # Have to do this _after_ setting model components because HumanToHuman builds the pi_ij matrix
+        model.patches.pi_ij *= 0.0
+
         model.run()
         for index in range(len(params.location_name)):
             if index != iNigeria:

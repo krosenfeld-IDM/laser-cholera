@@ -81,7 +81,7 @@ class Environmental:
 
         plt.title("Environmental Reservoir")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.patches.W[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.patches.W[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.legend()
 

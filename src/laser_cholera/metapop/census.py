@@ -11,7 +11,6 @@ class Census:
         assert hasattr(model, "patches"), "Census: model needs to have a 'patches' attribute."
         model.patches.add_vector_property("N", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Census: model needs to have a 'params' attribute."
-        assert "N_j_initial" in self.model.params, "Census: model params needs to have a 'N_j_initial' parameter."
 
         return
 
@@ -38,7 +37,6 @@ class Census:
         exec(code, namespace)  # noqa: S102
         self.update = staticmethod(namespace["update"])
 
-        # self.model.patches.N[0] = self.model.params.N_j_initial
         # Makes me feel a little slimy, but we need to set the initial population size
         self.update(self.model.patches, self.model.agents, -1)
 

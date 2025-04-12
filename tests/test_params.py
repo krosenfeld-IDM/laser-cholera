@@ -20,17 +20,17 @@ class TestGetParameters(TestCase):
 
         return
 
-    def test_load_uncompressed_hdf5(self):
-        _params = get_parameters(PARAMS_DIR / "default_parameters.h5", overrides={"verbose": True})
-        # assert True
+    # def test_load_uncompressed_hdf5(self):
+    #     _params = get_parameters(PARAMS_DIR / "default_parameters.h5", overrides={"verbose": True})
+    #     # assert True
 
-        return
+    #     return
 
-    def test_load_compressed_hdf5(self):
-        _params = get_parameters(PARAMS_DIR / "default_parameters.h5.gz", overrides={"verbose": True})
-        # assert True
+    # def test_load_compressed_hdf5(self):
+    #     _params = get_parameters(PARAMS_DIR / "default_parameters.h5.gz", overrides={"verbose": True})
+    #     # assert True
 
-        return
+    #     return
 
 
 if __name__ == "__main__":

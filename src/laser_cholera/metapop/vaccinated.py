@@ -172,7 +172,7 @@ class Vaccinated:
 
         plt.title("Vaccinated (One Dose)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.V1[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.agents.V1[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.legend()
 
