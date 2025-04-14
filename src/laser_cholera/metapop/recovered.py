@@ -48,12 +48,12 @@ class Recovered:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Recovered") if fig is None else fig
 
-        plt.title("Recovered")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.R[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.agents.R[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
+        plt.ylabel("Recovered")
         plt.legend()
 
         yield

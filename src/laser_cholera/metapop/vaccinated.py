@@ -168,22 +168,22 @@ class Vaccinated:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Vaccinated (One Dose)") if fig is None else fig
 
-        plt.title("Vaccinated (One Dose)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
             plt.plot(self.model.agents.V1[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
+        plt.ylabel("Vaccinated (One Dose)")
         plt.legend()
 
         yield
 
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Vaccinated (Two Doses)") if fig is None else fig
 
-        plt.title("Vaccinated (Two Doses)")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.V2[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.agents.V2[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
+        plt.ylabel("Vaccinated (Two Doses)")
         plt.legend()
 
         yield

@@ -35,16 +35,22 @@ def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optio
 
     params = load_fn(file_path)
 
-    validate(params)
-
     if "verbose" not in params:
         params.verbose = False
 
     if overrides is not None:
+        for key, value in overrides.items():
+            if key in params:
+                # Coerce the value to the type of the parameter (mostly string to number)
+                overrides[key] = type(params[key])(value)
+
+        # Update the parameters with the overrides
         params += overrides
 
         if params.verbose:
             click.echo(f"Updated/overrode file parameters with `{overrides}`…")
+
+    validate(params)
 
     if params.verbose:
         click.echo(f"Loaded parameters from `{filename}`…")
@@ -418,7 +424,7 @@ class Parameters:
 
     def plot(self, fig: Figure = None):  # pragma: no cover
         # Stacked bar chart of initial populations
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Initial Populations by Category") if fig is None else fig
 
         categories = ["S_j_initial", "E_j_initial", "I_j_initial", "R_j_initial", "V1_j_initial", "V2_j_initial"]
         data = [getattr(self.model.params, category) for category in categories]
@@ -433,115 +439,96 @@ class Parameters:
         plt.xticks(x, self.model.params.location_name, rotation=45, ha="right")
         plt.xlabel("Location Name")
         plt.ylabel("Population")
-        plt.title("Initial Populations by Category")
         plt.legend()
         plt.tight_layout()
 
         yield
 
         # Birth rates by location over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Birth Rates by Location Over Time") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.params.b_jt.T, aspect="auto", cmap="Blues", interpolation="nearest")
         plt.colorbar(label="Birth Rate")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Birth Rates by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
-        # plt.show()
         yield
 
         # Mortality rates by location over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Non-Disease Mortality Rates by Location Over Time") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.params.d_jt.T, aspect="auto", cmap="Reds", interpolation="nearest")
         plt.colorbar(label="Mortality Rate")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Non-Disease Mortality Rates by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
-        # plt.show()
         yield
 
         # Vaccination (first dose) rates by location over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="First Dose Vaccination Counts by Location Over Time") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.params.nu_1_jt.T, aspect="auto", cmap="Greens", interpolation="nearest")
         plt.colorbar(label="Vaccination Count")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("First Dose Vaccination Counts by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
         # plt.show()
         yield
 
         # Vaccination (second dose) rates by location over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Second Dose Vaccination Counts by Location Over Time") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.params.nu_2_jt.T, aspect="auto", cmap="Greens", interpolation="nearest")
         plt.colorbar(label="Vaccination Count")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Second Dose Vaccination Counts by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
         # plt.show()
         yield
 
         # Disease mortality rate over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Disease Mortality Rate by Location Over Time") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.params.mu_jt.T, aspect="auto", cmap="Reds", interpolation="nearest")
         plt.colorbar(label="Disease Mortality Rate")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Disease Mortality Rate by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
         # plt.show()
         yield
 
         # Emmigration probability rates by location
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Emigration Probabilities by Location") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.scatter(self.model.params.location_name, self.model.params.tau_i, marker="x", color="purple")
         plt.xlabel("Location Name")
         plt.ylabel("Emigration Probability")
-        plt.title("Emigration Probabilities by Location")
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         yield
 
         # WASH fraction by location
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="WASH Coverage by Location") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.scatter(self.model.params.location_name, self.model.params.theta_j, marker="x", color="purple")
         plt.xlabel("Location Name")
         plt.ylabel("WASH Coverage")
-        plt.title("WASH Coverage by Location")
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         yield
 
         # Environmental suitability factor by location over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Environmental Suitability Factor by Location Over Time") if fig is None else fig
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.params.psi_jt.T, aspect="auto", cmap="Blues", interpolation="nearest")
         plt.colorbar(label="Environmental Suitability Factor")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Environmental Suitability Factor by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
         yield

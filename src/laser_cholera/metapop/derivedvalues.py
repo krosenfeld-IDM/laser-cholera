@@ -28,7 +28,7 @@ class DerivedValues:
             # https://www.mosaicmod.org/model-description.html#the-probability-of-spatial-transmission
             # $p(i,j,t) = 1 - e^{-\beta^{hum}_{jt}(((1 - \tau_j) S_{jt}) / N_{jt}) \pi_{ij} \tau_i I_{it}}$
             for t in range(model.params.nticks):
-                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % 366, :])
+                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % model.params.p, :])
                 tau_j = model.params.tau_i
                 S_j = model.agents.S[t]
                 N_j = model.patches.N[t]
@@ -50,7 +50,7 @@ class DerivedValues:
             # https://www.mosaicmod.org/model-description.html#the-spatial-hazard
             # $h(j,t) = \frac {\beta^{hum}_{jt} (1 - e^{-((1 - \tau_j) S_{jt} / N_{jt}) \sum_{\forall i \ne j} \pi_{ij} \tau_i (I_{it} / N_{it})})} {1/(1 + \beta^{hum}_{jt}(1 - \tau_j) S_{jt})}$
             for t in range(model.params.nticks):
-                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % 366, :])
+                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % model.params.p, :])
                 tau_j = model.params.tau_i
                 S_j = model.agents.S[t]
                 N_j = model.patches.N[t]
@@ -74,14 +74,12 @@ class DerivedValues:
         return
 
     def plot(self, fig=None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Spatial Hazard by Location Over Time") if fig is None else fig
 
-        # plt.figure(figsize=(12, 6))
         plt.imshow(self.model.patches.spatial_hazard.T, aspect="auto", cmap="Reds", interpolation="nearest")
         plt.colorbar(label="Spatial Hazard")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Spatial Hazard by Location Over Time")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
 

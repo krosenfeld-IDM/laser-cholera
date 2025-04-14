@@ -17,7 +17,7 @@ class HumanToHuman:
         assert hasattr(model, "patches"), "HumanToHuman: model needs to have a 'patches' attribute."
         model.patches.add_vector_property("Lambda", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
 
-        assert "latitide" in self.model.params, "HumanToHuman: model params needs to have a 'latitide' (location latitude) parameter."
+        assert "latitude" in self.model.params, "HumanToHuman: model params needs to have a 'latitude' (location latitude) parameter."
         assert "longitude" in self.model.params, "HumanToHuman: model params needs to have a 'longitude' (location longitude) parameter."
         assert "mobility_omega" in self.model.params, "HumanToHuman: model params needs to have a 'mobility_omega' (mobility) parameter."
         assert "mobility_gamma" in self.model.params, "HumanToHuman: model params needs to have a 'mobility_gamma' (mobility) parameter."
@@ -79,7 +79,7 @@ class HumanToHuman:
         immigrating_i = (model.patches.pi_ij * (model.params.tau_i * total_i)).sum(axis=1).astype(Lambda.dtype)
         effective_i = local_i + immigrating_i
         power_adjusted = np.power(effective_i, model.params.alpha_1).astype(Lambda.dtype)
-        seasonality = (model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[tick % 366, :])).astype(Lambda.dtype)
+        seasonality = (model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[tick % model.params.p, :])).astype(Lambda.dtype)
         adjusted = seasonality * power_adjusted
         denominator = np.power(N, model.params.alpha_2).astype(Lambda.dtype)
         rate = (adjusted / denominator).astype(Lambda.dtype)
@@ -102,20 +102,19 @@ class HumanToHuman:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Human-to-Human Transmission Rate") if fig is None else fig
 
-        plt.title("Human-to-Human Transmission Rate")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.patches.Lambda[:, ipatch], label=f"Patch {ipatch}")
+            plt.plot(self.model.patches.Lambda[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
+        plt.ylabel("Transmission Rate")
         plt.legend()
 
         yield
 
         # Spatial connectivity matrix
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Spatial Connectivity Matrix (pi_ij)") if fig is None else fig
 
-        plt.figure(figsize=(12, 9))
         plt.imshow(self.model.patches.pi_ij, aspect="auto", cmap="viridis", interpolation="nearest")
         plt.colorbar(label="Connectivity")
         plt.xlabel("Destination Location Index")
@@ -124,21 +123,22 @@ class HumanToHuman:
         plt.ylabel("Source Location Index")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.yticks(rotation=45, ha="right")
-        plt.title("Spatial Connectivity Matrix (pi_ij)")
         plt.tight_layout()
 
         yield
 
         # Seasonality factor by location over time
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = (
+            plt.figure(figsize=(12, 9), dpi=128, num="Seasonal Human-Human Transmission Factor by Location Over Time")
+            if fig is None
+            else fig
+        )
 
-        plt.figure(figsize=(12, 6))
         plt.imshow(self.model.patches.beta_j_seasonality.T, aspect="auto", cmap="Blues", interpolation="nearest")
         plt.colorbar(label="Seasonal Factor")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.title("Seasonal Human-Human Transmission Factor by Location Over Time")
-        plt.yticks(ticks=np.arange(len(self.model.patches.location_name)), labels=self.model.params.location_name)
+        plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.tight_layout()
         # plt.show()
         yield

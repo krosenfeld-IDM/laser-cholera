@@ -77,12 +77,12 @@ class Environmental:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Environmental Reservoir") if fig is None else fig
 
-        plt.title("Environmental Reservoir")
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
             plt.plot(self.model.patches.W[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
+        plt.ylabel("Environmental Reservoir")
         plt.legend()
 
         yield

@@ -213,9 +213,8 @@ class Model:
         return filename
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Scenario Patches and Populations") if fig is None else fig
 
-        _fig.suptitle("Scenario Patches and Populations")
         if "geometry" in self.scenario.columns:
             ax = plt.gca()
             self.scenario.plot(ax=ax)
@@ -230,11 +229,11 @@ class Model:
 
         yield
 
-        _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
-
         metrics = pd.DataFrame(self.metrics, columns=["tick"] + [type(phase).__name__ for phase in self.phases])
         plot_columns = metrics.columns[1:]
         sum_columns = metrics[plot_columns].sum()
+
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num=f"Update Phase Times (Total {sum_columns.sum():,} µsec)") if fig is None else fig
 
         plt.pie(
             sum_columns,
@@ -242,7 +241,6 @@ class Model:
             autopct="%1.1f%%",
             startangle=140,
         )
-        plt.title("Update Phase Times")
 
         yield
         return
@@ -251,13 +249,13 @@ class Model:
 @click.command()
 # @click.option("--nticks", default=365, help="Number of ticks to run the simulation")
 @click.option("--seed", default=20241107, help="Random seed")
-@click.option("--verbose", is_flag=True, help="Print verbose output")
+@click.option("--verbose", "-v", is_flag=True, help="Print verbose output")
 @click.option("--no-viz", is_flag=True, default=False, help="Suppress displaying visualizations")
 @click.option("--pdf", is_flag=True, help="Output visualization results as a PDF")
-@click.option("--outdir", default=Path.cwd(), help="Output file for results")
-@click.option("--paramfile", default=None, help="JSON file with parameters")
-@click.option("--param", "-p", multiple=True, help="Additional parameter overrides (param:value or param=value)")
-def cli_run(**kwargs):
+@click.option("--outdir", "-o", default=Path.cwd(), help="Output file for results")
+@click.option("--params", "-p", default=None, help="JSON file with parameters")
+@click.option("--over", multiple=True, help="Additional parameter overrides (param:value or param=value)")
+def cli_run(params, **kwargs):
     """
     Run the cholera model simulation with the given parameters.
 
@@ -280,13 +278,19 @@ def cli_run(**kwargs):
         None
     """
 
-    run_model(**kwargs)
+    if "over" in kwargs:
+        overrides = kwargs.pop("over")
+        for override in overrides:
+            param, value = override.split("=") if "=" in override else override.split(":")
+            kwargs[param] = value
+
+    run_model(params, **kwargs)
 
     return
 
 
-def run_model(**kwargs):
-    parameters = get_parameters(overrides=kwargs)
+def run_model(paramfile, **kwargs):
+    parameters = get_parameters(paramfile, overrides=kwargs)
     model = Model(parameters)
 
     model.components = [

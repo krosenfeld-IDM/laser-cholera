@@ -25,7 +25,9 @@ class Recorder:
     def __call__(self, model, tick: int) -> None:
         # write the current state of the model to an HDF5 file if it is the last tick of the simulation
         if tick == (model.params.nticks - 1):
-            filename = Path.cwd() / f"{datetime.now().strftime('%Y%m%d%H%M%S')}.h5"  # noqa: DTZ005
+            root = Path(model.params.outdir) if "outdir" in model.params and model.params.outdir else Path.cwd()
+            root.mkdir(parents=True, exist_ok=True)
+            filename = root / f"{datetime.now().strftime('%Y%m%d%H%M%S')}.h5"  # noqa: DTZ005
 
             if True:  # ("compress" in model.params) and model.params.compress:
                 filename = save_compressed_hdf5_parameters(model, filename, model.params.verbose)
