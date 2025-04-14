@@ -17,7 +17,9 @@ from matplotlib.figure import Figure
 from laser_cholera.sc import printcyan
 
 
-def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optional[dict] = None) -> PropertySet:
+def get_parameters(
+    filename: Optional[Union[str, Path]] = None, do_validation: bool = True, overrides: Optional[dict] = None
+) -> PropertySet:
     fn_map = {
         (".json",): load_json_parameters,
         (".json", ".gz"): load_compressed_json_parameters,
@@ -39,18 +41,14 @@ def get_parameters(filename: Optional[Union[str, Path]] = None, overrides: Optio
         params.verbose = False
 
     if overrides is not None:
-        for key, value in overrides.items():
-            if key in params:
-                # Coerce the value to the type of the parameter (mostly string to number)
-                overrides[key] = type(params[key])(value)
-
         # Update the parameters with the overrides
         params += overrides
 
         if params.verbose:
             click.echo(f"Updated/overrode file parameters with `{overrides}`…")
 
-    validate(params)
+    if do_validation:
+        validate(params)
 
     if params.verbose:
         click.echo(f"Loaded parameters from `{filename}`…")

@@ -1,18 +1,25 @@
+from datetime import datetime
+from functools import partial
+
 import numpy as np
 from laser_core.migration import distance
 
 
 def fourier_series_double(t, beta0, a1, b1, a2, b2, p):
     """
-    Fourier series with 2 harmonics
-    :param t: time
-    :param beta0: constant term
-    :param a1: first harmonic amplitude (cosine)
-    :param b1: first harmonic amplitude (sine)
-    :param a2: second harmonic amplitude (cosine)
-    :param b2: second harmonic amplitude (sine)
-    :param p: period
-    :return: Fourier series value at time t
+    Computes the value of a Fourier series with two harmonics at a given time.
+
+    Args:
+        t (array-like): Time values.
+        beta0 (float): Constant term of the Fourier series.
+        a1 (array-like): Amplitudes of the first harmonic (cosine component).
+        b1 (array-like): Amplitudes of the first harmonic (sine component).
+        a2 (array-like): Amplitudes of the second harmonic (cosine component).
+        b2 (array-like): Amplitudes of the second harmonic (sine component).
+        p (float): Period of the Fourier series.
+
+    Returns:
+        numpy.ndarray: The computed Fourier series values at the given time points.
     """
     return (
         beta0
@@ -47,25 +54,23 @@ def get_daily_seasonality(params):
 
 
 def get_pi_from_lat_long(params):
-    """
-    x <- D; x[,] <- NA
-    for (i in 1:length(N_orig)) {
-      for (j in 1:length(N_dest)) {
+    # x <- D; x[,] <- NA
+    # for (i in 1:length(N_orig)) {
+    #   for (j in 1:length(N_dest)) {
 
-        x[i,j] <- (N_dest[j]^params[k,'omega']) * (D[i,j]+0.001)^(-params[k,'gamma'])
+    #     x[i,j] <- (N_dest[j]^params[k,'omega']) * (D[i,j]+0.001)^(-params[k,'gamma'])
 
-      }
-    }
+    #   }
+    # }
 
-    for (i in 1:length(N_orig)) {
-      for (j in 1:length(N_dest)) {
+    # for (i in 1:length(N_orig)) {
+    #   for (j in 1:length(N_dest)) {
 
-        # M_hat[i,j] <- params[k,'theta'] * N_orig[i] * (x[i,j]/sum(x[i,]))
-        M_hat[i,j] <- x[i,j]/sum(x[i,])
+    #     # M_hat[i,j] <- params[k,'theta'] * N_orig[i] * (x[i,j]/sum(x[i,]))
+    #     M_hat[i,j] <- x[i,j]/sum(x[i,])
 
-      }
-    }
-    """
+    #   }
+    # }
 
     d = distance(params.latitude, params.longitude, params.latitude, params.longitude)
     x = np.zeros_like(d, dtype=np.float32)
@@ -90,3 +95,66 @@ def get_pi_from_lat_long(params):
             m_hat[i, j] = x[i, j] / row_sum
 
     return m_hat
+
+
+def override_helper(overrides) -> dict:
+    mapping = {
+        "seed": int,
+        "date_start": partial(datetime.strptime, format="%Y-%m-%d"),
+        "date_stop": partial(datetime.strptime, format="%Y-%m-%d"),
+        "location_name": None,  # vector
+        "S_j_initial": None,  # vector # TODO consider partial np.array(dtype=np.int32)
+        "E_j_initial": None,  # vector
+        "I_j_initial": None,  # vector
+        "R_j_initial": None,  # vector
+        "V1_j_initial": None,  # vector
+        "V2_j_initial": None,  # vector
+        "b_jt": None,  # matrix
+        "d_jt": None,  # matrix
+        "nu_1_jt": None,  # matrix
+        "nu_2_jt": None,  # matrix
+        "phi_1": float,
+        "phi_2": float,
+        "omega_1": float,
+        "omega_2": float,
+        "iota": float,
+        "gamma_1": float,
+        "gamma_2": float,
+        "epsilon": float,
+        "mu_jt": None,  # matrix
+        "rho": float,
+        "simga": float,
+        "longitude": None,  # vector
+        "latitude": None,  # vector
+        "mobility_omega": float,
+        "mobility_gamma": float,
+        "tau_i": None,  # vector
+        "beta_j0_hum": None,  # vector
+        "a_1_j": None,  # vector
+        "b_1_j": None,  # vector
+        "a_2_j": None,  # vector
+        "b_2_j": None,  # vector
+        "p": int,
+        "alpha_1": float,
+        "alpha_2": float,
+        "beta_j0_env": None,  # vector
+        "theta_j": None,  # vector
+        "psi_jt": None,  # matrix
+        "zeta_1": float,
+        "zeta_2": float,
+        "kappa": float,
+        "decay_days_short": float,
+        "decay_days_long": float,
+        "decay_shape_1": float,
+        "decay_shape_2": float,
+        "return": None,  # vector
+    }
+
+    typed = {}
+    for key, value in overrides.items():
+        if key in mapping and mapping[key] is not None:
+            typed[key] = mapping[key](value)
+        else:
+            typed[key] = value
+
+    return overrides

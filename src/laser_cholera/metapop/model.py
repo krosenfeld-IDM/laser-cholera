@@ -29,6 +29,7 @@ from laser_cholera.metapop import Susceptible
 from laser_cholera.metapop import Vaccinated
 from laser_cholera.metapop import get_parameters
 from laser_cholera.metapop import scenario
+from laser_cholera.metapop.utils import override_helper
 
 
 class Model:
@@ -278,11 +279,12 @@ def cli_run(params, **kwargs):
         None
     """
 
-    if "over" in kwargs:
-        overrides = kwargs.pop("over")
+    if "over" in kwargs and (overrides := kwargs.pop("over")):
         for override in overrides:
             param, value = override.split("=") if "=" in override else override.split(":")
             kwargs[param] = value
+        typed = override_helper(overrides)
+        kwargs.update(typed)
 
     run_model(params, **kwargs)
 

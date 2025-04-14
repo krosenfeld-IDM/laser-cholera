@@ -1,6 +1,9 @@
+import warnings
 from pathlib import Path
 
-import geopandas as gpd
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import geopandas as gpd
 import pandas as pd
 
 from laser_cholera import iso_codes

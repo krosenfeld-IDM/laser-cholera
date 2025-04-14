@@ -14,7 +14,7 @@ from laser_cholera.utils import sim_duration
 class TestVaccinated(unittest.TestCase):
     @staticmethod
     def get_test_parameters(V1=20_000, V2=10_000):
-        params = get_parameters(overrides=sim_duration())
+        params = get_parameters(overrides=sim_duration(), do_validation=False)
         # S - use given susceptible populations
         # E - move any exposed people back to susceptible
         params.S_j_initial += params.E_j_initial

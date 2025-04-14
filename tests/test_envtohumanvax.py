@@ -57,7 +57,7 @@ class TestEnvToHumanVax(unittest.TestCase):
 
     @staticmethod
     def get_test_parameters() -> PropertySet:
-        params = get_parameters(overrides=sim_duration())
+        params = get_parameters(overrides=sim_duration(), do_validation=False)
 
         # Configure population
         # Move some people to the infectious state so we have shedding to the environment

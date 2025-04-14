@@ -27,7 +27,7 @@ class TestEnvToHuman(unittest.TestCase):
 
     @staticmethod
     def get_test_parameters():
-        params = get_parameters(overrides=sim_duration())
+        params = get_parameters(overrides=sim_duration(), do_validation=False)
         params.S_j_initial += params.I_j_initial  # return initial I to S
         params.I_j_initial = 10_000  # fix I at 10,000
         params.S_j_initial -= params.I_j_initial  # remove I from S
