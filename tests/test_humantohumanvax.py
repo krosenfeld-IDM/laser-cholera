@@ -71,20 +71,20 @@ class TestHumanToHumanVax(unittest.TestCase):
                 # With no infectious people and no migration, expect Lambda to be zero
                 assert np.all(model.patches.Lambda[:, index] == 0), "HumanToHuman: tau_i = 0, Lambda_jt not zero."
                 # Expect all vaccine populations to be in steady state
-                assert np.all(model.agents.V1imm[1:] == model.agents.V1imm[0]), "V1imm: steady state not held."
-                assert np.all(model.agents.V2imm[1:] == model.agents.V2imm[0]), "V2imm: steady state not held."
-                assert np.all(model.agents.V1sus[1:] == model.agents.V1sus[0]), "V1sus: steady state not held."
-                assert np.all(model.agents.V2sus[1:] == model.agents.V2sus[0]), "V2sus: steady state not held."
-                assert np.all(model.agents.V1inf[1:] == model.agents.V1inf[0]), "V1inf: steady state not held."
-                assert np.all(model.agents.V2inf[1:] == model.agents.V2inf[0]), "V2inf: steady state not held."
-                assert np.all(model.agents.V1[1:] == model.agents.V1[0]), "V1: steady state not held."
-                assert np.all(model.agents.V2[1:] == model.agents.V2[0]), "V2: steady state not held."
+                assert np.all(model.agents.V1imm[1:, index] == model.agents.V1imm[0, index]), "V1imm: steady state not held."
+                assert np.all(model.agents.V2imm[1:, index] == model.agents.V2imm[0, index]), "V2imm: steady state not held."
+                assert np.all(model.agents.V1sus[1:, index] == model.agents.V1sus[0, index]), "V1sus: steady state not held."
+                assert np.all(model.agents.V2sus[1:, index] == model.agents.V2sus[0, index]), "V2sus: steady state not held."
+                assert np.all(model.agents.V1inf[1:, index] == model.agents.V1inf[0, index]), "V1inf: steady state not held."
+                assert np.all(model.agents.V2inf[1:, index] == model.agents.V2inf[0, index]), "V2inf: steady state not held."
+                assert np.all(model.agents.V1[1:, index] == model.agents.V1[0, index]), "V1: steady state not held."
+                assert np.all(model.agents.V2[1:, index] == model.agents.V2[0, index]), "V2: steady state not held."
             else:
                 # With infectious people in Nigeria, expect Lambda to be non-zero
                 assert np.any(model.patches.Lambda[:, index] != 0), "HumanToHuman: tau_i = 0, Lambda_jt zero in Nigeria."
                 # Expect immune vaccine populations to be in steady state
-                assert np.all(model.agents.V1imm[1:] == model.agents.V1imm[0]), "V1imm: steady state not held."
-                assert np.all(model.agents.V2imm[1:] == model.agents.V2imm[0]), "V2imm: steady state not held."
+                assert np.all(model.agents.V1imm[1:, index] == model.agents.V1imm[0, index]), "V1imm: steady state not held."
+                assert np.all(model.agents.V2imm[1:, index] == model.agents.V2imm[0, index]), "V2imm: steady state not held."
                 # Expect susceptible vaccine populations to decline
                 assert np.all(np.diff(model.agents.V1sus, axis=0) <= 0), "V1sus: not declining with human to human transmission."
                 assert np.all(np.diff(model.agents.V2sus, axis=0) <= 0), "V2sus: not declining with human to human transmission."
@@ -92,8 +92,8 @@ class TestHumanToHumanVax(unittest.TestCase):
                 assert np.all(np.diff(model.agents.V1inf, axis=0) >= 0), "V1inf: not increasing with human to human transmission."
                 assert np.all(np.diff(model.agents.V2inf, axis=0) >= 0), "V2inf: not increasing with human to human transmission."
                 # Expect total vaccine populations to be in steady state
-                assert np.all(model.agents.V1[1:] == model.agents.V1[0]), "V1: steady state not held."
-                assert np.all(model.agents.V2[1:] == model.agents.V2[0]), "V2: steady state not held."
+                assert np.all(model.agents.V1[1:, index] == model.agents.V1[0, index]), "V1: steady state not held."
+                assert np.all(model.agents.V2[1:, index] == model.agents.V2[0, index]), "V2: steady state not held."
 
         return
 

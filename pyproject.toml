@@ -34,9 +34,9 @@ dependencies = [
     "laser-core==0.4.0",
     "geopandas",
     "h5py",
-    "numpy==2.0.2",
-    "llvmlite==0.43.0",
-    "numba==0.60.0",
+    # "numpy==2.0.2",
+    # "llvmlite==0.43.0",
+    # "numba==0.60.0",
     "scipy",
     "tqdm",
 ]

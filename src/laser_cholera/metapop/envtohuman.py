@@ -78,5 +78,5 @@ class EnvToHuman:
         plt.ylabel("Environmental Transmission Rate")
         plt.legend()
 
-        yield
+        yield "Environmental Transmission Rate"
         return

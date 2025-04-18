@@ -85,5 +85,5 @@ class Environmental:
         plt.ylabel("Environmental Reservoir")
         plt.legend()
 
-        yield
+        yield "Environmental Reservoir"
         return

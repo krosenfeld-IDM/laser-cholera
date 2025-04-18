@@ -185,6 +185,7 @@ class Model:
                 if (_debugging is None) or (type(instance) in _debugging):
                     if hasattr(instance, "plot"):
                         for _plot in instance.plot():
+                            plt.tight_layout()
                             self.verbose(f"Plotting {type(instance).__name__}…")
                             plt.show()
                     else:
@@ -199,7 +200,9 @@ class Model:
                 for instance in [self, *self.instances]:
                     if (_debugging is None) or (type(instance) in _debugging):
                         if hasattr(instance, "plot"):
-                            for _plot in instance.plot():
+                            for title in instance.plot():
+                                plt.title(title)
+                                plt.tight_layout()
                                 self.verbose(f"Plotting {type(instance).__name__}…")
                                 pdf.savefig()
                                 plt.close()
@@ -228,7 +231,7 @@ class Model:
         )
         plt.colorbar(scatter, label="Population")
 
-        yield
+        yield "Scenario Patches and Populations"
 
         metrics = pd.DataFrame(self.metrics, columns=["tick"] + [type(phase).__name__ for phase in self.phases])
         plot_columns = metrics.columns[1:]
@@ -243,7 +246,7 @@ class Model:
             startangle=140,
         )
 
-        yield
+        yield f"Update Phase Times (Total {sum_columns.sum():,} µsec)"
         return
 
 
@@ -251,8 +254,8 @@ class Model:
 # @click.option("--nticks", default=365, help="Number of ticks to run the simulation")
 @click.option("--seed", default=20241107, help="Random seed")
 @click.option("--verbose", "-v", is_flag=True, help="Print verbose output")
-@click.option("--no-viz", is_flag=True, default=False, help="Suppress displaying visualizations")
-@click.option("--pdf", is_flag=True, help="Output visualization results as a PDF")
+@click.option("--viz", "visualize", is_flag=True, default=False, help="Suppress displaying visualizations")
+@click.option("--pdf", is_flag=True, default=False, help="Output visualization results as a PDF")
 @click.option("--outdir", "-o", default=Path.cwd(), help="Output file for results")
 @click.option("--params", "-p", default=None, help="JSON file with parameters")
 @click.option("--over", multiple=True, help="Additional parameter overrides (param:value or param=value)")
@@ -271,7 +274,7 @@ def cli_run(params, **kwargs):
             Expected keys include:
 
                 - "verbose": (bool) Whether to print verbose output.
-                - "no_viz": (bool) Whether to skip visualizations.
+                - "viz": (bool) Whether to show visualizations.
                 - "pdf": (str) The file path to save the visualization as a PDF.
 
     Returns:
@@ -315,7 +318,7 @@ def run_model(paramfile, **kwargs):
 
     model.run()
 
-    if not parameters.no_viz:
+    if parameters.visualize or parameters.pdf:
         model.visualize(pdf=parameters.pdf)
 
     return model
@@ -323,5 +326,5 @@ def run_model(paramfile, **kwargs):
 
 if __name__ == "__main__":
     ctx = click.Context(cli_run)
-    # ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, no_viz=False, pdf=False)
-    ctx.invoke(cli_run, seed=20241107, verbose=True, no_viz=False, pdf=False)
+    # ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, viz=True, pdf=False)
+    ctx.invoke(cli_run, seed=20241107, verbose=True, viz=True, pdf=False)

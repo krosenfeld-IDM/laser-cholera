@@ -41,7 +41,7 @@ class TestMetapopUtils(unittest.TestCase):
             sin2 = b2[i] * np.sin(4 * np.pi * t / p)
             plt.plot(beta_j0[i] * (1.0 + cos1 + sin1 + cos2 + sin2))
             ax.set_title(f"{params.location_name[i]}")
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.show()
         """
 

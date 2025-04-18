@@ -77,13 +77,10 @@ class HumanToHumanVax:
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover
-        plot_helper(fig, "V1 Incidence (Human Transmission)", self.model.patches.V1_incidence_env, self.model.params.location_name)
+        yield plot_helper(fig, "V1 Incidence (Human Transmission)", self.model.patches.V1_incidence_env, self.model.params.location_name)
 
-        yield
+        yield plot_helper(fig, "V2 Incidence (Human Transmission)", self.model.patches.V2_incidence_env, self.model.params.location_name)
 
-        plot_helper(fig, "V2 Incidence (Human Transmission)", self.model.patches.V2_incidence_env, self.model.params.location_name)
-
-        yield
         return
 
 
@@ -118,4 +115,4 @@ def plot_helper(fig, title, data, names):
     _fig.text(0.04, 0.5, "Incidence", va="center", rotation="vertical", fontsize=9)  # left center
     plt.tight_layout(rect=[0.06, 0.06, 1, 1])  # leave space for global labels
 
-    return
+    return title

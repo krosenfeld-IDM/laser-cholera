@@ -56,5 +56,5 @@ class Recovered:
         plt.ylabel("Recovered")
         plt.legend()
 
-        yield
+        yield "Recovered"
         return

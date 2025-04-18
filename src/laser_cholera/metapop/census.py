@@ -58,5 +58,5 @@ class Census:
         plt.ylabel("Total Population")
         plt.legend()
 
-        yield
+        yield "Census (Total Population)"
         return

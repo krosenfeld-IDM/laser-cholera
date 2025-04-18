@@ -112,7 +112,7 @@ class Infectious:
         plt.ylabel("Symptomatic")
         plt.legend()
 
-        yield
+        yield "Infectious (Symptomatic)"
 
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Infectious (Asymptomatic)") if fig is None else fig
 
@@ -122,7 +122,7 @@ class Infectious:
         plt.ylabel("Asymptomatic")
         plt.legend()
 
-        yield
+        yield "Infectious (Asymptomatic)"
 
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Infectious (Total)") if fig is None else fig
 
@@ -134,5 +134,5 @@ class Infectious:
         plt.ylabel("Total Infectious")
         plt.legend()
 
-        yield
+        yield "Infectious (Total)"
         return

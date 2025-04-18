@@ -75,11 +75,11 @@ class EnvToHumanVax:
     def plot(self, fig: Figure = None):  # pragma: no cover
         plot_helper(fig, "V1 Incidence (Environmental Transmission)", self.model.patches.V1_incidence_env, self.model.params.location_name)
 
-        yield
+        yield "V1 Incidence (Environmental Transmission)"
 
         plot_helper(fig, "V2 Incidence (Environmental Transmission)", self.model.patches.V2_incidence_env, self.model.params.location_name)
 
-        yield
+        yield "V2 Incidence (Environmental Transmission)"
         return
 
 

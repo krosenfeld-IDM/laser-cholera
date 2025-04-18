@@ -81,8 +81,7 @@ class DerivedValues:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
 
-        yield
+        yield "Spatial Hazard by Location Over Time"
 
         return

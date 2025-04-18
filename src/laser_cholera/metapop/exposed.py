@@ -48,5 +48,5 @@ class Exposed:
         plt.ylabel("Exposed")
         plt.legend()
 
-        yield
+        yield "Exposed"
         return

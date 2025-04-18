@@ -110,7 +110,7 @@ class HumanToHuman:
         plt.ylabel("Transmission Rate")
         plt.legend()
 
-        yield
+        yield "Human-to-Human Transmission Rate"
 
         # Spatial connectivity matrix
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Spatial Connectivity Matrix (pi_ij)") if fig is None else fig
@@ -123,9 +123,8 @@ class HumanToHuman:
         plt.ylabel("Source Location Index")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
         plt.yticks(rotation=45, ha="right")
-        plt.tight_layout()
 
-        yield
+        yield "Spatial Connectivity Matrix (pi_ij)"
 
         # Seasonality factor by location over time
         _fig = (
@@ -134,13 +133,13 @@ class HumanToHuman:
             else fig
         )
 
-        plt.imshow(self.model.patches.beta_j_seasonality.T, aspect="auto", cmap="Blues", interpolation="nearest")
+        indices = np.argsort(self.model.params.latitude)[::-1]
+        plt.imshow(self.model.patches.beta_j_seasonality[:, indices].T, aspect="auto", cmap="Blues", interpolation="nearest")
         plt.colorbar(label="Seasonal Factor")
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
-        plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        # plt.show()
-        yield
+        plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=[self.model.params.location_name[i] for i in indices])
+
+        yield "Seasonal Human-Human Transmission Factor by Location Over Time"
 
         return

@@ -82,20 +82,15 @@ def sanitize_json(parameters: dict) -> PropertySet:
 
     params = PropertySet(parameters)
 
+    # No processing of "seed"
+
     params.date_start = datetime.strptime(params.date_start, "%Y-%m-%d")  # noqa: DTZ007
     params.date_stop = datetime.strptime(params.date_stop, "%Y-%m-%d")  # noqa: DTZ007
     params.nticks = (params.date_stop - params.date_start).days + 1
     printcyan(f"Simulation calendar dates: {params.date_start} to {params.date_stop} ({params.nticks} ticks)")
 
-    nticks = params.nticks
-    npatches = len(params.location_name)
-
     # IDs are 1-based not 0-based like indices
     # Map string IDs to names and names to indices (0-based)
-
-    strid_to_location_map = {str(i + 1): name for i, name in enumerate(parameters["location_name"])}
-    location_to_idx_map = {name: idx for idx, name in enumerate(sorted(parameters["location_name"]))}
-    strid_to_numidx_map = {id: location_to_idx_map[name] for id, name in strid_to_location_map.items()}
 
     params.S_j_initial = np.array(params.S_j_initial, dtype=np.uint32)
     params.E_j_initial = np.array(params.E_j_initial, dtype=np.uint32)
@@ -104,32 +99,34 @@ def sanitize_json(parameters: dict) -> PropertySet:
     params.V1_j_initial = np.array(params.V1_j_initial, dtype=np.uint32)
     params.V2_j_initial = np.array(params.V2_j_initial, dtype=np.uint32)
 
-    b_jt = np.zeros((nticks, npatches), dtype=np.float32)
-    for key, values in params.b_jt.items():
-        b_jt[:, strid_to_numidx_map[key]] = values
-    params.b_jt = b_jt
+    params.b_jt = np.array(params.b_jt, dtype=np.float32).T
+    params.d_jt = np.array(params.d_jt, dtype=np.float32).T
 
-    d_jt = np.zeros((nticks, npatches), dtype=np.float32)
-    for key, values in params.d_jt.items():
-        d_jt[:, strid_to_numidx_map[key]] = values
-    params.d_jt = d_jt
+    params.nu_1_jt = np.array(params.nu_1_jt, dtype=np.float32).T
+    params.nu_2_jt = np.array(params.nu_2_jt, dtype=np.float32).T
 
-    # Transpose here for more efficient access by tick
-    nu_1_jt = np.zeros((nticks, npatches), dtype=np.float32)
-    for key, values in params.nu_1_jt.items():
-        nu_1_jt[:, strid_to_numidx_map[key]] = values
-    params.nu_1_jt = nu_1_jt  # Change from dict to np.ndarray
+    # No processing of "phi_1"
+    # No processing of "phi_2"
+    # No processing of "omega_1"
+    # No processing of "omega_2"
+    # No processing of "iota"
+    # No processing of "gamma_1"
+    # No processing of "gamma_2"
+    # No processing of "epsilon"
 
-    # Transpose here for more efficient access by tick
-    nu_2_jt = np.zeros((nticks, npatches), dtype=np.float32)
-    for key, values in params.nu_2_jt.items():
-        nu_2_jt[:, strid_to_numidx_map[key]] = values
-    params.nu_2_jt = nu_2_jt  # Change from dict to np.ndarray
+    params.mu_jt = np.array(params.mu_jt, dtype=np.float32).T
 
-    mu_jt = np.zeros((nticks, npatches), dtype=np.float32)
-    for key, values in params.mu_jt.items():
-        mu_jt[:, strid_to_numidx_map[key]] = values
-    params.mu_jt = mu_jt
+    # No processing of "rho"
+    # No processing of "sigma"
+
+    params.latitude = np.array(params.latitude, dtype=np.float32)
+    params.longitude = np.array(params.longitude, dtype=np.float32)
+
+    # No processing of "mobility_omega"
+    # No processing of "mobility_gamma"
+
+    params.tau_i = np.array(params.tau_i, dtype=np.float32)
+    assert np.all((params.tau_i >= 0.0) & (params.tau_i <= 1.0)), "tau_i values must be in the range [0, 1]"
 
     params.beta_j0_hum = np.array(params.beta_j0_hum, dtype=np.float32)
 
@@ -138,19 +135,27 @@ def sanitize_json(parameters: dict) -> PropertySet:
     params.a_2_j = np.array(params.a_2_j, dtype=np.float32)
     params.b_2_j = np.array(params.b_2_j, dtype=np.float32)
 
-    params.tau_i = np.array(params.tau_i, dtype=np.float32)
-    assert np.all((params.tau_i >= 0.0) & (params.tau_i <= 1.0)), "tau_i values must be in the range [0, 1]"
-
-    params.latitude = np.array(params.latitude, dtype=np.float32)
-    params.longitude = np.array(params.longitude, dtype=np.float32)
+    # No processing of "p"
+    # No processing of "alpha_1"
+    # No processing of "alpha_2"
 
     params.beta_j0_env = np.array(params.beta_j0_env, dtype=np.float32).reshape(-1, 1)
     params.theta_j = np.array(params.theta_j, dtype=np.float32)
 
-    psi_jt = np.zeros((nticks, npatches), dtype=np.float32)
-    for key, values in params.psi_jt.items():
-        psi_jt[:, strid_to_numidx_map[key]] = values
-    params.psi_jt = psi_jt
+    params.psi_jt = np.array(params.psi_jt, dtype=np.float32).T
+
+    # No processing of "zeta_1"
+    # No processing of "zeta_2"
+    # No processing of "kappa"
+    # No processing of "decay_days_short"
+    # No processing of "decay_days_long"
+    # No processing of "decay_shape_1"
+    # No processing of "decay_shape_2"
+
+    # No processing of "reported_cases" (yet)
+    # No processing of "reported_deaths" (yet)
+
+    # No processing of "return"
 
     return params
 
@@ -269,21 +274,21 @@ def validate(params: PropertySet) -> None:
 
     # shape of b_jt = (nticks, npatches)
     assert params.b_jt.shape == (nticks, npatches), (
-        f"Shape of b_jt ({params.b_jt.shape}) does not match (nticks, npatches) = ({nticks}, {npatches})"
+        f"Shape of b_jt {params.b_jt.shape} does not match (nticks, npatches) = ({nticks}, {npatches})"
     )
     # 0 <= b_jt <= 0.0001369863 (5% annual / 365 days)
     assert np.all((params.b_jt >= 0.0) & (params.b_jt <= 0.0001369863)), "b_jt values must be in the range [0, 0.0001369863]"
 
     # shape of b_jt = (nticks, npatches)
     assert params.d_jt.shape == (nticks, npatches), (
-        f"Shape of d_jt ({params.d_jt.shape}) does not match (nticks, npatches) = ({nticks}, {npatches})"
+        f"Shape of d_jt {params.d_jt.shape} does not match (nticks, npatches) = ({nticks}, {npatches})"
     )
     # 0 <= d_jt <= 0.0002739726 (10% annual / 365 days)
     assert np.all((params.d_jt >= 0.0) & (params.d_jt <= 0.0002739726)), "d_jt values must be in the range [0, 0.0002739726]"
 
     # shape of nu_1_jt = (nticks, npatches)
     assert params.nu_1_jt.shape == (nticks, npatches), (
-        f"Shape of nu_1_jt ({params.nu_1_jt.shape}) does not match (nticks, npatches) = ({nticks}, {npatches})"
+        f"Shape of nu_1_jt {params.nu_1_jt.shape} does not match (nticks, npatches) = ({nticks}, {npatches})"
     )
     # # nu_1_jt - no daily value can be larger than the country population (N_j_initial) / 7
     # assert np.all(params.nu_1_jt <= params.N_j_initial[np.newaxis, :] / 7), (
@@ -292,7 +297,7 @@ def validate(params: PropertySet) -> None:
 
     # shape of nu_2_jt = (nticks, npatches)
     assert params.nu_2_jt.shape == (nticks, npatches), (
-        f"Shape of nu_2_jt ({params.nu_2_jt.shape}) does not match (nticks, npatches) = ({nticks}, {npatches})"
+        f"Shape of nu_2_jt {params.nu_2_jt.shape} does not match (nticks, npatches) = ({nticks}, {npatches})"
     )
     # # nu_2_jt - no daily value can be larger than the country population (N_j_initial) / 7
     # assert np.all(params.nu_2_jt <= params.N_j_initial[np.newaxis, :] / 7), (
@@ -319,7 +324,7 @@ def validate(params: PropertySet) -> None:
 
     # shape of mu_jt = (nticks, npatches)
     assert params.mu_jt.shape == (nticks, npatches), (
-        f"Shape of mu_jt ({params.mu_jt.shape}) does not match (nticks, npatches) = ({nticks}, {npatches})"
+        f"Shape of mu_jt {params.mu_jt.shape} does not match (nticks, npatches) = ({nticks}, {npatches})"
     )
     # all mu_jt must be between 0 (no mortality) and 1 (100% mortality)
     assert np.all((params.mu_jt >= 0.0) & (params.mu_jt <= 1.0)), "mu_jt values must be in the range [0, 1]"
@@ -379,7 +384,7 @@ def validate(params: PropertySet) -> None:
 
     # shape of psi_jt = (nticks, npatches)
     assert params.psi_jt.shape == (nticks, npatches), (
-        f"Shape of psi_jt ({params.psi_jt.shape}) does not match (nticks, npatches) = ({nticks}, {npatches})"
+        f"Shape of psi_jt {params.psi_jt.shape} does not match (nticks, npatches) = ({nticks}, {npatches})"
     )
 
     # psi_jt
@@ -438,9 +443,8 @@ class Parameters:
         plt.xlabel("Location Name")
         plt.ylabel("Population")
         plt.legend()
-        plt.tight_layout()
 
-        yield
+        yield "Initial Populations by Category"
 
         # Birth rates by location over time
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Birth Rates by Location Over Time") if fig is None else fig
@@ -450,8 +454,8 @@ class Parameters:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        yield
+
+        yield "Birth Rates by Location Over Time"
 
         # Mortality rates by location over time
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Non-Disease Mortality Rates by Location Over Time") if fig is None else fig
@@ -461,8 +465,8 @@ class Parameters:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        yield
+
+        yield "Non-Disease Mortality Rates by Location Over Time"
 
         # Vaccination (first dose) rates by location over time
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="First Dose Vaccination Counts by Location Over Time") if fig is None else fig
@@ -472,9 +476,8 @@ class Parameters:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        # plt.show()
-        yield
+
+        yield "First Dose Vaccination Counts by Location Over Time"
 
         # Vaccination (second dose) rates by location over time
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Second Dose Vaccination Counts by Location Over Time") if fig is None else fig
@@ -484,9 +487,8 @@ class Parameters:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        # plt.show()
-        yield
+
+        yield "Second Dose Vaccination Counts by Location Over Time"
 
         # Disease mortality rate over time
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Disease Mortality Rate by Location Over Time") if fig is None else fig
@@ -496,9 +498,8 @@ class Parameters:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        # plt.show()
-        yield
+
+        yield "Disease Mortality Rate by Location Over Time"
 
         # Emmigration probability rates by location
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Emigration Probabilities by Location") if fig is None else fig
@@ -507,8 +508,8 @@ class Parameters:
         plt.xlabel("Location Name")
         plt.ylabel("Emigration Probability")
         plt.xticks(rotation=45, ha="right")
-        plt.tight_layout()
-        yield
+
+        yield "Emigration Probabilities by Location"
 
         # WASH fraction by location
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="WASH Coverage by Location") if fig is None else fig
@@ -517,8 +518,8 @@ class Parameters:
         plt.xlabel("Location Name")
         plt.ylabel("WASH Coverage")
         plt.xticks(rotation=45, ha="right")
-        plt.tight_layout()
-        yield
+
+        yield "WASH Coverage by Location"
 
         # Environmental suitability factor by location over time
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Environmental Suitability Factor by Location Over Time") if fig is None else fig
@@ -528,7 +529,7 @@ class Parameters:
         plt.xlabel("Time (Days)")
         plt.ylabel("Location")
         plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
-        plt.tight_layout()
-        yield
+
+        yield "Environmental Suitability Factor by Location Over Time"
 
         return

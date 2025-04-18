@@ -23,5 +23,5 @@ class Analyzer:
         plt.ylabel("Population")
         plt.legend()
 
-        yield
+        yield "SIRV Trajectories (Largest Patch)"
         return

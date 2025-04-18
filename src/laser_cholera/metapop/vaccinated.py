@@ -116,7 +116,9 @@ class Vaccinated:
         # +newly vaccinated (successful take)
         new_one_doses = model.prng.poisson(model.params.nu_1_jt[tick] * S / (S + E)).astype(V1imm.dtype)
         if np.any(new_one_doses > S):
-            printred(f"WARNING: new_one_doses > S ({tick=}\n\t{new_one_doses=}\n\t{S=})")
+            printred(f"WARNING: new_one_doses > S ({tick=})")
+            for index in np.nonzero(new_one_doses > S)[0]:
+                printred(f"\t{model.params.location_name[index]}: doses {new_one_doses[index]} > {S[index]} susceptible")
             new_one_doses = np.minimum(new_one_doses, S)
         S_next -= new_one_doses
         assert np.all(S_next >= 0), f"S' should not go negative ({tick=}\n\t{S_next})"
@@ -176,7 +178,7 @@ class Vaccinated:
         plt.ylabel("Vaccinated (One Dose)")
         plt.legend()
 
-        yield
+        yield "Vaccinated (One Dose)"
 
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Vaccinated (Two Doses)") if fig is None else fig
 
@@ -186,5 +188,5 @@ class Vaccinated:
         plt.ylabel("Vaccinated (Two Doses)")
         plt.legend()
 
-        yield
+        yield "Vaccinated (Two Doses)"
         return
