@@ -33,10 +33,12 @@ class Environmental:
             "Environmental: model params needs to have a 'decay_shape_2' (beta function parameter 2) parameter."
         )
 
-        fast_decay = 1.0 / model.params.decay_days_short
-        slow_decay = 1.0 / model.params.decay_days_long
-        model.patches.delta_jt[:, :] = beta.cdf(
-            fast_decay + model.params.psi_jt * (slow_decay - fast_decay), a=model.params.decay_shape_1, b=model.params.decay_shape_2
+        model.patches.delta_jt[:, :] = map_suitability_to_decay(
+            fast=model.params.decay_days_short,
+            slow=model.params.decay_days_long,
+            suitability=model.params.psi_jt,
+            beta_a=model.params.decay_shape_1,
+            beta_b=model.params.decay_shape_2,
         )
 
         return
@@ -86,4 +88,57 @@ class Environmental:
         plt.legend()
 
         yield "Environmental Reservoir"
+
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num="Environmental Decay Rate") if fig is None else fig
+
+        plt.imshow(self.model.patches.delta_jt.T, aspect="auto", cmap="viridis", interpolation="nearest")
+        plt.colorbar(label="Environmental Decay Rate")
+        plt.xlabel("Tick")
+        plt.ylabel("Patch")
+        plt.yticks(ticks=np.arange(len(self.model.params.location_name)), labels=self.model.params.location_name)
+
+        yield "Environmental Decay Rate"
+
+        title = "Suitability to Decay Mapping"
+        _fig = plt.figure(figsize=(12, 9), dpi=128, num=title) if fig is None else fig
+
+        x = np.linspace(0, 1, self.model.params.psi_jt.shape[0])
+        y = map_suitability_to_decay(
+            self.model.params.decay_days_short,
+            self.model.params.decay_days_long,
+            x,
+            self.model.params.decay_shape_1,
+            self.model.params.decay_shape_2,
+        )
+        plt.plot(x, y, label=f"{self.model.params.location_name[ipatch]}")
+        plt.xlabel("psi_jt - suitability")
+        plt.ylabel("delta_jt - decay rate")
+
+        yield title
         return
+
+
+# Put this is its own function so mapping plot is sure to use the same calculation.
+def map_suitability_to_decay(fast, slow, suitability, beta_a, beta_b):
+    """
+    Map suitability to decay using a beta distribution.
+
+    Parameters
+    ----------
+    fast : float
+        Fast decay time.
+    slow : float
+        Slow decay time.
+    suitability : np.ndarray
+        Suitability values.
+    beta_a : float
+        Alpha parameter for the beta distribution.
+    beta_b : float
+        Beta parameter for the beta distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Decay rates corresponding to the suitability values.
+    """
+    return 1.0 / fast + beta.cdf(suitability, beta_a, beta_b) * (1.0 / slow - 1.0 / fast)

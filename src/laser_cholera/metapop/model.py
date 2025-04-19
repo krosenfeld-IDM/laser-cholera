@@ -163,7 +163,7 @@ class Model:
 
         return
 
-    def visualize(self, pdf: bool = True) -> Optional[str]:
+    def visualize(self, pdf: bool = True) -> Optional[str]:  # pragma: no cover
         """
         Visualize each compoonent instances either by displaying plots or saving them to a PDF file.
 
@@ -326,5 +326,4 @@ def run_model(paramfile, **kwargs):
 
 if __name__ == "__main__":
     ctx = click.Context(cli_run)
-    # ctx.invoke(run, nticks=5 * 365, seed=20241107, verbose=True, viz=True, pdf=False)
-    ctx.invoke(cli_run, seed=20241107, verbose=True, viz=True, pdf=False)
+    ctx.invoke(cli_run, seed=20241107, verbose=True, visualize=True, pdf=False)

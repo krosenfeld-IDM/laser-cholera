@@ -83,7 +83,7 @@ class EnvToHumanVax:
         return
 
 
-def plot_helper(fig, title, data, names):
+def plot_helper(fig, title, data, names):  # pragma: no cover
     _fig = plt.figure(num=title, figsize=(12, 9), dpi=128) if fig is None else fig
     rows, cols = 10, 4
     x_axes_refs = [None] * cols
