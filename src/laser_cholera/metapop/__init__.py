@@ -10,6 +10,7 @@ from .humantohumanvax import HumanToHumanVax
 from .infectious import Infectious
 from .params import Parameters
 from .params import get_parameters
+from .params import validate_parameters
 from .recorder import Recorder
 from .recovered import Recovered
 from .scenario import scenario
@@ -34,4 +35,5 @@ __all__ = [
     "Vaccinated",
     "get_parameters",
     "scenario",
+    "validate_parameters",
 ]

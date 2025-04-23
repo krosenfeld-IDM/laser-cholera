@@ -48,7 +48,7 @@ def get_parameters(
             click.echo(f"Updated/overrode file parameters with `{overrides}`…")
 
     if do_validation:
-        validate(params)
+        validate_parameters(params)
 
     if params.verbose:
         click.echo(f"Loaded parameters from `{filename}`…")
@@ -239,7 +239,7 @@ def load_hdf5(h5file) -> PropertySet:
     return ps
 
 
-def validate(params: PropertySet) -> None:
+def validate_parameters(params: PropertySet) -> None:
     # date_start and date_stop
     assert params.date_stop >= params.date_start, f"date_stop ({params.date_stop}) must be >= date_start ({params.date_start})"
 
