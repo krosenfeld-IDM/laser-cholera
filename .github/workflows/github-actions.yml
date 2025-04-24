@@ -1,5 +1,11 @@
-name: build
-on: [pull_request, workflow_dispatch]
+name: test matrix
+on:
+  pull_request:
+    branches: [ '*' ]
+  workflow_dispatch:
+    branches: [ '*' ]
+  push:
+    branches: [ main ]
 jobs:
   test:
     name: ${{ matrix.name }}
