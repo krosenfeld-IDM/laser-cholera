@@ -181,7 +181,9 @@ def dict_to_propertysetex(parameters: dict) -> PropertySetEx:
     params.a_2_j = np.array(params.a_2_j, dtype=np.float32)
     params.b_2_j = np.array(params.b_2_j, dtype=np.float32)
 
-    # No processing of "p"
+    assert int(params.p) == params.p, f"p must be an integer, but got {params.p}"
+    params.p = int(params.p)
+
     # No processing of "alpha_1"
     # No processing of "alpha_2"
 
