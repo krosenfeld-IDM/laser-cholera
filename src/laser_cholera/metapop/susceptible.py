@@ -14,7 +14,7 @@ class Susceptible(Component):
         assert hasattr(model, "agents"), "Susceptible: model needs to have an 'agents' attribute."
         model.agents.add_vector_property("S", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(model, "patches"), "Susceptible: model needs to have a 'patches' attribute."
-        model.patches.add_vector_property("births", length=model.params.nticks, dtype=np.int32, default=0)
+        model.patches.add_vector_property("births", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Susceptible: model needs to have a 'params' attribute."
         assert "S_j_initial" in self.model.params, "Susceptible: model params needs to have a 'S_j_initial' parameter."
         model.agents.S[0] = model.params.S_j_initial
@@ -38,13 +38,13 @@ class Susceptible(Component):
         # natural mortality
         non_disease_deaths = model.prng.binomial(S, -np.expm1(-model.params.d_jt[tick])).astype(S_next.dtype)
         S_next -= non_disease_deaths
-        ndd_next = model.patches.non_disease_deaths[tick + 1]
-        ndd_next += non_disease_deaths
+        model.patches.non_disease_deaths[tick] += non_disease_deaths
 
         # births
         N = model.patches.N[tick]
         births = model.prng.binomial(N, -np.expm1(-model.params.b_jt[tick])).astype(S_next.dtype)
         S_next[:] += births
+        model.patches.births[tick] = births
 
         return
 

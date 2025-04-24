@@ -85,7 +85,7 @@ class Vaccinated:
         # -natural mortality
         non_disease_deaths = model.prng.binomial(V1imm, -np.expm1(-model.params.d_jt[tick])).astype(V1imm.dtype)
         V1imm_next -= non_disease_deaths
-        ndd_next = model.patches.non_disease_deaths[tick + 1]
+        ndd_next = model.patches.non_disease_deaths[tick]
         ndd_next += non_disease_deaths
         non_disease_deaths = model.prng.binomial(V1sus, -np.expm1(-model.params.d_jt[tick])).astype(V1sus.dtype)
         V1sus_next -= non_disease_deaths

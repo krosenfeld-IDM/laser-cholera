@@ -17,9 +17,35 @@ from matplotlib.figure import Figure
 from laser_cholera.sc import printcyan
 
 
+class PseEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, PropertySet):
+            return obj.to_dict()
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, datetime):
+            return f"{obj:%Y-%m-%d}"
+        else:
+            return super().default(obj)
+
+
+class PropertySetEx(PropertySet):
+    def __init__(self, *kvps):
+        super().__init__(*kvps)
+
+        return
+
+    def __str__(self) -> str:
+        """Return a string representation of the PropertySet.
+
+        Include converters for datetime and NumPy types.
+        """
+        return json.dumps(self.to_dict(), cls=PseEncoder, indent=4)
+
+
 def get_parameters(
-    filename: Optional[Union[str, Path]] = None, do_validation: bool = True, overrides: Optional[dict] = None
-) -> PropertySet:
+    paramsource: Optional[Union[str, Path, dict]] = None, do_validation: bool = True, overrides: Optional[dict] = None
+) -> PropertySetEx:
     fn_map = {
         (".json",): load_json_parameters,
         (".json", ".gz"): load_compressed_json_parameters,
@@ -31,11 +57,19 @@ def get_parameters(
         (".hdf5", ".gz"): load_compressed_hdf5_parameters,
     }
 
-    file_path = Path(filename) if filename is not None else Path(__file__).parent / "data" / "default_parameters.json"
-    suffixes = [suffix.lower() for suffix in file_path.suffixes]
-    load_fn = fn_map[tuple(suffixes)]
+    if isinstance(paramsource, (str, Path, type(None))):
+        file_path = Path(paramsource) if paramsource is not None else Path(__file__).parent / "data" / "default_parameters.json"
+        suffixes = [suffix.lower() for suffix in file_path.suffixes]
+        load_fn = fn_map[tuple(suffixes)]
 
-    params = load_fn(file_path)
+        click.echo(f"Loading parameters from `{file_path}`…")
+        params = load_fn(file_path)
+
+    elif isinstance(paramsource, dict):
+        params = dict_to_propertysetex(paramsource)
+
+    else:
+        raise ValueError(f"Invalid parameter source type: {type(paramsource)}")
 
     if "verbose" not in params:
         params.verbose = False
@@ -45,49 +79,51 @@ def get_parameters(
         params += overrides
 
         if params.verbose:
-            click.echo(f"Updated/overrode file parameters with `{overrides}`…")
+            click.echo("Updated/overrode file parameters with overrides:")
+            for k, v in overrides.items():
+                click.echo(f"  '{k}': {v}")
 
     if do_validation:
         validate_parameters(params)
 
-    if params.verbose:
-        click.echo(f"Loaded parameters from `{filename}`…")
-
     return params
 
 
-def load_json_parameters(filename: Union[str, Path]) -> PropertySet:
+def load_json_parameters(filename: Union[str, Path]) -> PropertySetEx:
     file_path = Path(filename)
     with file_path.open("r") as file:
         parameters = json.load(file)
 
-    return sanitize_json(parameters)
+    return dict_to_propertysetex(parameters)
 
 
-def load_compressed_json_parameters(filename: Union[str, Path]) -> PropertySet:
+def load_compressed_json_parameters(filename: Union[str, Path]) -> PropertySetEx:
     file_path = Path(filename)
     with gzip.open(file_path, "rb") as gz_file:
         with io.BytesIO(gz_file.read()) as file:
             parameters = json.load(file)
 
-    return sanitize_json(parameters)
+    return dict_to_propertysetex(parameters)
 
 
-def sanitize_json(parameters: dict) -> PropertySet:
+def dict_to_propertysetex(parameters: dict) -> PropertySetEx:
     # Note the following canonicalizes the order of the locations based on the
     # order in the JSON file.
     # We might consider either
     # a) alphabetical order by location name or
     # b) order by int(ID)
 
-    params = PropertySet(parameters)
+    params = PropertySetEx(parameters)
 
     # No processing of "seed"
 
-    params.date_start = datetime.strptime(params.date_start, "%Y-%m-%d")  # noqa: DTZ007
-    params.date_stop = datetime.strptime(params.date_stop, "%Y-%m-%d")  # noqa: DTZ007
+    params.date_start = datetime.strptime(params.date_start, "%Y-%m-%d") if isinstance(params.date_start, (str,)) else params.date_start  # noqa: DTZ007
+    params.date_stop = datetime.strptime(params.date_stop, "%Y-%m-%d") if isinstance(params.date_stop, (str,)) else params.date_stop  # noqa: DTZ007
     params.nticks = (params.date_stop - params.date_start).days + 1
     printcyan(f"Simulation calendar dates: {params.date_start} to {params.date_stop} ({params.nticks} ticks)")
+
+    num_ticks = params.nticks
+    num_nodes = len(params.location_name)
 
     # IDs are 1-based not 0-based like indices
     # Map string IDs to names and names to indices (0-based)
@@ -99,11 +135,19 @@ def sanitize_json(parameters: dict) -> PropertySet:
     params.V1_j_initial = np.array(params.V1_j_initial, dtype=np.uint32)
     params.V2_j_initial = np.array(params.V2_j_initial, dtype=np.uint32)
 
-    params.b_jt = np.array(params.b_jt, dtype=np.float32).T
-    params.d_jt = np.array(params.d_jt, dtype=np.float32).T
+    params.b_jt = np.array(params.b_jt, dtype=np.float32)
+    if params.b_jt.shape == (num_nodes, num_ticks):
+        params.b_jt = np.array(params.b_jt.T)  # index on time, then location
+    params.d_jt = np.array(params.d_jt, dtype=np.float32)
+    if params.d_jt.shape == (num_nodes, num_ticks):
+        params.d_jt = np.array(params.d_jt.T)  # index on time, then location
 
-    params.nu_1_jt = np.array(params.nu_1_jt, dtype=np.float32).T
-    params.nu_2_jt = np.array(params.nu_2_jt, dtype=np.float32).T
+    params.nu_1_jt = np.array(params.nu_1_jt, dtype=np.float32)
+    if params.nu_1_jt.shape == (num_nodes, num_ticks):
+        params.nu_1_jt = np.array(params.nu_1_jt.T)  # index on time, then location
+    params.nu_2_jt = np.array(params.nu_2_jt, dtype=np.float32)
+    if params.nu_2_jt.shape == (num_nodes, num_ticks):
+        params.nu_2_jt = np.array(params.nu_2_jt.T)  # index on time, then location
 
     # No processing of "phi_1"
     # No processing of "phi_2"
@@ -114,7 +158,9 @@ def sanitize_json(parameters: dict) -> PropertySet:
     # No processing of "gamma_2"
     # No processing of "epsilon"
 
-    params.mu_jt = np.array(params.mu_jt, dtype=np.float32).T
+    params.mu_jt = np.array(params.mu_jt, dtype=np.float32)
+    if params.mu_jt.shape == (num_nodes, num_ticks):
+        params.mu_jt = np.array(params.mu_jt.T)  # index on time, then location
 
     # No processing of "rho"
     # No processing of "sigma"
@@ -142,7 +188,9 @@ def sanitize_json(parameters: dict) -> PropertySet:
     params.beta_j0_env = np.array(params.beta_j0_env, dtype=np.float32).reshape(-1, 1)
     params.theta_j = np.array(params.theta_j, dtype=np.float32)
 
-    params.psi_jt = np.array(params.psi_jt, dtype=np.float32).T
+    params.psi_jt = np.array(params.psi_jt, dtype=np.float32)
+    if params.psi_jt.shape == (num_nodes, num_ticks):
+        params.psi_jt = np.array(params.psi_jt.T)  # index on time, then location
 
     # No processing of "zeta_1"
     # No processing of "zeta_2"
@@ -160,14 +208,14 @@ def sanitize_json(parameters: dict) -> PropertySet:
     return params
 
 
-def load_hdf5_parameters(filename: Union[str, Path]) -> PropertySet:
+def load_hdf5_parameters(filename: Union[str, Path]) -> PropertySetEx:
     with h5.File(filename, "r") as h5file:
         parameters = load_hdf5(h5file)
 
     return parameters
 
 
-def load_compressed_hdf5_parameters(filename: Union[str, Path]) -> PropertySet:
+def load_compressed_hdf5_parameters(filename: Union[str, Path]) -> PropertySetEx:
     with gzip.open(filename, "rb") as gz_file:
         with io.BytesIO(gz_file.read()) as file:
             with h5.File(file, "r") as h5file:
@@ -176,8 +224,8 @@ def load_compressed_hdf5_parameters(filename: Union[str, Path]) -> PropertySet:
     return parameters
 
 
-def load_hdf5(h5file) -> PropertySet:
-    ps = PropertySet()
+def load_hdf5(h5file) -> PropertySetEx:
+    ps = PropertySetEx()
 
     # date_start and date_stop
     start = h5file["date_start"][()][0]
@@ -239,7 +287,7 @@ def load_hdf5(h5file) -> PropertySet:
     return ps
 
 
-def validate_parameters(params: PropertySet) -> None:
+def validate_parameters(params: PropertySetEx) -> None:
     # date_start and date_stop
     assert params.date_stop >= params.date_start, f"date_stop ({params.date_stop}) must be >= date_start ({params.date_start})"
 

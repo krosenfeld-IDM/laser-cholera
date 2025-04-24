@@ -29,7 +29,6 @@ from laser_cholera.metapop import Susceptible
 from laser_cholera.metapop import Vaccinated
 from laser_cholera.metapop import get_parameters
 from laser_cholera.metapop import scenario
-from laser_cholera.metapop import validate_parameters
 from laser_cholera.metapop.utils import override_helper
 
 
@@ -296,14 +295,14 @@ def cli_run(params, **kwargs):
 
 
 def run_model(paramfile, **kwargs):
-    if isinstance(paramfile, (str, Path)) or paramfile is None:
-        # Load parameters from file or use defaults
-        parameters = get_parameters(paramfile, overrides=kwargs)
-    elif isinstance(paramfile, dict):
-        parameters = PropertySet(paramfile)
-        validate_parameters(parameters)
-    else:
-        raise ValueError(f"Invalid parameter file type: {type(paramfile)}")
+    parameters = get_parameters(paramfile, overrides=kwargs)
+
+    if "verbose" not in parameters:
+        parameters.verbose = False
+    if "visualize" not in parameters:
+        parameters.visualize = False
+    if "pdf" not in parameters:
+        parameters.pdf = False
 
     model = Model(parameters)
 
@@ -328,7 +327,7 @@ def run_model(paramfile, **kwargs):
     model.run()
 
     if parameters.visualize or parameters.pdf:
-        model.visualize(pdf=parameters.pdf)
+        model.pdf = model.visualize(pdf=parameters.pdf)
 
     return model
 

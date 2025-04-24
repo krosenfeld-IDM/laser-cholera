@@ -45,6 +45,23 @@ class TestSusceptible(unittest.TestCase):
 
         return
 
+    def test_susceptible_vitalstatistics(self):
+        params = self.get_test_parameters()
+
+        params.b_jt *= 5  # turn up births
+        params.d_jt *= 5  # turn up deaths
+
+        model = Model(parameters=params)
+        model.components = [Susceptible, Census]
+        model.run()
+
+        delta = model.patches.births[:-1] - model.patches.non_disease_deaths[:-1]
+        assert np.all(delta == (model.agents.S[1:] - model.agents.S[:-1])), (
+            "Susceptible: births - deaths != change in susceptible population."
+        )
+
+        return
+
     def test_susceptible_deaths(self):
         params = self.get_test_parameters()
 
@@ -55,6 +72,9 @@ class TestSusceptible(unittest.TestCase):
         model.run()
 
         assert np.all(model.agents.S[-1] < model.agents.S[0]), "Susceptible: deaths not occurring."
+        assert np.all(model.patches.non_disease_deaths[:-1] == (model.agents.S[:-1] - model.agents.S[1:])), (
+            "Susceptible: deaths not recorded correctly."
+        )
 
         return
 
@@ -68,6 +88,9 @@ class TestSusceptible(unittest.TestCase):
         model.run()
 
         assert np.all(model.agents.S[-1] > model.agents.S[0]), "Susceptible: births not occurring."
+        assert np.all(model.patches.births[:-1] == (model.agents.S[1:] - model.agents.S[:-1])), (
+            "Susceptible: births not recorded correctly."
+        )
 
         return
 

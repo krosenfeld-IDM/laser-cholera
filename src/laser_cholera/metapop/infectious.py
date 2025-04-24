@@ -47,7 +47,7 @@ class Infectious:
         ## natural deaths (d_jt)
         non_disease_deaths = model.prng.binomial(Is_next, -np.expm1(-model.params.d_jt[tick])).astype(Is_next.dtype)
         Is_next -= non_disease_deaths
-        ndd_next = model.patches.non_disease_deaths[tick + 1]
+        ndd_next = model.patches.non_disease_deaths[tick]
         ndd_next += non_disease_deaths
         assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
@@ -72,6 +72,7 @@ class Infectious:
         ## natural deaths (d_jt)
         non_disease_deaths = model.prng.binomial(Ia_next, -np.expm1(-model.params.d_jt[tick])).astype(Ia_next.dtype)
         Ia_next -= non_disease_deaths
+        ndd_next += non_disease_deaths
         assert np.all(Ia_next >= 0), f"Ia_next should not go negative ({tick=}\n\t{Ia_next=})"
 
         ## recovery

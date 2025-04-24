@@ -34,8 +34,7 @@ class Exposed:
         # Do non-disease mortality first
         non_disease_deaths = model.prng.binomial(E, -np.expm1(-model.params.d_jt[tick])).astype(E_next.dtype)
         E_next -= non_disease_deaths
-        ndd_next = model.patches.non_disease_deaths[tick + 1]
-        ndd_next += non_disease_deaths
+        model.patches.non_disease_deaths[tick] += non_disease_deaths
 
         return
 
