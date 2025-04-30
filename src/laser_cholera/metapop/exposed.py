@@ -4,9 +4,8 @@ from matplotlib.figure import Figure
 
 
 class Exposed:
-    def __init__(self, model, verbose: bool = False):
+    def __init__(self, model):
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "agents"), "Exposed: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("E", length=model.params.nticks + 1, dtype=np.int32, default=0)

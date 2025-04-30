@@ -1,3 +1,6 @@
+from . import logging  # noqa: F401, I001
+
+
 from .analyzer import Analyzer
 from .census import Census
 from .derivedvalues import DerivedValues

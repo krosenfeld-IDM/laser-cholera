@@ -6,9 +6,8 @@ from matplotlib.figure import Figure
 
 
 class EnvToHuman:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "agents"), "EnvToHuman: model needs to have a 'agents' attribute."
         model.patches.add_vector_property("Psi", length=model.params.nticks + 1, dtype=np.float32, default=np.float32(0.0))

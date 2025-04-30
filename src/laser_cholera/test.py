@@ -2,9 +2,8 @@ from matplotlib.figure import Figure
 
 
 class Eradication:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         return
 

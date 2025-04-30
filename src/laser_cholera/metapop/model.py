@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -31,11 +32,13 @@ from laser_cholera.metapop import get_parameters
 from laser_cholera.metapop import scenario
 from laser_cholera.metapop.utils import override_helper
 
+logger = logging.getLogger(__name__)
+
 
 class Model:
     def __init__(self, parameters: PropertySet, name: str = "Cholera Metapop"):
         self.tinit = datetime.now(tz=None)  # noqa: DTZ005
-        click.echo(f"{self.tinit}: Creating the {name} model…")
+        logger.info(f"{self.tinit}: Creating the {name} model…")
         self.params = parameters
         self.name = name
 
@@ -43,7 +46,7 @@ class Model:
 
         self.prng = seed_prng(parameters.seed if parameters.seed is not None else self.tinit.microsecond)
 
-        click.echo(f"Initializing the {name} model with {len(parameters.location_name)} patches…")
+        logger.info(f"Initializing the {name} model with {len(parameters.location_name)} patches…")
 
         # https://gilesjohnr.github.io/MOSAIC-docs/model-description.html
 
@@ -53,21 +56,6 @@ class Model:
         self.agents = LaserFrame(npatches)
         self.patches = LaserFrame(npatches)
 
-        return
-
-    def verbose(self, *args, **kwargs) -> None:
-        """
-        Print verbose output if the verbose flag is set in the parameters.
-
-        Args:
-            *args: Positional arguments to be printed.
-            **kwargs: Keyword arguments to be printed.
-
-        Returns:
-            None
-        """
-        if self.params.verbose:
-            click.echo(*args, **kwargs)
         return
 
     @property
@@ -103,10 +91,10 @@ class Model:
         self.instances = []  # instantiated instances of components
         self.phases = []  # callable phases of the model
         for component in components:
-            instance = component(self, self.params.verbose)
+            instance = component(self)
             self.instances.append(instance)
             if "__call__" in dir(instance):
-                self.verbose(f"Adding {type(instance).__name__} to the model…")
+                logger.debug(f"Adding {type(instance).__name__} to the model…")
                 self.phases.append(instance)
 
         _ = [instance.check() for instance in self.instances]
@@ -121,7 +109,7 @@ class Model:
         and for each tick, it executes each phase of the model while recording the time taken for each phase.
 
         The metrics for each tick are stored in a list. After completing all ticks, it records the finish time and,
-        if verbose mode is enabled, prints a summary of the timing metrics.
+        logs a summary of the timing metrics.
 
         Attributes:
 
@@ -135,10 +123,11 @@ class Model:
         """
 
         self.tstart = datetime.now(tz=None)  # noqa: DTZ005
-        click.echo(f"{self.tstart}: Running the {self.name} model for {self.params.nticks} ticks…")
+        logger.info(f"{self.tstart}: Running the {self.name} model for {self.params.nticks} ticks…")
 
         self.metrics = []
-        for tick in tqdm(range(self.params.nticks)):
+
+        for tick in tqdm(range(self.params.nticks), desc="Running model", disable=self.params.quiet):
             timing = [tick]
             for phase in self.phases:
                 tstart = datetime.now(tz=None)  # noqa: DTZ005
@@ -149,17 +138,16 @@ class Model:
             self.metrics.append(timing)
 
         self.tfinish = datetime.now(tz=None)  # noqa: DTZ005
-        print(f"Completed the {self.name} model at {self.tfinish:%Y-%m-%d %H-%M-%S}…")
+        logger.info(f"{self.tfinish}: Completed the {self.name} model")
 
-        if self.params.verbose:
-            metrics = pd.DataFrame(self.metrics, columns=["tick"] + [type(phase).__name__ for phase in self.phases])
-            plot_columns = metrics.columns[1:]
-            sum_columns = metrics[plot_columns].sum()
-            width = max(map(len, sum_columns.index))
-            for key in sum_columns.index:
-                print(f"{key:{width}}: {sum_columns[key]:13,} µs")
-            print("=" * (width + 2 + 13 + 3))
-            print(f"{'Total:':{width + 1}} {sum_columns.sum():13,} microseconds")
+        metrics = pd.DataFrame(self.metrics, columns=["tick"] + [type(phase).__name__ for phase in self.phases])
+        plot_columns = metrics.columns[1:]
+        sum_columns = metrics[plot_columns].sum()
+        width = max(map(len, sum_columns.index))
+        for key in sum_columns.index:
+            logger.info(f"{key:{width}}: {sum_columns[key]:13,} µs")
+        logger.info("=" * (width + 2 + 13 + 3))
+        logger.info(f"{'Total:':{width + 1}} {sum_columns.sum():13,} microseconds")
 
         return
 
@@ -186,15 +174,15 @@ class Model:
                     if hasattr(instance, "plot"):
                         for _plot in instance.plot():
                             plt.tight_layout()
-                            self.verbose(f"Plotting {type(instance).__name__}…")
+                            logger.debug(f"Plotting {type(instance).__name__}…")
                             plt.show()
                     else:
-                        click.echo(f"Warning: {type(instance).__name__} does not have a plot method.")
+                        logger.warning(f"{type(instance).__name__} does not have a plot method.")
                 else:
-                    self.verbose(f"Skipping {type(instance).__name__} visualization…")
+                    logger.debug(f"Skipping {type(instance).__name__} visualization…")
 
         else:
-            click.echo("Generating PDF output…")
+            logger.info("Generating PDF output…")
             pdf_filename = f"{self.name} {self.tstart:%Y-%m-%d %H%M%S}.pdf"
             with PdfPages(pdf_filename) as pdf:
                 for instance in [self, *self.instances]:
@@ -203,15 +191,15 @@ class Model:
                             for title in instance.plot():
                                 plt.title(title)
                                 plt.tight_layout()
-                                self.verbose(f"Plotting {type(instance).__name__}…")
+                                logger.debug(f"Plotting {type(instance).__name__}…")
                                 pdf.savefig()
                                 plt.close()
                         else:
-                            click.echo(f"Warning: {type(instance).__name__} does not have a plot method.")
+                            logger.warning(f"{type(instance).__name__} does not have a plot method.")
                     else:
-                        self.verbose(f"Skipping {type(instance).__name__} visualization…")
+                        logger.debug(f"Skipping {type(instance).__name__} visualization…")
 
-            click.echo(f"PDF output saved to '{pdf_filename}'.")
+            logger.info(f"PDF output saved to '{pdf_filename}'.")
             filename = pdf_filename
 
         return filename
@@ -251,14 +239,14 @@ class Model:
 
 
 @click.command()
-# @click.option("--nticks", default=365, help="Number of ticks to run the simulation")
 @click.option("--seed", default=20241107, help="Random seed")
-@click.option("--verbose", "-v", is_flag=True, help="Print verbose output")
 @click.option("--viz", "visualize", is_flag=True, default=False, help="Suppress displaying visualizations")
 @click.option("--pdf", is_flag=True, default=False, help="Output visualization results as a PDF")
 @click.option("--outdir", "-o", default=Path.cwd(), help="Output file for results")
 @click.option("--params", "-p", default=None, help="JSON file with parameters")
 @click.option("--over", multiple=True, help="Additional parameter overrides (param:value or param=value)")
+@click.option("--loglevel", default="WARNING", help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+@click.option("-q", "--quiet", is_flag=True, default=False, help="Suppress console progress output")
 def cli_run(params, **kwargs):
     """
     Run the cholera model simulation with the given parameters.
@@ -273,7 +261,7 @@ def cli_run(params, **kwargs):
 
             Expected keys include:
 
-                - "verbose": (bool) Whether to print verbose output.
+                - "loglevel": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] logging level.
                 - "viz": (bool) Whether to show visualizations.
                 - "pdf": (str) The file path to save the visualization as a PDF.
 
@@ -282,11 +270,16 @@ def cli_run(params, **kwargs):
         None
     """
 
+    # logger.setLevel(kwargs.pop("loglevel", "INFO"))
+    logging.getLogger().setLevel(kwargs.pop("loglevel", "INFO"))  # Set the root logger level
+    logger.info("Starting the cholera model simulation...")
+
     if "over" in kwargs and (overrides := kwargs.pop("over")):
+        logger.info(f"Overriding parameters: {overrides}")
         for override in overrides:
             param, value = override.split("=") if "=" in override else override.split(":")
             kwargs[param] = value
-        typed = override_helper(overrides)
+        typed = override_helper(kwargs)
         kwargs.update(typed)
 
     run_model(params, **kwargs)
@@ -296,13 +289,6 @@ def cli_run(params, **kwargs):
 
 def run_model(paramfile, **kwargs):
     parameters = get_parameters(paramfile, overrides=kwargs)
-
-    if "verbose" not in parameters:
-        parameters.verbose = False
-    if "visualize" not in parameters:
-        parameters.visualize = False
-    if "pdf" not in parameters:
-        parameters.pdf = False
 
     model = Model(parameters)
 
@@ -334,4 +320,4 @@ def run_model(paramfile, **kwargs):
 
 if __name__ == "__main__":
     ctx = click.Context(cli_run)
-    ctx.invoke(cli_run, seed=20241107, verbose=True, visualize=True, pdf=False)
+    ctx.invoke(cli_run, seed=20241107, loglevel="INFO", visualize=True, pdf=False, over=["hdf5_output:0"])

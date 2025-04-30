@@ -4,9 +4,8 @@ from matplotlib.figure import Figure
 
 
 class Recovered:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "agents"), "Recovered: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("R", length=model.params.nticks + 1, dtype=np.int32, default=0)

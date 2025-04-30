@@ -6,9 +6,8 @@ from matplotlib.figure import Figure
 
 
 class HumanToHumanVax:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         model.patches.add_vector_property("V1_incidence_hum", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.patches.add_vector_property("V2_incidence_hum", length=model.params.nticks + 1, dtype=np.int32, default=0)

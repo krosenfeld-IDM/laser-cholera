@@ -9,25 +9,25 @@ PARAMS_DIR = SCRIPT_DIR / "../src/laser_cholera/metapop/data"
 
 class TestGetParameters(TestCase):
     def test_load_uncompressed_json(self):
-        _params = get_parameters(PARAMS_DIR / "default_parameters.json", overrides={"verbose": True})
+        _params = get_parameters(PARAMS_DIR / "default_parameters.json", overrides={"loglevel": "DEBUG"})
         # assert True
 
         return
 
     def test_load_compressed_json(self):
-        _params = get_parameters(PARAMS_DIR / "default_parameters.json.gz", overrides={"verbose": True})
+        _params = get_parameters(PARAMS_DIR / "default_parameters.json.gz", overrides={"loglevel": "DEBUG"})
         # assert True
 
         return
 
     # def test_load_uncompressed_hdf5(self):
-    #     _params = get_parameters(PARAMS_DIR / "default_parameters.h5", overrides={"verbose": True})
+    #     _params = get_parameters(PARAMS_DIR / "default_parameters.h5", overrides={"loglevel": "DEBUG"})
     #     # assert True
 
     #     return
 
     # def test_load_compressed_hdf5(self):
-    #     _params = get_parameters(PARAMS_DIR / "default_parameters.h5.gz", overrides={"verbose": True})
+    #     _params = get_parameters(PARAMS_DIR / "default_parameters.h5.gz", overrides={"loglevel": "DEBUG"})
     #     # assert True
 
     #     return

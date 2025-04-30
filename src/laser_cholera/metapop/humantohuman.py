@@ -1,18 +1,20 @@
 """Human-to-human transmission rate."""
 
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
 from laser_cholera.metapop.utils import get_daily_seasonality
 from laser_cholera.metapop.utils import get_pi_from_lat_long
-from laser_cholera.sc import printred
+
+logger = logging.getLogger(__name__)
 
 
 class HumanToHuman:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "patches"), "HumanToHuman: model needs to have a 'patches' attribute."
         model.patches.add_vector_property("Lambda", length=model.params.nticks + 1, dtype=np.float32, default=0.0)
@@ -86,13 +88,13 @@ class HumanToHuman:
 
         # TODO - check seasonality and power_adjusted for negative values so we don't have to do this
         if np.any(rate < 0.0):
-            printred(f"Negative transmission rate at tick {tick + 1}.\n\t{rate=}")
+            logger.debug(f"Negative transmission rate at tick {tick + 1}.\n\t{rate=}")
             rate = np.maximum(rate, 0.0)
 
         Lambda[:] = rate
         local = np.round((1 - model.params.tau_i) * S).astype(S.dtype)
         if np.any(np.isnan(rate)):
-            printred(f"NaN transmission rate at tick {tick + 1}.\n\t{rate=}")
+            logger.debug(f"NaN transmission rate at tick {tick + 1}.\n\t{rate=}")
         infections = model.prng.binomial(local, -np.expm1(-rate)).astype(S.dtype)
         S_next -= infections
         E_next += infections

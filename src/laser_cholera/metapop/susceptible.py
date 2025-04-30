@@ -7,9 +7,8 @@ class Component: ...
 
 
 class Susceptible(Component):
-    def __init__(self, model, verbose: bool = False):
+    def __init__(self, model):
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "agents"), "Susceptible: model needs to have an 'agents' attribute."
         model.agents.add_vector_property("S", length=model.params.nticks + 1, dtype=np.int32, default=0)

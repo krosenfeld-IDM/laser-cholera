@@ -3,9 +3,8 @@ import numpy as np
 
 
 class DerivedValues:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "patches"), "DerivedValues: model needs to have a 'patches' attribute."
         assert hasattr(model, "params"), "DerivedValues: model needs to have a 'params' attribute."

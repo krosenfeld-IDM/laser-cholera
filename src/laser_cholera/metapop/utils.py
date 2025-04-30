@@ -98,6 +98,9 @@ def get_pi_from_lat_long(params):
 
 
 def override_helper(overrides) -> dict:
+    def bool_from_string(value):
+        return str(value).lower() in ("true", "1", "yes", "y", "t", "on", "enabled")
+
     mapping = {
         "seed": int,
         "date_start": partial(datetime.strptime, format="%Y-%m-%d"),
@@ -147,14 +150,19 @@ def override_helper(overrides) -> dict:
         "decay_days_long": float,
         "decay_shape_1": float,
         "decay_shape_2": float,
-        "return": None,  # vector
+        "return": None,  # list
+        "visualize": bool_from_string,
+        "pdf": bool_from_string,
+        "hdf5_output": bool_from_string,
+        "compress": bool_from_string,
+        "quiet": bool_from_string,
     }
 
     typed = {}
     for key, value in overrides.items():
-        if key in mapping and mapping[key] is not None:
-            typed[key] = mapping[key](value)
+        if key in mapping and (fn := mapping[key]) is not None:
+            typed[key] = fn(value)
         else:
             typed[key] = value
 
-    return overrides
+    return typed

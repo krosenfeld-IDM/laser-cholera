@@ -1,20 +1,20 @@
 import gzip
 import io
 import json
+import logging
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 from typing import Union
 
-import click
 import h5py as h5
 import matplotlib.pyplot as plt
 import numpy as np
 from laser_core.propertyset import PropertySet
 from matplotlib.figure import Figure
 
-from laser_cholera.sc import printcyan
+logger = logging.getLogger(__name__)
 
 
 class PseEncoder(json.JSONEncoder):
@@ -62,7 +62,7 @@ def get_parameters(
         suffixes = [suffix.lower() for suffix in file_path.suffixes]
         load_fn = fn_map[tuple(suffixes)]
 
-        click.echo(f"Loading parameters from `{file_path}`…")
+        logger.info(f"Loading parameters from `{file_path}`…")
         params = load_fn(file_path)
 
     elif isinstance(paramsource, dict):
@@ -71,20 +71,23 @@ def get_parameters(
     else:
         raise ValueError(f"Invalid parameter source type: {type(paramsource)}")
 
-    if "verbose" not in params:
-        params.verbose = False
-
     if overrides is not None:
         # Update the parameters with the overrides
         params += overrides
 
-        if params.verbose:
-            click.echo("Updated/overrode file parameters with overrides:")
-            for k, v in overrides.items():
-                click.echo(f"  '{k}': {v}")
+        logger.info("Updated/overrode file parameters with overrides:")
+        for k, v in overrides.items():
+            logger.info(f"  '{k}': {v}")
 
     if do_validation:
         validate_parameters(params)
+
+    if "visualize" not in params:
+        params.visualize = False
+    if "pdf" not in params:
+        params.pdf = False
+    if "quiet" not in params:
+        params.quiet = True
 
     return params
 
@@ -120,7 +123,7 @@ def dict_to_propertysetex(parameters: dict) -> PropertySetEx:
     params.date_start = datetime.strptime(params.date_start, "%Y-%m-%d") if isinstance(params.date_start, (str,)) else params.date_start  # noqa: DTZ007
     params.date_stop = datetime.strptime(params.date_stop, "%Y-%m-%d") if isinstance(params.date_stop, (str,)) else params.date_stop  # noqa: DTZ007
     params.nticks = (params.date_stop - params.date_start).days + 1
-    printcyan(f"Simulation calendar dates: {params.date_start} to {params.date_stop} ({params.nticks} ticks)")
+    logger.info(f"Simulation calendar dates: {params.date_start} to {params.date_stop} ({params.nticks} ticks)")
 
     num_ticks = params.nticks
     num_nodes = len(params.location_name)
@@ -459,9 +462,8 @@ def validate_parameters(params: PropertySetEx) -> None:
 
 
 class Parameters:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         return
 

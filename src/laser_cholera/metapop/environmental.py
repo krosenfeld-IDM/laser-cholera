@@ -5,9 +5,8 @@ from scipy.stats import beta
 
 
 class Environmental:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "patches"), "Environmental: model needs to have a 'patches' attribute."
 

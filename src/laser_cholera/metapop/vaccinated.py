@@ -1,14 +1,15 @@
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
-from laser_cholera.sc import printred
+logger = logging.getLogger(__name__)
 
 
 class Vaccinated:
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model) -> None:
         self.model = model
-        self.verbose = verbose
 
         assert hasattr(model, "agents"), "Vaccinated: model needs to have a 'agents' attribute."
         model.agents.add_vector_property("V1", length=model.params.nticks + 1, dtype=np.int32, default=0)
@@ -116,9 +117,9 @@ class Vaccinated:
         # +newly vaccinated (successful take)
         new_one_doses = model.prng.poisson(model.params.nu_1_jt[tick] * S / (S + E)).astype(V1imm.dtype)
         if np.any(new_one_doses > S):
-            printred(f"WARNING: new_one_doses > S ({tick=})")
+            logger.debug(f"WARNING: new_one_doses > S ({tick=})")
             for index in np.nonzero(new_one_doses > S)[0]:
-                printred(f"\t{model.params.location_name[index]}: doses {new_one_doses[index]} > {S[index]} susceptible")
+                logger.debug(f"\t{model.params.location_name[index]}: doses {new_one_doses[index]} > {S[index]} susceptible")
             new_one_doses = np.minimum(new_one_doses, S)
         S_next -= new_one_doses
         assert np.all(S_next >= 0), f"S' should not go negative ({tick=}\n\t{S_next})"
@@ -134,7 +135,7 @@ class Vaccinated:
         V1 = np.maximum(V1imm + V1sus + V1inf, 1).astype(V1imm.dtype)
         new_two_doses = model.prng.poisson(model.params.nu_2_jt[tick]).astype(V1imm.dtype)
         if np.any(new_two_doses > V1):
-            printred(f"WARNING: new_two_doses > V1 ({tick=}\n\t{new_two_doses=}\n\t{V1=})")
+            logger.debug(f"WARNING: new_two_doses > V1 ({tick=}\n\t{new_two_doses=}\n\t{V1=})")
             new_two_doses = np.minimum(new_two_doses, V1)
         v1imm_contribution = np.round((V1imm / V1) * new_two_doses).astype(V1imm.dtype)
         V1imm_next -= v1imm_contribution
@@ -157,7 +158,7 @@ class Vaccinated:
         # doses applied to previously infected one dose recipients
         v2inf_delta = new_two_doses - new_immunized - new_infective
         if np.any(v2inf_delta < 0):
-            printred(f"WARNING: v2inf_delta < 0 ({tick=}\n\t{v2inf_delta=})")
+            logger.debug(f"WARNING: v2inf_delta < 0 ({tick=}\n\t{v2inf_delta=})")
             v2inf_delta = np.maximum(v2inf_delta, 0)
         V2inf_next += v2inf_delta
 
