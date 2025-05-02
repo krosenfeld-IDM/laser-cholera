@@ -1,0 +1,264 @@
+**user**
+This repository implements a meta-population model of Cholera transmission (see the code in src/laser_cholera/metapop particularly). I would like to
+ be able to abstract the implementation here so that I could create, leveraging the code that has already been done here, other metapopulation based
+ models of disease transmission (for example, measles). Please identify what parts of the code will be important for this and come up with a
+detailed, specific plan on how I can go about doing this. The idea is to re-use as much of the code and implementation as possible but create
+something that is more flexible and can be abstracted to e.g., SIR, SEIR, SIS spatial models generally.
+
+**codex**
+*Inspecting code structure*
+
+I'm exploring a repository for a meta-population model of Cholera. My goal is to identify crucial parts of the code that will help implement new
+    generic metapopulation disease models like SIR and SEIR. From there, I’ll create a detailed plan for refactoring and abstracting the code to
+enhance flexibility and promote reusability. I think the next step is to take a closer look at the structure of the repository. Let’s get
+started!
+
+*Planning code adaptation*
+
+    I'm examining how measles operates without an environmental reservoir, so I'm considering the state components like Susceptible, Exposed,
+    Infectious, and Recovered (SEIR) that focus on human-to-human contact. I need to generalize certain parts of the code, specifically the
+    LaserFrame, Model orchestrator, and the HumanToHuman component with customizable parameters. I also need to figure out which code needs to be
+    removed or adapted, like anything related to environmental factors or cholera-specific splits, particularly with DerivedValues.
+
+ *Planning project stages*
+
+    I’m laying out a detailed project plan that involves multiple stages.
+
+    In Stage 1, I’ll establish a generic core, creating a package and moving essential classes.
+
+    Then in Stage 2, I’ll extract cholera-specific modules, adapting them to fit the new core structure as plugins.
+
+    In Stage 3, I’ll build new disease modules, like for measles, and consider how to define various types of infectious diseases through generics.
+
+    Later stages will focus on parameterization, utilities for scenario building, and ensuring there are tests and documentation.
+
+    *Outlining repository components and tasks*
+
+    I’m identifying key parts of the project repository. First, I have src/laser_cholera/metapop/model.py as the core simulation engine, along with
+    elements like LaserFrame and property set that are external but important.
+
+    For components, I’m looking at Susceptible, Exposed, Infectious, Recovered, and more. Parameter handling will use params.py and utility
+    functions. The DerivedValues, Analyzer, and Recorder are relevant too, though I’ll keep only some for the generic system.
+
+    Now, I’ll detail eight tasks to move forward with setting up the project.
+
+**codex**
+    Below is a roadmap that has worked well for other agent–based / metapop projects.
+    It is split into two parts:
+
+    A. What in the current cholera code base matters for re-use
+    B. Exactly how to re-organise / extend it so any SIR/SEIR/SIS-style disease can be plugged-in with minimal code
+
+    ────────────────────────────────────────────────────────────────────────
+    A.  Files / objects you will want to KEEP and place in a generic core
+    ────────────────────────────────────────────────────────────────────────
+
+        1. src/laser_cholera/metapop/model.py            →  simulation engine
+           • the Model class, the event loop, metrics collection and plotting stubs
+        2. The “component” classes and their pattern
+           Susceptible.py, Exposed.py, Infectious.py, Recovered.py, Vaccinated.py
+           HumanToHuman.py, EnvToHuman*.py, Environmental.py, Census.py, Recorder.py, …
+           • These demonstrate the *contract* each component obeys:
+           ─ __init__(self, model) pushes its properties into LaserFrame
+           ─ check(self) validates dependencies
+           ─ __call__(self, model, tick) advances one time step
+           ─ optional plot(self) returns generators of Figures
+        3. laser_core.* (external dependency)
+           LaserFrame, PropertySet, and PRNG wrappers are already nicely neutral – no change.
+        4. src/laser_cholera/metapop/utils.py
+           • get_pi_from_lat_long                           (gravity / mobility)
+           • fourier_series_double & get_daily_seasonality  (seasonality helpers)
+           • override_helper                                (CLI → typed params)
+        5. Parameter loader/validator in metapop/params.py
+           • The machinery that turns JSON/HDF5 into a PropertySetEx and does dtype
+             normalisation is disease-agnostic; only the *schema* is cholera-specific.
+        6. Scenario, Analyzer, Recorder, DerivedValues
+           • Useful, but can stay in the cholera package and be re-implemented per
+             disease; nothing here blocks abstraction.
+
+    ────────────────────────────────────────────────────────────────────────
+    B.  Step-by-step plan to achieve a pluggable, disease-agnostic framework
+    ────────────────────────────────────────────────────────────────────────
+    Phase 0 – one rule
+    • DO NOT touch simulation logic in one go.  First extract core, introduce clear
+      interfaces, then migrate cholera so you have working regression tests before
+      you start a new disease.
+
+    ──────────────────────────────────
+    Phase 1: Carve-out a “metapop_core”
+    ──────────────────────────────────
+
+        1. Create src/metapop_core/ with two files:
+
+       a. core.py
+          • class MetaPopModel  (copy Model, remove cholera imports)
+          • keeps: components, phases list, run(), visualize()
+          • no disease-specific defaults; components must be provided by builder.
+
+       b. component.py
+          • class BaseComponent
+              required_agent_props : dict[str, (dtype, default)]
+              required_patch_props : dict[str, (dtype, default)]
+              required_params      : set[str]
+              provides_props       : set[str]         # optional, for tooling
+              add_properties() – factorised helper that pushes vectors/arrays into
+                                 LaserFrame using the dicts above.
+          • default check() that validates requirements; subclasses may override.
+
+        1. Move utils.py (renamed common.py) into metapop_core; leave a small wrapper
+           in laser_cholera.metapop that re-exports for backward compatibility.
+        2. Adapt MetaPopModel to use BaseComponent:
+             for comp_cls in components:
+             inst = comp_cls(self)
+             self.instances.append(inst)
+             if callable(inst): self.phases.append(inst)
+
+       That is the only engine change needed.
+
+    ──────────────────────────────────
+    Phase 2: Generic, minimal parameter schema
+    ──────────────────────────────────
+
+        1. In metapop_core/params.py:
+             • class GenericParameterSet(PropertySetEx)
+             • mandatory keys everyone will recognise:
+             - seed
+             - date_start, date_stop
+             - location_name (list[str])
+             - latitude, longitude
+             - births_t (b_jt)         natural_birth_rate[t, j]
+             - deaths_t (d_jt)         natural_death_rate[t, j]
+             - tau_i                   emigration probability per patch
+             (anything else is allowed but not enforced here)
+             • validate_generic() runs generic checks only.
+        2. Keep the JSON/HDF5 loader code, but drive validation through two stages:
+             validate_generic(params)
+             disease_module.validate_specific(params)
+
+    ──────────────────────────────────
+    Phase 3: Re-package current cholera model as a plugin
+    ──────────────────────────────────
+
+        1. laser_cholera/
+             __init__.py   →  declares entry-point ‘metapop_models’
+             metapop/
+            builder.py      build_model(params: PropertySet) -> MetaPopModel
+            components/
+                 (all existing files, but inherit BaseComponent)
+
+       Install entry-point in pyproject.toml:
+
+       [project.entry-points."metapop_models"]
+       cholera = "laser_cholera.metapop.builder:build_model"
+
+        1. Adjust each cholera component:
+             • replace explicit asserts with BaseComponent.required_*  lists
+             • call self.add_properties() inside __init__
+             • no other behavioural change required
+        2. Provide a tiny builder:
+
+       def build_model(params):
+           m = MetaPopModel(params, name="Cholera Metapop")
+           m.components = [
+               Susceptible, Exposed, Recovered,
+               InfectiousCholera,           # same code, renamed if you wish
+               Vaccinated,
+               Environmental, EnvToHuman,
+               HumanToHuman,
+               Census, DerivedValues, Analyzer, Recorder
+           ]
+           return m
+
+       Regression tests must still pass (pytest -q).
+
+    ──────────────────────────────────
+    Phase 4: CLI & registry
+    ──────────────────────────────────
+
+        1. New CLI group `metapop run --disease cholera --params file.json`
+             • uses importlib.metadata.entry_points(group="metapop_models")
+        2. All CLI flags currently in metapop/model.py stay valid.
+
+    ──────────────────────────────────
+    Phase 5: Add another disease (measles example)
+    ──────────────────────────────────
+
+        1. Create package laser_measles with same builder pattern:
+
+       components
+         susceptible.py   – identical to generic Susceptible
+         exposed.py       – latency σ_E (parameter)
+         infectious.py    – S → I infectious period γ, no symptomatic/asym split
+         recovered.py     – permanent immunity (ε = 0)
+         human_to_human.py – can reuse the generic HumanToHuman component exactly
+         vaccination.py   – (optional)
+       builder.py lists only the components the disease needs.
+
+        1. Parameter schema:
+             – Add validate_specific(params) in laser_measles that ensures
+           σ_E, γ, R0, etc. exist.
+        2. Register entry-point:
+
+       [project.entry-points."metapop_models"]
+       measles = "laser_measles.metapop.builder:build_model"
+
+       Now you can run:
+
+         metapop run --disease measles --params measles_ghana_2005.json
+
+    ──────────────────────────────────
+    Phase 6: Shared, truly generic building-blocks (optional polish)
+    ──────────────────────────────────
+    • Extract pieces from cholera components that are generic:
+
+        * HumanToHuman becomes TransmissionGravity or TransmissionFOI,
+          parameterised by “beta_jt” and the α, 1/denominator exponents.
+        * BirthsDeaths component that only handles natural demography and pushes
+          births / non_disease_deaths to patches.
+        * VaccinationBase that just moves individuals between
+          S, V, E/Ι etc. according to ν_t, φ, ω parameters.
+
+    These can live in metapop_core.components and be subclassed/overridden if a
+    disease wants special logic (e.g. cholera’s symptomatic/asym shedding).
+
+    ──────────────────────────────────
+    Phase 7: Documentation & tests
+    ──────────────────────────────────
+
+        1. docs/usage.rst – Describe:
+
+
+            * How to write a new component (template snippet)
+
+            * What “required_agent_props/patch_props/params” mean
+
+            * How to register a disease builder
+        2. tests/
+
+
+            * Keep all existing cholera tests
+
+            * Add smoke test: build measles model with 2 patches, run 10 ticks,
+                 assert no negative populations and totals are conserved.
+
+    ──────────────────────────────────
+    Deliverables ordering (practical sprint plan)
+    ──────────────────────────────────
+    Sprint 1    Core extraction & cholera migration (Phases 1–3)
+    Sprint 2   Registry & CLI re-wire (Phase 4)
+    Sprint 3   Measles prototype + docs + new unit tests (Phase 5)
+    Sprint 4   Refactor common components & polish (Phase 6–7)
+
+    ──────────────────────────────────
+    Why this works
+    ──────────────────────────────────
+    • The simulation engine and LaserFrame are already disease-agnostic.
+    • Components are naturally pluggable – you just needed a tiny formal
+      interface (BaseComponent) so the engine can validate automatically.
+    • Builders and entry-points give you true “drop-in” disease models without
+      conditional logic in the core.
+    • Existing cholera code changes VERY little; so regression confidence stays
+      high while unlocking flexibility for SEIR / SIS etc.
+
+    Good luck — once Phase 3 is finished you will be able to start experimenting
+    with new diseases in hours, not weeks.
