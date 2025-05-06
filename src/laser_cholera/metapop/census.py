@@ -18,31 +18,37 @@ class Census:
         check() gets called after all components have been instantiated and initialized.
         At this point, we will dynamically generate the update() method based on which compartments we find in the model.
         """
-        prolog = "def update(patches, agents, tick):\n    N_next = patches.N[tick + 1]\n"
-        epilog = "    return\n"
+        # prolog = "def update(patches, agents, tick):\n    N_next = patches.N[tick + 1]\n"
+        # epilog = "    return\n"
 
-        body = ""
+        # body = ""
+        # for compartment in ["S", "E", "Isym", "Iasym", "R", "V1", "V2"]:
+        #     if hasattr(self.model.agents, compartment):
+        #         body += f"    {compartment}_next = agents.{compartment}[tick + 1]\n"
+        #         body += f"    N_next[:] += {compartment}_next\n"
+
+        # code = compile(
+        #     prolog + body + epilog,
+        #     filename="<string>",
+        #     mode="exec",
+        # )
+        # namespace = {}
+        # exec(code, namespace)
+        # self.update = staticmethod(namespace["update"])
+
+        # # Makes me feel a little slimy, but we need to set the initial population size
+        # self.update(self.model.patches, self.model.agents, -1)
         for compartment in ["S", "E", "Isym", "Iasym", "R", "V1", "V2"]:
             if hasattr(self.model.agents, compartment):
-                body += f"    {compartment}_next = agents.{compartment}[tick + 1]\n"
-                body += f"    N_next[:] += {compartment}_next\n"
-
-        code = compile(
-            prolog + body + epilog,
-            filename="<string>",
-            mode="exec",
-        )
-        namespace = {}
-        exec(code, namespace)  # noqa: S102
-        self.update = staticmethod(namespace["update"])
-
-        # Makes me feel a little slimy, but we need to set the initial population size
-        self.update(self.model.patches, self.model.agents, -1)
+                self.model.patches.N[0] += getattr(self.model.agents, compartment)[0]
 
         return
 
     def __call__(self, model, tick: int) -> None:
-        self.update(model.patches, model.agents, tick)
+        # self.update(model.patches, model.agents, tick)
+        for compartment in ["S", "E", "Isym", "Iasym", "R", "V1", "V2"]:
+            if hasattr(model.agents, compartment):
+                model.patches.N[tick + 1] += getattr(model.agents, compartment)[tick + 1]
 
         assert np.all(model.patches.N[tick + 1] >= 0), "N' should not go negative"
 

@@ -56,24 +56,24 @@ class Environmental:
 
     def __call__(self, model, tick: int) -> None:
         W = model.patches.W[tick]
-        Wnext = model.patches.W[tick + 1]
-        Wnext[:] = W
+        W_next = model.patches.W[tick + 1]
+        W_next[:] = W
 
         Isym = model.agents.Isym[tick]
         Iasym = model.agents.Iasym[tick]
 
         # -decay
         # Use np.minimum() to make sure we don't go negative
-        decay = np.minimum(model.prng.poisson(model.patches.delta_jt[tick] * W), W).astype(Wnext.dtype)
-        Wnext -= decay
+        decay = np.minimum(model.prng.poisson(model.patches.delta_jt[tick] * W), W).astype(W_next.dtype)
+        W_next -= decay
 
         # +shedding from Isymptomatic
-        shedding_sym = model.prng.poisson(model.params.zeta_1 * Isym).astype(Wnext.dtype)
-        Wnext += (1 - model.params.theta_j) * shedding_sym
+        shedding_sym = model.prng.poisson(model.params.zeta_1 * Isym).astype(W_next.dtype)
+        W_next += (1 - model.params.theta_j) * shedding_sym
 
         # +shedding from Iasymptomatic
-        shedding_asym = model.prng.poisson(model.params.zeta_2 * Iasym).astype(Wnext.dtype)
-        Wnext += (1 - model.params.theta_j) * shedding_asym
+        shedding_asym = model.prng.poisson(model.params.zeta_2 * Iasym).astype(W_next.dtype)
+        W_next += (1 - model.params.theta_j) * shedding_asym
 
         return
 

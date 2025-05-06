@@ -12,6 +12,9 @@ class HumanToHumanVax:
         model.patches.add_vector_property("V1_incidence_hum", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.patches.add_vector_property("V2_incidence_hum", length=model.params.nticks + 1, dtype=np.int32, default=0)
 
+        if not hasattr(model.patches, "incidence"):
+            model.patches.add_vector_property("incidence", length=model.params.nticks + 1, dtype=np.int32, default=0)
+
         return
 
     def check(self):
@@ -47,29 +50,33 @@ class HumanToHumanVax:
         """
 
         Lambda = model.patches.Lambda[tick + 1]
-        Enext = model.agents.E[tick + 1]
+        E_next = model.agents.E[tick + 1]
 
         # LambdaV1
         V1sus = model.agents.V1sus[tick]
         local = np.round((1 - model.params.tau_i) * V1sus).astype(V1sus.dtype)
-        infections = model.prng.binomial(local, -np.expm1(-Lambda)).astype(V1sus.dtype)
+        new_infections = model.prng.binomial(local, -np.expm1(-Lambda)).astype(V1sus.dtype)
         V1sus_next = model.agents.V1sus[tick + 1]
         V1inf_next = model.agents.V1inf[tick + 1]
-        V1sus_next -= infections
-        V1inf_next += infections
-        Enext += infections
+        V1sus_next -= new_infections
+        V1inf_next += new_infections
+        E_next += new_infections
+        model.patches.V1_incidence_hum[tick + 1] += new_infections
+        model.patches.incidence[tick + 1] += new_infections
 
         assert np.all(V1sus_next >= 0), f"V1sus' should not go negative ({tick=}\n\t{V1sus_next})"
 
         # LambdaV2
         V2sus = model.agents.V2sus[tick]
         local = np.round((1 - model.params.tau_i) * V2sus).astype(V2sus.dtype)
-        infections = model.prng.binomial(local, -np.expm1(-Lambda)).astype(V2sus.dtype)
+        new_infections = model.prng.binomial(local, -np.expm1(-Lambda)).astype(V2sus.dtype)
         V2sus_next = model.agents.V2sus[tick + 1]
         V2inf_next = model.agents.V2inf[tick + 1]
-        V2sus_next -= infections
-        V2inf_next += infections
-        Enext += infections
+        V2sus_next -= new_infections
+        V2inf_next += new_infections
+        E_next += new_infections
+        model.patches.V2_incidence_hum[tick + 1] += new_infections
+        model.patches.incidence[tick + 1] += new_infections
 
         assert np.all(V2sus_next >= 0), f"V2sus' should not go negative ({tick=}\n\t{V2sus_next})"
 

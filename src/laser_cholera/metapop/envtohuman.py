@@ -25,6 +25,11 @@ class EnvToHuman:
         psi_bar = psi.mean(axis=0, keepdims=True)
         model.patches.beta_env[:, :] = model.params.beta_j0_env.T * (1.0 + (psi - psi_bar) / psi_bar)
 
+        model.patches.add_vector_property("incidence_env", length=model.params.nticks + 1, dtype=np.int32, default=0)
+
+        if not hasattr(model.patches, "incidence"):
+            model.patches.add_vector_property("incidence", length=model.params.nticks + 1, dtype=np.int32, default=0)
+
         return
 
     def check(self):
@@ -60,9 +65,11 @@ class EnvToHuman:
         E_next = model.agents.E[tick + 1]
         # Use S_next here since some S will have been removed by natural mortality and by human-to-human transmission
         local_s = np.round(S_next * local_frac).astype(S.dtype)
-        infections_s = model.prng.binomial(local_s, -np.expm1(-Psi)).astype(S_next.dtype)
-        S_next -= infections_s
-        E_next += infections_s
+        new_infections = model.prng.binomial(local_s, -np.expm1(-Psi)).astype(S_next.dtype)
+        S_next -= new_infections
+        E_next += new_infections
+        model.patches.incidence_env[tick + 1] += new_infections
+        model.patches.incidence[tick + 1] += new_infections
 
         assert np.all(S_next >= 0), f"Negative susceptible populations at tick {tick + 1}.\n\t{S_next=}"
 

@@ -36,6 +36,11 @@ class HumanToHuman:
         model.patches.add_array_property("beta_j_seasonality", (model.params.p, model.patches.count), dtype=np.float32, default=0.0)
         model.patches.beta_j_seasonality[:, :] = get_daily_seasonality(model.params)
 
+        model.patches.add_vector_property("incidence_human", length=model.params.nticks + 1, dtype=np.int32, default=0)
+
+        if not hasattr(model.patches, "incidence"):
+            model.patches.add_vector_property("incidence", length=model.params.nticks + 1, dtype=np.int32, default=0)
+
         return
 
     def check(self):
@@ -95,9 +100,11 @@ class HumanToHuman:
         local = np.round((1 - model.params.tau_i) * S).astype(S.dtype)
         if np.any(np.isnan(rate)):
             logger.debug(f"NaN transmission rate at tick {tick + 1}.\n\t{rate=}")
-        infections = model.prng.binomial(local, -np.expm1(-rate)).astype(S.dtype)
-        S_next -= infections
-        E_next += infections
+        new_infections = model.prng.binomial(local, -np.expm1(-rate)).astype(S.dtype)
+        S_next -= new_infections
+        E_next += new_infections
+        model.patches.incidence_human[tick + 1] += new_infections
+        model.patches.incidence[tick + 1] += new_infections
 
         assert np.all(S_next >= 0), f"Negative susceptible populations at tick {tick + 1}.\n\t{S_next=}"
 

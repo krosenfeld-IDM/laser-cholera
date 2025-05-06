@@ -205,8 +205,8 @@ def dict_to_propertysetex(parameters: dict) -> PropertySetEx:
     # No processing of "decay_shape_1"
     # No processing of "decay_shape_2"
 
-    # No processing of "reported_cases" (yet)
-    # No processing of "reported_deaths" (yet)
+    params.reported_cases = np.array([[int(element) if element != "NA" else np.nan for element in row] for row in params.reported_cases])
+    params.reported_deaths = np.array([[int(element) if element != "NA" else np.nan for element in row] for row in params.reported_deaths])
 
     # No processing of "return"
 
