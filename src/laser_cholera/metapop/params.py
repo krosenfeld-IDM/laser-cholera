@@ -205,8 +205,24 @@ def dict_to_propertysetex(parameters: dict) -> PropertySetEx:
     # No processing of "decay_shape_1"
     # No processing of "decay_shape_2"
 
-    params.reported_cases = np.array([[int(element) if element != "NA" else np.nan for element in row] for row in params.reported_cases])
-    params.reported_deaths = np.array([[int(element) if element != "NA" else np.nan for element in row] for row in params.reported_deaths])
+    def convert(item):
+        try:
+            return int(item)
+        except ValueError:
+            pass
+        return np.nan
+
+    # If it's a list (of lists), convert to a numpy array. Otherwise assume it's already a numpy array.
+    if isinstance(params.reported_cases, list):
+        params.reported_cases = np.array([[convert(element) for element in row] for row in params.reported_cases])
+    else:
+        assert isinstance(params.reported_cases, np.ndarray), "reported_cases must be a list of lists or a numpy array"
+
+    # If it's a list (of lists), convert to a numpy array. Otherwise assume it's already a numpy array.
+    if isinstance(params.reported_deaths, list):
+        params.reported_deaths = np.array([[convert(element) for element in row] for row in params.reported_deaths])
+    else:
+        assert isinstance(params.reported_deaths, np.ndarray), "reported_deaths must be a list of lists or a numpy array"
 
     # No processing of "return"
 

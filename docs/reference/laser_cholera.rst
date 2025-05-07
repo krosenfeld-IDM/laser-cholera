@@ -41,6 +41,14 @@ laser\_cholera.iso\_codes module
    :show-inheritance:
    :undoc-members:
 
+laser\_cholera.likelihood module
+--------------------------------
+
+.. automodule:: laser_cholera.likelihood
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 laser\_cholera.sc module
 ------------------------
 
