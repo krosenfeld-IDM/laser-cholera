@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
+from laser_cholera.likelihood import get_model_likelihood
+
 
 class Analyzer:
     def __init__(self, model) -> None:
@@ -10,6 +12,19 @@ class Analyzer:
         return
 
     def check(self):
+        return
+
+    def __call__(self, model, tick: int) -> None:
+        """Calculate log likelihood on the final tick."""
+        if tick == model.params.nticks - 1:
+            # Use the smaller of reported cases or the number of timesteps (not including the initial state)
+            nreports = min(model.params.reported_cases.shape[1], model.patches.incidence.shape[0] - 1)
+            model.log_likelihood = get_model_likelihood(
+                obs_cases=model.params.reported_cases[:, :nreports],
+                est_cases=model.patches.incidence[1 : nreports + 1, :].T,
+                obs_deaths=model.params.reported_deaths[:, :nreports],
+                est_deaths=model.patches.disease_deaths[1 : nreports + 1, :].T,
+            )
         return
 
     def plot(self, fig: Figure = None):  # pragma: no cover

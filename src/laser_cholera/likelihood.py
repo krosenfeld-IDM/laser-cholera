@@ -97,8 +97,14 @@ def get_model_likelihood(
     ll_locations = np.full(n_locations, np.nan)
 
     for j in range(n_locations):
-        mean_cases = np.nanmean(obs_cases[j, :])
-        var_cases = np.nanvar(obs_cases[j, :], ddof=1)
+        cases = obs_cases[j, :]
+        if np.all(np.isnan(cases)):
+            if verbose:
+                print(f"Location {j} (cases): all NA — skipping.")
+            continue
+
+        mean_cases = np.nanmean(cases)
+        var_cases = np.nanvar(cases, ddof=1)
 
         # If cases row fully NA, skip
         if np.all(np.isnan(mean_cases)) or np.all(np.isnan(var_cases)):
@@ -108,8 +114,14 @@ def get_model_likelihood(
         # Decide family for cases
         family_cases = "negbin" if var_cases / mean_cases >= 1.5 else "poisson"
 
-        mean_deaths = np.nanmean(obs_deaths[j, :])
-        var_deaths = np.nanvar(obs_deaths[j, :], ddof=1)
+        deaths = obs_deaths[j, :]
+        if np.all(np.isnan(deaths)):
+            if verbose:
+                print(f"Location {j} (deaths): all NA — skipping.")
+            continue
+
+        mean_deaths = np.nanmean(deaths)
+        var_deaths = np.nanvar(deaths, ddof=1)
 
         # If deaths row fully NA, skip
         if np.all(np.isnan(mean_deaths)) or np.all(np.isnan(var_deaths)):
@@ -118,6 +130,10 @@ def get_model_likelihood(
             continue
 
         # Decide family for deaths
+        if mean_deaths == 0:
+            if verbose:
+                print(f"Location {j} (deaths): mean = 0 — skipping.")
+            continue
         family_deaths = "negbin" if var_deaths / mean_deaths >= 1.5 else "poisson"
 
         # Calculate log-likelihood for cases
@@ -126,7 +142,11 @@ def get_model_likelihood(
         )
 
         ll_max_cases = calc_log_likelihood(
-            observed=np.nanmax(obs_cases[j,]), estimated=np.nanmax(est_cases[j,]), family="poisson", weights=None, verbose=verbose
+            observed=np.array([np.nanmax(obs_cases[j,])]),
+            estimated=np.array([np.nanmax(est_cases[j,])]),
+            family="poisson",
+            weights=None,
+            verbose=verbose,
         )
 
         # Calculate log-likelihood for deaths
@@ -135,7 +155,11 @@ def get_model_likelihood(
         )
 
         ll_max_deaths = calc_log_likelihood(
-            observed=np.nanmax(obs_deaths[j,]), estimated=np.nanmax(est_deaths[j,]), family="poisson", weights=None, verbose=False
+            observed=np.array([np.nanmax(obs_deaths[j,])]),
+            estimated=np.array([np.nanmax(est_deaths[j,])]),
+            family="poisson",
+            weights=None,
+            verbose=False,
         )
 
         # Weighted sum for location j
@@ -151,7 +175,7 @@ def get_model_likelihood(
             print(f"  Weighted={ll_location_tmp:%.2f}")
 
     # If everything was skipped
-    if np.all(np.nan(ll_locations)):
+    if np.all(np.isnan(ll_locations)):
         if verbose:
             print("All locations skipped — returning NA.")
 
@@ -241,7 +265,7 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
     # Parameter estimation
     if mean_precision:
         residuals = observed - estimated
-        sigma2 = np.var(residuals, ddof=1)
+        sigma2 = np.var(residuals, ddof=1 if len(residuals) > 1 else 0)
         if sigma2 <= 0:
             raise ValueError("Residual variance is non-positive — cannot estimate phi.")
 
@@ -258,7 +282,7 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
 
     else:
         mu = np.mean(observed)
-        sigma2 = np.var(observed, ddof=1)
+        sigma2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
         shape_1 = ((1 - mu) / sigma2 - 1 / mu) * mu**2
         shape_2 = shape_1 * (1 / mu - 1)
 
@@ -363,7 +387,7 @@ def calc_log_likelihood_gamma(observed, estimated, weights=None, verbose=True):
 
     # Parameter estimation
     mu = np.mean(observed)
-    s2 = np.var(observed, ddof=1)
+    s2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
     shape = mu**2 / s2
     scale = estimated / shape
 
@@ -420,7 +444,7 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
     # Estimate k if not supplied
     if k is None:
         mu = np.mean(observed)
-        s2 = np.var(observed, ddof=1)
+        s2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
 
         if s2 <= mu:
             if verbose:
@@ -552,7 +576,7 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     # Original code checked this, but we already return np.nan if there are no usable data
     # if len(observed) > 1:
     mu = np.mean(observed)
-    s2 = np.var(observed, ddof=1)
+    s2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
     disp_ratio = s2 / mu
 
     if disp_ratio > 1.5:
