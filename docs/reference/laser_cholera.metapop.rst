@@ -89,10 +89,10 @@ laser\_cholera.metapop.infectious module
    :show-inheritance:
    :undoc-members:
 
-laser\_cholera.metapop.logging module
--------------------------------------
+laser\_cholera.metapop.logsetup module
+--------------------------------------
 
-.. automodule:: laser_cholera.metapop.logging
+.. automodule:: laser_cholera.metapop.logsetup
    :members:
    :show-inheritance:
    :undoc-members:

@@ -1,4 +1,4 @@
-from . import logging  # noqa: F401, I001
+from . import logsetup  # noqa: F401, I001
 
 
 from .analyzer import Analyzer
