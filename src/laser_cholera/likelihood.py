@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.special import gammaln
 from scipy.stats import beta
@@ -407,6 +409,8 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
     observed, estimated, weights = result
 
     # Add cushion around 0 values to avoid -Inf in log calculations
+    if np.any(estimated <= 0):
+        estimated = estimated.astype(np.float64)
     estimated[estimated <= 0] = np.finfo(np.float64).eps
 
     # Domain checks
@@ -435,7 +439,7 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
         ll_vec = observed * np.log(estimated) - estimated - gammaln(observed + 1)
     else:
         if k < 1.5 and verbose:
-            print(f"k = {k:.2f} indicates near-Poisson dispersion.")
+            warnings.warn(f"k ({k:.2f}) < 1.5 indicates near-Poisson dispersion.")  # noqa: B028
         ll_vec = (
             gammaln(observed + k)
             - gammaln(k)
@@ -536,6 +540,8 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     observed, estimated, weights = result
 
     # Add cushion around 0 values to avoid -Inf in log calculations
+    if np.any(estimated <= 0):
+        estimated = estimated.astype(np.float64)
     estimated[estimated <= 0] = np.finfo(np.float64).eps
 
     # Domain checks
@@ -549,8 +555,8 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     s2 = np.var(observed)
     disp_ratio = s2 / mu
 
-    if disp_ratio > 1.5 and verbose:
-        print(f"Var/Mean = {disp_ratio:.2f} suggests overdispersion. Consider Negative Binomial.")
+    if disp_ratio > 1.5:
+        warnings.warn(f"Var/Mean = {disp_ratio:.2f} suggests overdispersion. Consider Negative Binomial.")  # noqa: B028
     # endif
 
     # Weighted log-likelihood

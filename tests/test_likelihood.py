@@ -1,7 +1,10 @@
+import re
 import unittest
+import warnings
 
 import numpy as np
 import pytest
+from scipy.special import gammaln
 
 from laser_cholera.likelihood import calc_log_likelihood_beta
 from laser_cholera.likelihood import calc_log_likelihood_binomial
@@ -188,7 +191,9 @@ class LikelihoodTests(unittest.TestCase):
         # _gamma = calc_log_likelihood_gamma(obs_cases, est_cases, verbose=False)
         _negbin = calc_log_likelihood_negbin(obs_cases, est_cases, verbose=False)
         # _normal = calc_log_likelihood_normal(obs_cases, est_cases, verbose=False)
-        _poisson = calc_log_likelihood_poisson(obs_cases, est_cases, verbose=False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            _poisson = calc_log_likelihood_poisson(obs_cases, est_cases, verbose=False)
 
         return
 
@@ -336,6 +341,122 @@ class LikelihoodTests(unittest.TestCase):
 
     def test_calc_log_likelihood_invalid_poisson_inputs(self):
         return
+
+
+class TestThatLikelihoodTests(unittest.TestCase):
+    def test_poisson_returns_NA_for_all_NA_input(self):
+        ll = calc_log_likelihood_poisson(observed=np.array([np.nan, np.nan]), estimated=np.array([1, 2]), weights=None, verbose=False)
+        assert np.all(np.isnan(ll))
+
+    def test_poisson_cushions_zero_or_negative_estimates(self):
+        ll = calc_log_likelihood_poisson(observed=np.array([1, 2]), estimated=np.array([0, -5]), weights=None, verbose=False)
+        assert np.all(np.isfinite(ll))
+
+    def test_poission_errors_on_length_mismatch(self):
+        with pytest.raises(ValueError, match=re.escape("Lengths of observed (4), estimated (2), and weights (4) must all match.")):
+            calc_log_likelihood_poisson(observed=np.array([1, 2, 3, 4]), estimated=np.array([1, 2]), weights=None, verbose=False)
+
+    def test_poisson_errors_on_negative_weights(self):
+        with pytest.raises(ValueError, match="All weights must be >= 0"):
+            calc_log_likelihood_poisson(observed=np.array([1, 2]), estimated=np.array([1, 2]), weights=np.array([1, -1]), verbose=False)
+
+    def test_poisson_errors_on_zero_sum_weights(self):
+        with pytest.raises(ValueError, match="All weights are zero, cannot compute likelihood."):
+            calc_log_likelihood_poisson(observed=np.array([1, 2]), estimated=np.array([1, 2]), weights=np.array([0, 0]), verbose=False)
+
+    def test_poisson_errors_on_non_interger_observed_values(self):
+        with pytest.raises(ValueError, match="observed must contain non-negative integer counts for Poisson."):
+            calc_log_likelihood_poisson(observed=np.array([1.5, 2]), estimated=np.array([1, 2]), weights=None, verbose=False)
+
+    def test_poisson_warns_on_overdispersion(self):
+        with pytest.warns(UserWarning, match="Var/Mean = "):
+            calc_log_likelihood_poisson(observed=np.array([0, 0, 5]), estimated=np.array([1, 1, 5]), weights=None, verbose=False)
+
+    def test_poisson_matches_manual_calculation_without_weights(self):
+        observed = np.array([0, 1, 2])
+        estimated = np.array([1, 2, 3])
+        weights = None
+        ll_manual = (observed * np.log(estimated) - estimated - gammaln(observed + 1)).sum()
+        ll_func = calc_log_likelihood_poisson(observed=observed, estimated=estimated, weights=weights, verbose=False)
+        assert np.isclose(ll_func, ll_manual, rtol=1e-8)
+
+    def test_poisson_matches_manual_calculation_with_weights(self):
+        observed = np.array([0, 1, 2])
+        estimated = np.array([1, 2, 3])
+        weights = np.array([1, 2, 0.5])
+        ll_manual = (weights * (observed * np.log(estimated) - estimated - gammaln(observed + 1))).sum()
+        ll_func = calc_log_likelihood_poisson(observed=observed, estimated=estimated, weights=weights, verbose=False)
+        assert np.isclose(ll_func, ll_manual, rtol=1e-8)
+
+    def test_negbin_errors_when_observed_and_estimated_lengths_differ(self):
+        with pytest.raises(ValueError, match=re.escape("Lengths of observed (2), estimated (1), and weights (2) must all match.")):
+            calc_log_likelihood_negbin(observed=np.array([1, 2]), estimated=np.array([1]), k=1, weights=None, verbose=False)
+
+    def test_negbin_returns_NA_for_all_NA_input(self):
+        ll = calc_log_likelihood_negbin(
+            observed=np.array([np.nan, np.nan]), estimated=np.array([np.nan, np.nan]), k=1, weights=None, verbose=False
+        )
+        assert np.all(np.isnan(ll))
+
+    def test_negbin_errors_on_negative_weights(self):
+        with pytest.raises(ValueError, match="All weights must be >= 0"):
+            calc_log_likelihood_negbin(observed=np.array([1, 2]), estimated=np.array([1, 2]), k=1, weights=np.array([1, -1]), verbose=False)
+
+    def test_negbin_errors_on_zero_sum_weights(self):
+        with pytest.raises(ValueError, match="All weights are zero, cannot compute likelihood."):
+            calc_log_likelihood_negbin(observed=np.array([1, 2]), estimated=np.array([1, 2]), k=1, weights=np.array([0, 0]), verbose=False)
+
+    def test_negbin_errors_on_non_interger_observed_values(self):
+        with pytest.raises(ValueError, match="observed must contain non-negative integer counts."):
+            calc_log_likelihood_negbin(observed=np.array([1.5, 2]), estimated=np.array([1, 2]), k=1, weights=None, verbose=False)
+
+    def test_negbin_cushions_zero_or_negative_estimates(self):
+        ll = calc_log_likelihood_negbin(observed=np.array([1, 2]), estimated=np.array([0, -5]), k=1, weights=None, verbose=False)
+        assert np.all(np.isfinite(ll))
+
+    def test_negbin_defaults_to_poisson_when_variance_less_than_equal_mean(self):
+        observed = np.array([1] * 5)
+        estimated = observed.copy()
+        ll_nb = calc_log_likelihood_negbin(observed=observed, estimated=estimated, k=None, weights=None, verbose=False)
+        ll_pois = calc_log_likelihood_poisson(observed=observed, estimated=estimated, weights=None, verbose=False)
+        assert np.isclose(ll_nb, ll_pois, rtol=1e-8)
+
+    def test_negbin_uses_provided_k_and_warns_when_less_than_one_point_five(self):
+        observed = np.array([0, 1, 2])
+        estimated = np.array([1, 1, 1])
+        with pytest.warns(UserWarning, match=r"k \([0-9]+\.[0-9][0-9]\) < 1.5 indicates near-Poisson dispersion."):
+            _ll = calc_log_likelihood_negbin(observed=observed, estimated=estimated, k=1, weights=None, verbose=True)
+
+    def test_negbin_matches_manual_negbin_log_likelihood_formula(self):
+        observed = np.array([0, 1, 2])
+        estimated = np.array([1, 2, 3])
+        k = 2
+        ll_vec = (
+            gammaln(observed + k)
+            - gammaln(k)
+            - gammaln(observed + 1)
+            + k * np.log(k / (k + estimated))
+            + observed * np.log(estimated / (k + estimated))
+        )
+        ll_manual = ll_vec.sum()
+        ll_func = calc_log_likelihood_negbin(observed=observed, estimated=estimated, k=k, weights=None, verbose=False)
+        assert np.isclose(ll_func, ll_manual, rtol=1e-8)
+
+    def test_negbin_matches_manual_calculation_with_weights(self):
+        observed = np.array([0, 1, 2])
+        estimated = np.array([1, 2, 3])
+        k = 2
+        weights = np.array([1, 2, 0.5])
+        ll_vec = (
+            gammaln(observed + k)
+            - gammaln(k)
+            - gammaln(observed + 1)
+            + k * np.log(k / (k + estimated))
+            + observed * np.log(estimated / (k + estimated))
+        )
+        ll_manual = (weights * ll_vec).sum()
+        ll_func = calc_log_likelihood_negbin(observed=observed, estimated=estimated, k=k, weights=weights, verbose=False)
+        assert np.isclose(ll_func, ll_manual, rtol=1e-8)
 
 
 if __name__ == "__main__":
