@@ -5,6 +5,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.extlinks",
     "sphinx.ext.ifconfig",
+    "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
@@ -12,7 +13,7 @@ extensions = [
 source_suffix = {".rst": "restructuredtext"}
 master_doc = "index"
 project = "LASER Cholera (LASIK)"
-year = "2024"
+year = "2024-2025"
 author = "Institute for Disease Modeling"
 copyright = f"{year}, Bill & Melinda Gates Foundation"
 version = release = "0.7.7"

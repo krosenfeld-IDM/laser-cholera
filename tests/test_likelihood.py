@@ -37,6 +37,11 @@ class LikelihoodTests(unittest.TestCase):
 
         return
 
+    def test_get_model_likelihood_reported_all_nan(self):
+        nans = np.full_like(self.obs_cases, np.nan, dtype=np.float64)
+        ll = get_model_likelihood(obs_cases=nans, est_cases=self.est_cases, obs_deaths=nans, est_deaths=self.est_deaths)
+        assert np.all(np.isnan(ll))
+
     def test_get_model_likelihood_invalid_inputs(self):
         # obs_cases isn't a NumPy array
         with pytest.raises(TypeError, match=r"obs_\* and est_\* must be numpy arrays"):

@@ -111,8 +111,9 @@ def get_model_likelihood(
             if verbose:
                 print(f"Location {j} (cases): all NA — skipping.")
             continue
+
         # Decide family for cases
-        family_cases = "negbin" if var_cases / mean_cases >= 1.5 else "poisson"
+        family_cases = "negbin" if (mean_cases > 0) and ((var_cases / mean_cases) >= 1.5) else "poisson"
 
         deaths = obs_deaths[j, :]
         if np.all(np.isnan(deaths)):
@@ -130,11 +131,7 @@ def get_model_likelihood(
             continue
 
         # Decide family for deaths
-        if mean_deaths == 0:
-            if verbose:
-                print(f"Location {j} (deaths): mean = 0 — skipping.")
-            continue
-        family_deaths = "negbin" if var_deaths / mean_deaths >= 1.5 else "poisson"
+        family_deaths = "negbin" if (mean_deaths > 0) and ((var_deaths / mean_deaths) >= 1.5) else "poisson"
 
         # Calculate log-likelihood for cases
         ll_cases = calc_log_likelihood(
@@ -575,12 +572,10 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     # Check for overdispersion
     # Original code checked this, but we already return np.nan if there are no usable data
     # if len(observed) > 1:
-    mu = np.mean(observed)
-    s2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
-    disp_ratio = s2 / mu
-
-    if disp_ratio > 1.5:
-        warnings.warn(f"Var/Mean = {disp_ratio:.2f} suggests overdispersion. Consider Negative Binomial.")  # noqa: B028
+    if (mu := np.mean(observed)) > 0:
+        s2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
+        if (disp_ratio := (s2 / mu)) > 1.5:
+            warnings.warn(f"Var/Mean = {disp_ratio:.2f} suggests overdispersion. Consider Negative Binomial.")  # noqa: B028
     # endif
 
     # Weighted log-likelihood

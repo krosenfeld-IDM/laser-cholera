@@ -49,14 +49,6 @@ laser\_cholera.likelihood module
    :show-inheritance:
    :undoc-members:
 
-laser\_cholera.sc module
-------------------------
-
-.. automodule:: laser_cholera.sc
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 laser\_cholera.test module
 --------------------------
 
