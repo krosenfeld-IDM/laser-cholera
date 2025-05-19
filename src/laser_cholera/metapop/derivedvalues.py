@@ -46,36 +46,40 @@ class DerivedValues:
 
         .. math::
 
+            y_{it} = \\frac {I^{sym}_{it} + I^{asym}_{it}} {N_{it}}
+
+        .. math::
+
+            \\bar y_{i} = \\frac 1 T \\sum_{t=1}^{T} y_{it}
+
+        .. math::
+
+            C_{ij} = \\frac { \\sum_{t=1}^T {(y_{it} - \\bar y_i) (y_{jt} - \\bar y_j)} } { \\sqrt {\\sum_{t=1}^T {(y_{it} - \\bar y_i)}^2} \\sqrt {\\sum_{t=1}^T {(y_{jt} - \\bar y_j)}^2} }
+
+
+        .. math::
+
             C_{ij} = \\frac {(y_{it} - \\bar y_{i}) (y_{jt} - \\bar y_{j})} { \\sqrt {\\text {var}(y_{i}) \\text {var}(y_{j})} }
 
         """
         if tick == model.params.nticks - 1:
-            # spatial_hazard
-            # https://www.mosaicmod.org/model-description.html#the-spatial-hazard
-            for t in range(model.params.nticks):
-                beta_jt = model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[t % model.params.p, :])
-                tau_j = model.params.tau_i
-                S_j = model.agents.S[t] + model.agents.V1sus[t] + model.agents.V2sus[t]
-                N_j = model.patches.N[t]
-                pi_ij = model.patches.pi_ij
-                tau_i = model.params.tau_i
-                I_i = model.agents.Isym[t] + model.agents.Iasym[t]
+            calculate_spatial_hazard(
+                model.params.nticks,
+                model.params.beta_j0_hum,
+                model.patches.beta_j_seasonality,
+                model.params.p,
+                model.params.tau_i,
+                model.agents.S,
+                model.agents.V1sus,
+                model.agents.V2sus,
+                model.patches.N,
+                model.patches.pi_ij,
+                model.agents.Iasym,
+                model.agents.Isym,
+                model.patches.spatial_hazard,
+            )
 
-                S_effective = (1 - tau_j) * S_j / N_j
-                I_incoming = (pi_ij * tau_i * I_i / N_j).sum(axis=1)
-                rate = beta_jt * S_effective * I_incoming
-                probability = -np.expm1(-rate)
-                denominator = 1 / (1 + beta_jt * (1 - tau_j) * S_j)
-                hazard = (beta_jt * probability) / denominator
-                model.patches.spatial_hazard[t] = hazard
-
-            # coupling
-            # https://www.mosaicmod.org/model-description.html#coupling-among-locations
-            # y_t = I_i / N_j
-            # y_bar_t = np.mean(y_t)
-            # diff = y_t - y_bar_t
-            # var_y_t = np.var(y_t)
-            # model.patches.coupling[:, :] = diff[:, None] * diff[None, :] / np.sqrt(var_y_t[:, None] * var_y_t[None, :])
+            calculate_coupling(model.agents.Isym, model.agents.Iasym, model.patches.N, model.patches.coupling)
 
         return
 
@@ -91,3 +95,103 @@ class DerivedValues:
         yield "Spatial Hazard by Location Over Time"
 
         return
+
+
+def calculate_spatial_hazard_for_model(model):
+    """Calculate the spatial hazard for the model.
+
+    Helpful for calling from R without needing to specify all the parameters.
+    """
+    calculate_spatial_hazard(
+        model.params.nticks,
+        model.params.beta_j0_hum,
+        model.patches.beta_j_seasonality,
+        model.params.p,
+        model.params.tau_i,
+        model.agents.S,
+        model.agents.V1sus,
+        model.agents.V2sus,
+        model.patches.N,
+        model.patches.pi_ij,
+        model.agents.Iasym,
+        model.agents.Isym,
+        model.patches.spatial_hazard,
+    )
+
+    return
+
+
+def calculate_spatial_hazard(nticks, beta_j0_hum, beta_j_seasonality, p, tau_i, S, V1sus, V2sus, N, pi_ij, Iasym, Isym, spatial_hazard):
+    """Calculate the spatial hazard for each location at each time step.
+    The spatial hazard is calculated using the formula:
+
+    https://www.mosaicmod.org/model-description.html#the-spatial-hazard
+
+    .. math::
+
+        h(j,t) = \\frac {\\beta^{hum}_{jt} (1 - e^{-((1 - \\tau_j) (S_{jt} + V^{sus}_{1,jt} + V^{sus}_{2,jt}) / N_{jt}) \\sum_{\\forall i \\ne j} \\pi_{ij} \\tau_i ((I^{sym}_{it} + I^{asym}_{it}) / N_{it})})} {1/(1 + \\beta^{hum}_{jt}(1 - \\tau_j) (S_{jt} + V^{sus}_{1,jt} + V^{sus}_{2,jt}))}
+
+    """
+
+    for t in range(nticks):
+        beta_j = beta_j0_hum * (1.0 + beta_j_seasonality[t % p, :])
+        tau_j = tau_i
+        S_j = S[t] + V1sus[t] + V2sus[t]  # Use S_j where S_j = S + V1sus + V2sus
+        N_i = N_j = N[t]
+        # pi_ij = pi_ij
+        # tau_i = tau_i
+        I_i = Isym[t] + Iasym[t]  # Use I_i where I_i = Isym + Iasym
+
+        S_effective = (1 - tau_j) * S_j / N_j  # Use S_effective where S_effective = (1 - tau_j) * S_j / N_j
+        I_incoming = (pi_ij * tau_i * I_i / N_i).sum(axis=1)
+        rate = S_effective * I_incoming
+        probability = -np.expm1(-rate)  # expm1 = exp(x) - 1, ∴ -expm1(-x) = 1 - exp(-x)
+        denominator = 1 / (1 + beta_j * (1 - tau_j) * S_j)
+        hazard = (beta_j * probability) / denominator
+        spatial_hazard[t] = hazard
+
+    return
+
+
+def calculate_coupling_for_model(model):
+    """Calculate the coupling for the model.
+
+    Helpful for calling from R without needing to specify all the parameters.
+    """
+    calculate_coupling(model.agents.Isym, model.agents.Iasym, model.patches.N, model.patches.coupling)
+
+    return
+
+
+def calculate_coupling(Isym, Iasym, N, C):
+    """Calculate the coupling between locations.
+
+    https://www.mosaicmod.org/model-description.html#coupling-among-locations
+
+    .. math::
+
+        C_{ij} = \\frac {(y_{it} - \\bar y_{i}) (y_{jt} - \\bar y_{j})} { \\sqrt {\\text {var}(y_{i}) \\text {var}(y_{j})} }
+
+    """
+    assert Isym.shape == Iasym.shape, "Isym and Iasym must have the same shape."
+    assert Isym.shape == N.shape, "Isym and N must have the same shape."
+    T, L = N.shape
+    assert C.shape == (L, L), "C must be a square matrix of shape (L, L)."
+
+    y = (Isym + Iasym) / N
+
+    y_bar = np.mean(y, axis=0)  # mean over time (axis=0) for each location
+
+    diff = y - y_bar  # difference from mean
+
+    for i in range(L):
+        for j in range(i, L):
+            numerator = np.sum(diff[:, i] * diff[:, j])
+            denominator = np.sqrt(np.sum(diff[:, i] ** 2) * np.sum(diff[:, j] ** 2))
+            if denominator != 0:
+                C_ij = numerator / denominator
+            else:
+                C_ij = np.nan
+            C[i, j] = C[j, i] = C_ij
+
+    return
