@@ -41,7 +41,7 @@ class TestSusceptible(unittest.TestCase):
         model.components = [Susceptible, Census]
         model.run()
 
-        assert np.all(model.agents.S[-1] == model.agents.S[0]), "Susceptible: steady state not held."
+        assert np.all(model.people.S[-1] == model.people.S[0]), "Susceptible: steady state not held."
 
         return
 
@@ -56,7 +56,7 @@ class TestSusceptible(unittest.TestCase):
         model.run()
 
         delta = model.patches.births[:-1] - model.patches.non_disease_deaths[:-1]
-        assert np.all(delta == (model.agents.S[1:] - model.agents.S[:-1])), (
+        assert np.all(delta == (model.people.S[1:] - model.people.S[:-1])), (
             "Susceptible: births - deaths != change in susceptible population."
         )
 
@@ -71,8 +71,8 @@ class TestSusceptible(unittest.TestCase):
         model.components = [Susceptible, Census]
         model.run()
 
-        assert np.all(model.agents.S[-1] < model.agents.S[0]), "Susceptible: deaths not occurring."
-        assert np.all(model.patches.non_disease_deaths[:-1] == (model.agents.S[:-1] - model.agents.S[1:])), (
+        assert np.all(model.people.S[-1] < model.people.S[0]), "Susceptible: deaths not occurring."
+        assert np.all(model.patches.non_disease_deaths[:-1] == (model.people.S[:-1] - model.people.S[1:])), (
             "Susceptible: deaths not recorded correctly."
         )
 
@@ -87,8 +87,8 @@ class TestSusceptible(unittest.TestCase):
         model.components = [Susceptible, Census]
         model.run()
 
-        assert np.all(model.agents.S[-1] > model.agents.S[0]), "Susceptible: births not occurring."
-        assert np.all(model.patches.births[:-1] == (model.agents.S[1:] - model.agents.S[:-1])), (
+        assert np.all(model.people.S[-1] > model.people.S[0]), "Susceptible: births not occurring."
+        assert np.all(model.patches.births[:-1] == (model.people.S[1:] - model.people.S[:-1])), (
             "Susceptible: births not recorded correctly."
         )
 

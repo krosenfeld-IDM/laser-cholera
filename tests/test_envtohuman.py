@@ -46,10 +46,10 @@ class TestEnvToHuman(unittest.TestCase):
         model.run()
 
         # At t = 0, Environmental component seeds environmental reservoir at t = 1
-        # At t = 1, EnvToHuman components calculates newly exposed agents at t = 2
+        # At t = 1, EnvToHuman components calculates newly exposed people at t = 2
 
         # Expect exposed at t = 2 to be _more_ for the test model.
-        assert np.all(model.agents.E[2] > self.baseline.agents.E[2]), "EnvToHuman: exposed not increasing with no WASH coverage."
+        assert np.all(model.people.E[2] > self.baseline.people.E[2]), "EnvToHuman: exposed not increasing with no WASH coverage."
 
         return
 
@@ -65,10 +65,10 @@ class TestEnvToHuman(unittest.TestCase):
         model.run()
 
         # At t = 0, Environmental component seeds environmental reservoir at t = 1
-        # At t = 1, EnvToHuman components calculates newly exposed agents at t = 2
+        # At t = 1, EnvToHuman components calculates newly exposed people at t = 2
 
         # Expect exposed at t = 2 to be _more_ for the test model.
-        assert np.all(model.agents.E[2] == 0), "EnvToHuman: exposed not decreasing with perfect WASH coverage."
+        assert np.all(model.people.E[2] == 0), "EnvToHuman: exposed not decreasing with perfect WASH coverage."
 
         return
 
@@ -84,7 +84,7 @@ class TestEnvToHuman(unittest.TestCase):
         model.run()
 
         # Expect exposed at t = 2 to be _more_ for the test model.
-        assert np.all(model.agents.E[2] > self.baseline.agents.E[2]), "EnvToHuman: exposed not increasing with increased seasonal factors."
+        assert np.all(model.people.E[2] > self.baseline.people.E[2]), "EnvToHuman: exposed not increasing with increased seasonal factors."
 
         return
 
@@ -100,7 +100,7 @@ class TestEnvToHuman(unittest.TestCase):
         model.run()
 
         # Expect exposed at t = 2 to be _less_ for the test model.
-        assert np.all(model.agents.E[2] < self.baseline.agents.E[2]), "EnvToHuman: exposed not decreasing with decreased seasonal factors."
+        assert np.all(model.people.E[2] < self.baseline.people.E[2]), "EnvToHuman: exposed not decreasing with decreased seasonal factors."
 
         return
 
@@ -116,7 +116,7 @@ class TestEnvToHuman(unittest.TestCase):
         model.run()
 
         # Expect exposed at t = 2 to be _more_ for the test model.
-        assert np.all(model.agents.E[2] > self.baseline.agents.E[2]), "EnvToHuman: exposed not increasing with lower infection threshold."
+        assert np.all(model.people.E[2] > self.baseline.people.E[2]), "EnvToHuman: exposed not increasing with lower infection threshold."
 
         return
 
@@ -132,7 +132,7 @@ class TestEnvToHuman(unittest.TestCase):
         model.run()
 
         # Expect exposed at t = 2 to be _less_ for the test model.
-        assert np.all(model.agents.E[2] < self.baseline.agents.E[2]), "EnvToHuman: exposed not decreasing with higher infection threshold."
+        assert np.all(model.people.E[2] < self.baseline.people.E[2]), "EnvToHuman: exposed not decreasing with higher infection threshold."
 
         return
 

@@ -44,13 +44,13 @@ class HumanToHuman:
         return
 
     def check(self):
-        assert hasattr(self.model, "agents"), "HumanToHuman: model needs to have a 'agents' attribute."
-        assert hasattr(self.model.agents, "Isym"), "HumanToHuman: model agents needs to have a 'Isym' (symptomatic) attribute."
-        assert hasattr(self.model.agents, "Iasym"), "HumanToHuman: model agents needs to have a 'Iasym' (asymptomatic) attribute."
-        assert hasattr(self.model.agents, "S"), "HumanToHuman: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "E"), "HumanToHuman: model agents needs to have a 'E' (exposed) attribute."
+        assert hasattr(self.model, "people"), "HumanToHuman: model needs to have a 'people' attribute."
+        assert hasattr(self.model.people, "Isym"), "HumanToHuman: model people needs to have a 'Isym' (symptomatic) attribute."
+        assert hasattr(self.model.people, "Iasym"), "HumanToHuman: model people needs to have a 'Iasym' (asymptomatic) attribute."
+        assert hasattr(self.model.people, "S"), "HumanToHuman: model people needs to have a 'S' (susceptible) attribute."
+        assert hasattr(self.model.people, "E"), "HumanToHuman: model people needs to have a 'E' (exposed) attribute."
 
-        assert hasattr(self.model.patches, "N"), "HumanToHuman: model agents needs to have a 'N' (current agents) attribute."
+        assert hasattr(self.model.patches, "N"), "HumanToHuman: model people needs to have a 'N' (current people) attribute."
 
         assert hasattr(self.model, "params"), "HumanToHuman: model needs to have a 'params' attribute."
         assert "tau_i" in self.model.params, "HumanToHuman: model params needs to have a 'tau_i' (emmigration probability) parameter."
@@ -73,12 +73,12 @@ class HumanToHuman:
 
         # LambdaS
         Lambda = model.patches.Lambda[tick + 1]
-        Isym = model.agents.Isym[tick]
-        Iasym = model.agents.Iasym[tick]
+        Isym = model.people.Isym[tick]
+        Iasym = model.people.Iasym[tick]
         N = model.patches.N[tick]
-        S = model.agents.S[tick]
-        S_next = model.agents.S[tick + 1]
-        E_next = model.agents.E[tick + 1]
+        S = model.people.S[tick]
+        S_next = model.people.S[tick + 1]
+        E_next = model.people.E[tick + 1]
 
         total_i = Isym + Iasym
         local_i = (total_i * (1 - model.params.tau_i)).astype(Lambda.dtype)

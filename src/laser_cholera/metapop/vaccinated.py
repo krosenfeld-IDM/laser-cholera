@@ -11,15 +11,15 @@ class Vaccinated:
     def __init__(self, model) -> None:
         self.model = model
 
-        assert hasattr(model, "agents"), "Vaccinated: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("V1", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V2", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V1imm", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V1sus", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V1inf", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V2imm", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V2sus", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("V2inf", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        assert hasattr(model, "people"), "Vaccinated: model needs to have a 'people' attribute."
+        model.people.add_vector_property("V1", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V2", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V1imm", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V1sus", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V1inf", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V2imm", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V2sus", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("V2inf", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert "V1_j_initial" in model.params, (
             "Vaccinated: model params needs to have a 'V1_j_initial' (initial one dose vaccinated population) parameter."
         )
@@ -28,20 +28,20 @@ class Vaccinated:
         )
         assert "phi_1" in model.params, "Vaccinated: model params needs to have a 'phi_1' (efficacy of one dose) parameter."
         assert "phi_2" in model.params, "Vaccinated: model params needs to have a 'phi_2' (efficacy of two doses) parameter."
-        model.agents.V1imm[0] = np.round(model.params.phi_1 * model.params.V1_j_initial)
-        model.agents.V1sus[0] = model.params.V1_j_initial - model.agents.V1imm[0]
-        model.agents.V1inf[0] = 0
-        model.agents.V1[0] = model.agents.V1imm[0] + model.agents.V1sus[0] + model.agents.V1inf[0]
-        model.agents.V2imm[0] = np.round(model.params.phi_2 * model.params.V2_j_initial)
-        model.agents.V2sus[0] = model.params.V2_j_initial - model.agents.V2imm[0]
-        model.agents.V2inf[0] = 0
-        model.agents.V2[0] = model.agents.V2imm[0] + model.agents.V2sus[0] + model.agents.V2inf[0]
+        model.people.V1imm[0] = np.round(model.params.phi_1 * model.params.V1_j_initial)
+        model.people.V1sus[0] = model.params.V1_j_initial - model.people.V1imm[0]
+        model.people.V1inf[0] = 0
+        model.people.V1[0] = model.people.V1imm[0] + model.people.V1sus[0] + model.people.V1inf[0]
+        model.people.V2imm[0] = np.round(model.params.phi_2 * model.params.V2_j_initial)
+        model.people.V2sus[0] = model.params.V2_j_initial - model.people.V2imm[0]
+        model.people.V2inf[0] = 0
+        model.people.V2[0] = model.people.V2imm[0] + model.people.V2sus[0] + model.people.V2inf[0]
 
         return
 
     def check(self):
-        assert hasattr(self.model.agents, "S"), "Vaccinated: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "E"), "Vaccinated: model agents needs to have a 'e' (exposed) attribute."
+        assert hasattr(self.model.people, "S"), "Vaccinated: model people needs to have a 'S' (susceptible) attribute."
+        assert hasattr(self.model.people, "E"), "Vaccinated: model people needs to have a 'e' (exposed) attribute."
 
         assert "phi_1" in self.model.params, "Vaccinated: model params needs to have a 'phi_1' parameter."
         assert "phi_2" in self.model.params, "Vaccinated: model params needs to have a 'phi_2' parameter."
@@ -58,23 +58,23 @@ class Vaccinated:
         return
 
     def __call__(self, model, tick: int) -> None:
-        V1_next = model.agents.V1[tick + 1]
-        V2_next = model.agents.V2[tick + 1]
-        V1imm = model.agents.V1imm[tick]
-        V1sus = model.agents.V1sus[tick]
-        V1inf = model.agents.V1inf[tick]
-        V1imm_next = model.agents.V1imm[tick + 1]
-        V1sus_next = model.agents.V1sus[tick + 1]
-        V1inf_next = model.agents.V1inf[tick + 1]
-        V2imm = model.agents.V2imm[tick]
-        V2sus = model.agents.V2sus[tick]
-        V2inf = model.agents.V2inf[tick]
-        V2imm_next = model.agents.V2imm[tick + 1]
-        V2sus_next = model.agents.V2sus[tick + 1]
-        V2inf_next = model.agents.V2inf[tick + 1]
-        S = model.agents.S[tick]
-        E = model.agents.E[tick]
-        S_next = model.agents.S[tick + 1]
+        V1_next = model.people.V1[tick + 1]
+        V2_next = model.people.V2[tick + 1]
+        V1imm = model.people.V1imm[tick]
+        V1sus = model.people.V1sus[tick]
+        V1inf = model.people.V1inf[tick]
+        V1imm_next = model.people.V1imm[tick + 1]
+        V1sus_next = model.people.V1sus[tick + 1]
+        V1inf_next = model.people.V1inf[tick + 1]
+        V2imm = model.people.V2imm[tick]
+        V2sus = model.people.V2sus[tick]
+        V2inf = model.people.V2inf[tick]
+        V2imm_next = model.people.V2imm[tick + 1]
+        V2sus_next = model.people.V2sus[tick + 1]
+        V2inf_next = model.people.V2inf[tick + 1]
+        S = model.people.S[tick]
+        E = model.people.E[tick]
+        S_next = model.people.S[tick + 1]
 
         V1imm_next[:] = V1imm
         V1sus_next[:] = V1sus
@@ -174,7 +174,7 @@ class Vaccinated:
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Vaccinated (One Dose)") if fig is None else fig
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.V1[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
+            plt.plot(self.model.people.V1[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.ylabel("Vaccinated (One Dose)")
         plt.legend()
@@ -184,7 +184,7 @@ class Vaccinated:
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Vaccinated (Two Doses)") if fig is None else fig
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.V2[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
+            plt.plot(self.model.people.V2[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.ylabel("Vaccinated (Two Doses)")
         plt.legend()

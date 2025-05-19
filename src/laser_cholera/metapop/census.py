@@ -20,8 +20,8 @@ class Census:
 
     def __call__(self, model, tick: int) -> None:
         for compartment in ["S", "E", "Isym", "Iasym", "R", "V1", "V2"]:
-            if hasattr(model.agents, compartment):
-                model.patches.N[tick + 1] += getattr(model.agents, compartment)[tick + 1]
+            if hasattr(model.people, compartment):
+                model.patches.N[tick + 1] += getattr(model.people, compartment)[tick + 1]
 
         assert np.all(model.patches.N[tick + 1] >= 0), "N' should not go negative"
 

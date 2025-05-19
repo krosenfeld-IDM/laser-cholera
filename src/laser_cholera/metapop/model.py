@@ -50,10 +50,10 @@ class Model:
 
         # https://gilesjohnr.github.io/MOSAIC-docs/model-description.html
 
-        # setup the LaserFrame for agents/population (states and dynamics)
+        # setup the LaserFrame for people/population (states and dynamics)
         # setup the LaserFrame for patches (inputs and reporting)
         npatches = len(parameters.location_name)
-        self.agents = LaserFrame(npatches)
+        self.people = LaserFrame(npatches)
         self.patches = LaserFrame(npatches)
 
         return

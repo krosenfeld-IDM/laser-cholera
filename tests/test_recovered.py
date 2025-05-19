@@ -42,7 +42,7 @@ class TestRecovered(unittest.TestCase):
         model.components = [Susceptible, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.R[-1] == model.agents.R[0]), "Recovered: steady state not held."
+        assert np.all(model.people.R[-1] == model.people.R[0]), "Recovered: steady state not held."
 
         return
 
@@ -53,7 +53,7 @@ class TestRecovered(unittest.TestCase):
         model.components = [Susceptible, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.R[-1] < model.agents.R[0]), "Recovered: deaths not occurring."
+        assert np.all(model.people.R[-1] < model.people.R[0]), "Recovered: deaths not occurring."
 
         return
 
@@ -66,7 +66,7 @@ class TestRecovered(unittest.TestCase):
         model.components = [Susceptible, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.R[-1] < model.agents.R[0]), "Recovered: waning immunity not occurring."
+        assert np.all(model.people.R[-1] < model.people.R[0]), "Recovered: waning immunity not occurring."
 
         return
 

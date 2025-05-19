@@ -34,7 +34,7 @@ class TestInfectious(unittest.TestCase):
 
         return params
 
-    # Test initial distribution of infectious agents - realistic sigma
+    # Test initial distribution of infectious people - realistic sigma
     def test_initial_distribution_realistic_sigma(self):
         params = self.get_test_parameters()
 
@@ -42,14 +42,14 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         # model.run() # don't need to run, just check initial distribution
 
-        assert np.all(model.agents.Isym[0] == np.round(model.params.sigma * model.params.I_j_initial)), (
+        assert np.all(model.people.Isym[0] == np.round(model.params.sigma * model.params.I_j_initial)), (
             "I symptomatic: initial distribution not correct."
         )
-        assert np.all(model.agents.Iasym[0] == (params.I_j_initial - model.agents.Isym[0])), (
+        assert np.all(model.people.Iasym[0] == (params.I_j_initial - model.people.Isym[0])), (
             "I asymptomatic: initial distribution not correct."
         )
 
-    # Test initial distribution of infectious agents - sigma = 0
+    # Test initial distribution of infectious people - sigma = 0
     def test_initial_distribution_sigma_zero(self):
         params = self.get_test_parameters()
 
@@ -60,10 +60,10 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         # model.run() # don't need to run, just check initial distribution
 
-        assert np.all(model.agents.Isym[0] == 0), "I symptomatic: initial distribution not correct."
-        assert np.all(model.agents.Iasym[0] == params.I_j_initial), "I asymptomatic: initial distribution not correct."
+        assert np.all(model.people.Isym[0] == 0), "I symptomatic: initial distribution not correct."
+        assert np.all(model.people.Iasym[0] == params.I_j_initial), "I asymptomatic: initial distribution not correct."
 
-    # Test initial distribution of infectious agents - sigma = 1
+    # Test initial distribution of infectious people - sigma = 1
     def test_initial_distribution_sigma_one(self):
         params = self.get_test_parameters()
 
@@ -74,8 +74,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         # model.run() # don't need to run, just check initial distribution
 
-        assert np.all(model.agents.Isym[0] == params.I_j_initial), "I symptomatic: initial distribution not correct."
-        assert np.all(model.agents.Iasym[0] == 0), "I asymptomatic: initial distribution not correct."
+        assert np.all(model.people.Isym[0] == params.I_j_initial), "I symptomatic: initial distribution not correct."
+        assert np.all(model.people.Iasym[0] == 0), "I asymptomatic: initial distribution not correct."
 
     # Steady state, d_jt = 0, mu = 0, gamma_1 = 0, gamma_2 = 0, iota = 0
     def test_infectous_steadystate(self):
@@ -91,8 +91,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.Isym[-1] == model.agents.Isym[0]), "I symptomatic: steady state not held."
-        assert np.all(model.agents.Iasym[-1] == model.agents.Iasym[0]), "I asymptomatic: steady state not held."
+        assert np.all(model.people.Isym[-1] == model.people.Isym[0]), "I symptomatic: steady state not held."
+        assert np.all(model.people.Iasym[-1] == model.people.Iasym[0]), "I asymptomatic: steady state not held."
 
         return
 
@@ -110,8 +110,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.Isym[-1] < model.agents.Isym[0]), "I symptomatic: non-disease-deaths not occurring."
-        assert np.all(model.agents.Iasym[-1] < model.agents.Iasym[0]), "I asymptomatic: non-disease-deaths not occurring."
+        assert np.all(model.people.Isym[-1] < model.people.Isym[0]), "I symptomatic: non-disease-deaths not occurring."
+        assert np.all(model.people.Iasym[-1] < model.people.Iasym[0]), "I asymptomatic: non-disease-deaths not occurring."
 
         return
 
@@ -129,8 +129,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.Isym[-1] < model.agents.Isym[0]), "I symptomatic: disease deaths not occurring."
-        assert np.all(model.agents.Iasym[-1] == model.agents.Iasym[0]), (
+        assert np.all(model.people.Isym[-1] < model.people.Isym[0]), "I symptomatic: disease deaths not occurring."
+        assert np.all(model.people.Iasym[-1] == model.people.Iasym[0]), (
             "I asymptomatic: disease deaths occurring in the asymptomatic population."
         )
 
@@ -150,8 +150,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.Isym[-1] < model.agents.Isym[0]), "I symptomatic: recovery not occurring."
-        assert np.all(model.agents.Iasym[-1] == model.agents.Iasym[0]), "I asymptomatic: recovery occurring in the asymptomatic population."
+        assert np.all(model.people.Isym[-1] < model.people.Isym[0]), "I symptomatic: recovery not occurring."
+        assert np.all(model.people.Iasym[-1] == model.people.Iasym[0]), "I asymptomatic: recovery occurring in the asymptomatic population."
 
         return
 
@@ -169,8 +169,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.Isym[-1] == model.agents.Isym[0]), "I symptomatic: recovery occurring in the symptomatic population."
-        assert np.all(model.agents.Iasym[-1] < model.agents.Iasym[0]), "I asymptomatic: recovery not occurring."
+        assert np.all(model.people.Isym[-1] == model.people.Isym[0]), "I symptomatic: recovery occurring in the symptomatic population."
+        assert np.all(model.people.Iasym[-1] < model.people.Iasym[0]), "I asymptomatic: recovery not occurring."
 
         return
 
@@ -191,8 +191,8 @@ class TestInfectious(unittest.TestCase):
         model.components = [Susceptible, Exposed, Infectious, Recovered, Census]
         model.run()
 
-        assert np.all(model.agents.Isym[-1] > model.agents.Isym[0]), "I symptomatic: progression from exposed to infectious not occurring."
-        assert np.all(model.agents.Iasym[-1] > model.agents.Iasym[0]), (
+        assert np.all(model.people.Isym[-1] > model.people.Isym[0]), "I symptomatic: progression from exposed to infectious not occurring."
+        assert np.all(model.people.Iasym[-1] > model.people.Iasym[0]), (
             "I asymptomatic: progression from exposed to infectious not occurring."
         )
 

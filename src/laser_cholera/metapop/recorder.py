@@ -17,8 +17,8 @@ class Recorder:
         return
 
     def check(self):
-        if not hasattr(self.model, "agents"):
-            Warning("Recorder: model expected to have a 'agents' attribute.")
+        if not hasattr(self.model, "people"):
+            Warning("Recorder: model expected to have a 'people' attribute.")
         if not hasattr(self.model, "patches"):
             Warning("Recorder: model expected to have a 'patches' attribute.")
 
@@ -86,7 +86,7 @@ def save_compressed_hdf5_parameters(model, filename: Union[str, Path]) -> Path:
 
 
 def save_hdf5(h5file: h5.File, model) -> None:
-    for frame in ["agents", "patches"]:
+    for frame in ["people", "patches"]:
         if not hasattr(model, frame):
             raise AttributeError(f"Recorder: model needs to have a '{frame}' attribute.")
 

@@ -7,9 +7,9 @@ class Infectious:
     def __init__(self, model) -> None:
         self.model = model
 
-        assert hasattr(model, "agents"), "Infectious: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("Isym", length=model.params.nticks + 1, dtype=np.int32, default=0)
-        model.agents.add_vector_property("Iasym", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        assert hasattr(model, "people"), "Infectious: model needs to have a 'people' attribute."
+        model.people.add_vector_property("Isym", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        model.people.add_vector_property("Iasym", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(model, "patches"), "Infectious: model needs to have a 'patches' attribute."
         model.patches.add_vector_property("expected_cases", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.patches.add_vector_property("disease_deaths", length=model.params.nticks + 1, dtype=np.int32, default=0)
@@ -18,13 +18,13 @@ class Infectious:
             "Infectious: model params needs to have a 'I_j_initial' (initial infectious population) parameter."
         )
         assert "sigma" in self.model.params, "Infectious: model params needs to have a 'sigma' (symptomatic fraction) parameter."
-        model.agents.Isym[0] = np.round(model.params.sigma * model.params.I_j_initial).astype(model.agents.Isym.dtype)
-        model.agents.Iasym[0] = model.params.I_j_initial - model.agents.Isym[0]
+        model.people.Isym[0] = np.round(model.params.sigma * model.params.I_j_initial).astype(model.people.Isym.dtype)
+        model.people.Iasym[0] = model.params.I_j_initial - model.people.Isym[0]
 
         return
 
     def check(self):
-        assert hasattr(self.model.agents, "R"), "Infectious: model.agents needs to have a 'S' attribute."
+        assert hasattr(self.model.people, "R"), "Infectious: model.people needs to have a 'S' attribute."
         assert "d_jt" in self.model.params, "Infectious: model params needs to have a 'd_jt' (mortality rate) parameter."
         assert "mu_jt" in self.model.params, "Infectious: model params needs to have a 'mu_jt' (disease mortality rate) parameter."
         assert "gamma_1" in self.model.params, "Infectious: model params needs to have a 'gamma_1' (recovery rate) parameter."
@@ -39,8 +39,8 @@ class Infectious:
 
     def __call__(self, model, tick: int) -> None:
         # Symptomatic
-        Isym = model.agents.Isym[tick]
-        Is_next = model.agents.Isym[tick + 1]
+        Isym = model.people.Isym[tick]
+        Is_next = model.people.Isym[tick + 1]
         Is_next[:] = Isym
 
         ## natural deaths (d_jt)
@@ -59,13 +59,13 @@ class Infectious:
         ## recovery (gamma)
         recovered = model.prng.binomial(Is_next, -np.expm1(-model.params.gamma_1)).astype(Is_next.dtype)
         Is_next -= recovered
-        R_next = model.agents.R[tick + 1]
+        R_next = model.people.R[tick + 1]
         R_next += recovered
         assert np.all(Is_next >= 0), f"Is_next should not go negative ({tick=}\n\t{Is_next=})"
 
         # Asymptomatic
-        Iasym = model.agents.Iasym[tick]
-        Ia_next = model.agents.Iasym[tick + 1]
+        Iasym = model.people.Iasym[tick]
+        Ia_next = model.people.Iasym[tick + 1]
         Ia_next[:] = Iasym
 
         ## natural deaths (d_jt)
@@ -77,12 +77,12 @@ class Infectious:
         ## recovery
         recovered = model.prng.binomial(Ia_next, -np.expm1(-model.params.gamma_2)).astype(Ia_next.dtype)
         Ia_next -= recovered
-        # R_next = model.agents.R[tick + 1]
+        # R_next = model.people.R[tick + 1]
         R_next += recovered
         assert np.all(Ia_next >= 0), f"Ia_next should not go negative ({tick=}\n\t{Ia_next=})"
 
         # Use E_next here, can't progress deceased individuals
-        E_next = model.agents.E[tick + 1]
+        E_next = model.people.E[tick + 1]
         progress = model.prng.binomial(E_next, -np.expm1(-model.params.iota)).astype(E_next.dtype)
         E_next -= progress
         assert np.all(E_next >= 0), f"E_next should not go negative ({tick=}\n\t{E_next=})"
@@ -107,7 +107,7 @@ class Infectious:
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Infectious (Symptomatic)") if fig is None else fig
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.Isym[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
+            plt.plot(self.model.people.Isym[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.ylabel("Symptomatic")
         plt.legend()
@@ -117,7 +117,7 @@ class Infectious:
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Infectious (Asymptomatic)") if fig is None else fig
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.Iasym[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
+            plt.plot(self.model.people.Iasym[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.ylabel("Asymptomatic")
         plt.legend()
@@ -128,7 +128,7 @@ class Infectious:
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
             plt.plot(
-                self.model.agents.Isym[:, ipatch] + self.model.agents.Iasym[:, ipatch], label=f"{self.model.params.location_name[ipatch]}"
+                self.model.people.Isym[:, ipatch] + self.model.people.Iasym[:, ipatch], label=f"{self.model.params.location_name[ipatch]}"
             )
         plt.xlabel("Tick")
         plt.ylabel("Total Infectious")

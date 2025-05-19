@@ -43,9 +43,9 @@ class Environmental:
         return
 
     def check(self):
-        assert hasattr(self.model, "agents"), "Environmental: model needs to have a 'agents' attribute."
-        assert hasattr(self.model.agents, "Isym"), "Environmental: model agents needs to have a 'Isym' (symptomatic) attribute."
-        assert hasattr(self.model.agents, "Iasym"), "Environmental: model agents needs to have a 'Iasym' (asymptomatic) attribute."
+        assert hasattr(self.model, "people"), "Environmental: model needs to have a 'people' attribute."
+        assert hasattr(self.model.people, "Isym"), "Environmental: model people needs to have a 'Isym' (symptomatic) attribute."
+        assert hasattr(self.model.people, "Iasym"), "Environmental: model people needs to have a 'Iasym' (asymptomatic) attribute."
         assert "zeta_1" in self.model.params, "Environmental: model params needs to have a 'zeta_1' (symptomatic shedding rate) parameter."
         assert "zeta_2" in self.model.params, "Environmental: model params needs to have a 'zeta_2' (asymptomatic shedding rate) parameter."
         assert "theta_j" in self.model.params, (
@@ -59,8 +59,8 @@ class Environmental:
         W_next = model.patches.W[tick + 1]
         W_next[:] = W
 
-        Isym = model.agents.Isym[tick]
-        Iasym = model.agents.Iasym[tick]
+        Isym = model.people.Isym[tick]
+        Iasym = model.people.Iasym[tick]
 
         # -decay
         # Use np.minimum() to make sure we don't go negative

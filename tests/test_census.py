@@ -11,17 +11,17 @@ from laser_cholera.utils import sim_duration
 
 
 class TestCensus(unittest.TestCase):
-    # Test with only susceptible agents
+    # Test with only susceptible people
     def test_census_susceptible(self):
         ps = get_parameters(overrides=sim_duration(), do_validation=False)
         model = Model(parameters=ps)
         model.components = [Susceptible, Census]
         model.run()
-        assert np.all(model.patches.N == model.agents.S), "Census: total does not match susceptible."
+        assert np.all(model.patches.N == model.people.S), "Census: total does not match susceptible."
 
         return
 
-    # Test with only exposed agents
+    # Test with only exposed people
     def test_census_exposed(self):
         ps = get_parameters(overrides=sim_duration(), do_validation=False)
         model = Model(parameters=ps)
@@ -29,11 +29,11 @@ class TestCensus(unittest.TestCase):
         ps.S_j_initial -= 10_000
         model.components = [Exposed, Census]
         model.run()
-        assert np.all(model.patches.N == model.agents.E), "Census: total does not match exposed."
+        assert np.all(model.patches.N == model.people.E), "Census: total does not match exposed."
 
         return
 
-    # Test with susceptible and exposed agents
+    # Test with susceptible and exposed people
     def test_census_susceptible_exposed(self):
         ps = get_parameters(overrides=sim_duration(), do_validation=False)
         model = Model(parameters=ps)
@@ -41,7 +41,7 @@ class TestCensus(unittest.TestCase):
         ps.S_j_initial -= 10_000
         model.components = [Susceptible, Exposed, Census]
         model.run()
-        assert np.all(model.patches.N == (model.agents.S + model.agents.E)), "Census: total does not match susceptible + exposed."
+        assert np.all(model.patches.N == (model.people.S + model.people.E)), "Census: total does not match susceptible + exposed."
 
         return
 

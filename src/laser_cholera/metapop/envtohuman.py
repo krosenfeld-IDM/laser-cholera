@@ -9,7 +9,7 @@ class EnvToHuman:
     def __init__(self, model) -> None:
         self.model = model
 
-        assert hasattr(model, "agents"), "EnvToHuman: model needs to have a 'agents' attribute."
+        assert hasattr(model, "people"), "EnvToHuman: model needs to have a 'people' attribute."
         model.patches.add_vector_property("Psi", length=model.params.nticks + 1, dtype=np.float32, default=np.float32(0.0))
 
         assert hasattr(model, "params"), "EnvToHuman: model needs to have a 'params' attribute."
@@ -33,8 +33,8 @@ class EnvToHuman:
         return
 
     def check(self):
-        assert hasattr(self.model.agents, "S"), "EnvToHuman: model agents needs to have a 'S' (susceptible) attribute."
-        assert hasattr(self.model.agents, "E"), "EnvToHuman: model agents needs to have a 'E' (exposed) attribute."
+        assert hasattr(self.model.people, "S"), "EnvToHuman: model people needs to have a 'S' (susceptible) attribute."
+        assert hasattr(self.model.people, "E"), "EnvToHuman: model people needs to have a 'E' (exposed) attribute."
 
         assert hasattr(self.model, "patches"), "EnvToHuman: model needs to have a 'patches' attribute."
         assert hasattr(self.model.patches, "W"), "EnvToHuman: model patches needs to have a 'W' (environmental) attribute."
@@ -60,9 +60,9 @@ class EnvToHuman:
         Psi[:] = normalized
 
         # PsiS
-        S = model.agents.S[tick]
-        S_next = model.agents.S[tick + 1]
-        E_next = model.agents.E[tick + 1]
+        S = model.people.S[tick]
+        S_next = model.people.S[tick + 1]
+        E_next = model.people.E[tick + 1]
         # Use S_next here since some S will have been removed by natural mortality and by human-to-human transmission
         local_s = np.round(S_next * local_frac).astype(S.dtype)
         new_infections = model.prng.binomial(local_s, -np.expm1(-Psi)).astype(S_next.dtype)

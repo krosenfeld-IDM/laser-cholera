@@ -21,19 +21,19 @@ class HumanToHumanVax:
         assert hasattr(self.model, "patches"), "HumanToHuman: model needs to have a 'patches' attribute."
         assert hasattr(self.model.patches, "Lambda"), "HumanToHuman: model patches needs to have a 'Lambda' attribute."
 
-        assert hasattr(self.model, "agents"), "HumanToHuman: model needs to have a 'agents' attribute."
-        assert hasattr(self.model.agents, "E"), "HumanToHuman: model agents needs to have a 'E' (exposed) attribute."
-        assert hasattr(self.model.agents, "V1sus"), (
-            "HumanToHuman: model agents needs to have a 'V1sus' (vaccinated 1 susceptible) attribute."
+        assert hasattr(self.model, "people"), "HumanToHuman: model needs to have a 'people' attribute."
+        assert hasattr(self.model.people, "E"), "HumanToHuman: model people needs to have a 'E' (exposed) attribute."
+        assert hasattr(self.model.people, "V1sus"), (
+            "HumanToHuman: model people needs to have a 'V1sus' (vaccinated 1 susceptible) attribute."
         )
-        assert hasattr(self.model.agents, "V1inf"), (
-            "HumanToHuman: model agents needs to have a 'V1inf' (vaccinated 1 infectious) attribute."
+        assert hasattr(self.model.people, "V1inf"), (
+            "HumanToHuman: model people needs to have a 'V1inf' (vaccinated 1 infectious) attribute."
         )
-        assert hasattr(self.model.agents, "V2sus"), (
-            "HumanToHuman: model agents needs to have a 'V2sus' (vaccinated 2 susceptible) attribute."
+        assert hasattr(self.model.people, "V2sus"), (
+            "HumanToHuman: model people needs to have a 'V2sus' (vaccinated 2 susceptible) attribute."
         )
-        assert hasattr(self.model.agents, "V2inf"), (
-            "HumanToHuman: model agents needs to have a 'V2inf' (vaccinated 2 infectious) attribute."
+        assert hasattr(self.model.people, "V2inf"), (
+            "HumanToHuman: model people needs to have a 'V2inf' (vaccinated 2 infectious) attribute."
         )
 
         assert hasattr(self.model, "params"), "HumanToHuman: model needs to have a 'params' attribute."
@@ -50,14 +50,14 @@ class HumanToHumanVax:
         """
 
         Lambda = model.patches.Lambda[tick + 1]
-        E_next = model.agents.E[tick + 1]
+        E_next = model.people.E[tick + 1]
 
         # LambdaV1
-        V1sus = model.agents.V1sus[tick]
+        V1sus = model.people.V1sus[tick]
         local = np.round((1 - model.params.tau_i) * V1sus).astype(V1sus.dtype)
         new_infections = model.prng.binomial(local, -np.expm1(-Lambda)).astype(V1sus.dtype)
-        V1sus_next = model.agents.V1sus[tick + 1]
-        V1inf_next = model.agents.V1inf[tick + 1]
+        V1sus_next = model.people.V1sus[tick + 1]
+        V1inf_next = model.people.V1inf[tick + 1]
         V1sus_next -= new_infections
         V1inf_next += new_infections
         E_next += new_infections
@@ -67,11 +67,11 @@ class HumanToHumanVax:
         assert np.all(V1sus_next >= 0), f"V1sus' should not go negative ({tick=}\n\t{V1sus_next})"
 
         # LambdaV2
-        V2sus = model.agents.V2sus[tick]
+        V2sus = model.people.V2sus[tick]
         local = np.round((1 - model.params.tau_i) * V2sus).astype(V2sus.dtype)
         new_infections = model.prng.binomial(local, -np.expm1(-Lambda)).astype(V2sus.dtype)
-        V2sus_next = model.agents.V2sus[tick + 1]
-        V2inf_next = model.agents.V2inf[tick + 1]
+        V2sus_next = model.people.V2sus[tick + 1]
+        V2inf_next = model.people.V2inf[tick + 1]
         V2sus_next -= new_infections
         V2inf_next += new_infections
         E_next += new_infections

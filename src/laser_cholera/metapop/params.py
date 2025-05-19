@@ -485,7 +485,7 @@ class Parameters:
 
     def check(self):
         # assert hasattr(self.model, "patches"), "Parameters: model needs to have a 'patches' attribute."
-        # assert hasattr(self.model, "agents"), "Parameters: model needs to have a 'agents' attribute."
+        # assert hasattr(self.model, "people"), "Parameters: model needs to have a 'people' attribute."
         assert hasattr(self.model, "params"), "Parameters: model needs to have a 'params' attribute."
 
         return

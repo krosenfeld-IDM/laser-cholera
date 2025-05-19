@@ -15,7 +15,7 @@ class TestExposed(unittest.TestCase):
         model = Model(parameters=ps)
         model.components = [Exposed]
         model.run()
-        assert np.all(model.agents.E[-1] == model.agents.E[0]), "Exposed: steady state not held."
+        assert np.all(model.people.E[-1] == model.people.E[0]), "Exposed: steady state not held."
 
         return
 
@@ -27,7 +27,7 @@ class TestExposed(unittest.TestCase):
         model = Model(parameters=ps)
         model.components = [Exposed]
         model.run()
-        assert np.all(model.agents.E[-1] < model.agents.E[0]), "Exposed: deaths not occurring."
+        assert np.all(model.people.E[-1] < model.people.E[0]), "Exposed: deaths not occurring."
 
         return
 

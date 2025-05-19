@@ -38,20 +38,20 @@ class TestEnvToHumanVax(unittest.TestCase):
         cls.baseline.run()
 
         # Expect V1imm and V2imm to be in steady state with vaccine dynamics turned off.
-        assert np.all(cls.baseline.agents.V1imm[1:] == cls.baseline.agents.V1imm[0]), "V1imm: steady state not held."
-        assert np.all(cls.baseline.agents.V2imm[1:] == cls.baseline.agents.V2imm[0]), "V2imm: steady state not held."
+        assert np.all(cls.baseline.people.V1imm[1:] == cls.baseline.people.V1imm[0]), "V1imm: steady state not held."
+        assert np.all(cls.baseline.people.V2imm[1:] == cls.baseline.people.V2imm[0]), "V2imm: steady state not held."
 
         # Expect V1sus and V2sus to decline with environmental transmission.
-        assert np.all(np.diff(cls.baseline.agents.V1sus, axis=0) <= 0), "V1sus: not declining with environmental transmission."
-        assert np.all(np.diff(cls.baseline.agents.V2sus, axis=0) <= 0), "V2sus: not declining with environmental transmission."
+        assert np.all(np.diff(cls.baseline.people.V1sus, axis=0) <= 0), "V1sus: not declining with environmental transmission."
+        assert np.all(np.diff(cls.baseline.people.V2sus, axis=0) <= 0), "V2sus: not declining with environmental transmission."
 
         # Expect V1inf and V2inf to increase with environmental transmission.
-        assert np.all(np.diff(cls.baseline.agents.V1inf, axis=0) >= 0), "V1inf: not increasing with environmental transmission."
-        assert np.all(np.diff(cls.baseline.agents.V2inf, axis=0) >= 0), "V2inf: not increasing with environmental transmission."
+        assert np.all(np.diff(cls.baseline.people.V1inf, axis=0) >= 0), "V1inf: not increasing with environmental transmission."
+        assert np.all(np.diff(cls.baseline.people.V2inf, axis=0) >= 0), "V2inf: not increasing with environmental transmission."
 
         # Expect V1 and V2 to be in steady state with vaccine dynamics turned off.
-        assert np.all(cls.baseline.agents.V1[1:] == cls.baseline.agents.V1[0]), "V1: steady state not held."
-        assert np.all(cls.baseline.agents.V2[1:] == cls.baseline.agents.V2[0]), "V2: steady state not held."
+        assert np.all(cls.baseline.people.V1[1:] == cls.baseline.people.V1[0]), "V1: steady state not held."
+        assert np.all(cls.baseline.people.V2[1:] == cls.baseline.people.V2[0]), "V2: steady state not held."
 
         return
 
@@ -101,14 +101,14 @@ class TestEnvToHumanVax(unittest.TestCase):
         model.run()
 
         # Expect more transmission with increased environmental transmission
-        nz = np.nonzero(self.baseline.agents.V1inf)
+        nz = np.nonzero(self.baseline.people.V1inf)
         assert len(nz) > 0, "V1inf: no infected individuals."  # All zeros would give a false positive
-        assert np.all(model.agents.V1inf[nz] >= self.baseline.agents.V1inf[nz]), (
+        assert np.all(model.people.V1inf[nz] >= self.baseline.people.V1inf[nz]), (
             "V1inf: not increasing with increased environmental transmission."
         )
-        nz = np.nonzero(self.baseline.agents.V2inf)
+        nz = np.nonzero(self.baseline.people.V2inf)
         assert len(nz) > 0, "V2inf: no infected individuals"  # All zeros would give a false positive
-        assert np.all(model.agents.V2inf[nz] >= self.baseline.agents.V2inf[nz]), (
+        assert np.all(model.people.V2inf[nz] >= self.baseline.people.V2inf[nz]), (
             "V2inf: not increasing with increased environmental transmission."
         )
 
@@ -137,10 +137,10 @@ class TestEnvToHumanVax(unittest.TestCase):
         model.run()
 
         # Expect less transmission with decreased environmental transmission
-        assert np.all(model.agents.V1inf[-1, :] <= self.baseline.agents.V1inf[-1, :]), (
+        assert np.all(model.people.V1inf[-1, :] <= self.baseline.people.V1inf[-1, :]), (
             "V1inf: not decreasing with decreased environmental transmission."
         )
-        assert np.all(model.agents.V2inf[-1, :] <= self.baseline.agents.V2inf[-1, :]), (
+        assert np.all(model.people.V2inf[-1, :] <= self.baseline.people.V2inf[-1, :]), (
             "V2inf: not decreasing with decreased environmental transmission."
         )
 

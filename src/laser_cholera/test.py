@@ -12,9 +12,9 @@ class Eradication:
 
     def __call__(self, model, tick: int) -> None:
         if tick == 1:
-            model.agents.S[tick] += model.agents.Isym[tick] + model.agents.Iasym[tick]
-            model.agents.Isym[tick] = 0
-            model.agents.Iasym[tick] = 0
+            model.people.S[tick] += model.people.Isym[tick] + model.people.Iasym[tick]
+            model.people.Isym[tick] = 0
+            model.people.Iasym[tick] = 0
 
         return
 

@@ -10,13 +10,13 @@ class Susceptible(Component):
     def __init__(self, model):
         self.model = model
 
-        assert hasattr(model, "agents"), "Susceptible: model needs to have an 'agents' attribute."
-        model.agents.add_vector_property("S", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        assert hasattr(model, "people"), "Susceptible: model needs to have an 'people' attribute."
+        model.people.add_vector_property("S", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(model, "patches"), "Susceptible: model needs to have a 'patches' attribute."
         model.patches.add_vector_property("births", length=model.params.nticks + 1, dtype=np.int32, default=0)
         assert hasattr(self.model, "params"), "Susceptible: model needs to have a 'params' attribute."
         assert "S_j_initial" in self.model.params, "Susceptible: model params needs to have a 'S_j_initial' parameter."
-        model.agents.S[0] = model.params.S_j_initial
+        model.people.S[0] = model.params.S_j_initial
 
         return
 
@@ -30,8 +30,8 @@ class Susceptible(Component):
         return
 
     def __call__(self, model, tick: int) -> None:
-        S_next = model.agents.S[tick + 1]
-        S = model.agents.S[tick]
+        S_next = model.people.S[tick + 1]
+        S = model.people.S[tick]
         S_next[:] = S
 
         # natural mortality
@@ -51,7 +51,7 @@ class Susceptible(Component):
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Susceptible") if fig is None else fig
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.S[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
+            plt.plot(self.model.people.S[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.ylabel("Susceptible")
         plt.legend()

@@ -7,13 +7,13 @@ class Exposed:
     def __init__(self, model):
         self.model = model
 
-        assert hasattr(model, "agents"), "Exposed: model needs to have a 'agents' attribute."
-        model.agents.add_vector_property("E", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        assert hasattr(model, "people"), "Exposed: model needs to have a 'people' attribute."
+        model.people.add_vector_property("E", length=model.params.nticks + 1, dtype=np.int32, default=0)
 
         assert hasattr(self.model, "params"), "Exposed: model needs to have a 'params' attribute."
         assert "E_j_initial" in self.model.params, "Exposed: model params needs to have a 'E_j_initial' parameter."
 
-        model.agents.E[0] = model.params.E_j_initial
+        model.people.E[0] = model.params.E_j_initial
 
         return
 
@@ -26,8 +26,8 @@ class Exposed:
         return
 
     def __call__(self, model, tick: int) -> None:
-        E_next = model.agents.E[tick + 1]
-        E = model.agents.E[tick]
+        E_next = model.people.E[tick + 1]
+        E = model.people.E[tick]
         E_next[:] = E
 
         # Do non-disease mortality first
@@ -41,7 +41,7 @@ class Exposed:
         _fig = plt.figure(figsize=(12, 9), dpi=128, num="Exposed") if fig is None else fig
 
         for ipatch in np.argsort(self.model.params.S_j_initial)[-10:]:
-            plt.plot(self.model.agents.E[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
+            plt.plot(self.model.people.E[:, ipatch], label=f"{self.model.params.location_name[ipatch]}")
         plt.xlabel("Tick")
         plt.ylabel("Exposed")
         plt.legend()

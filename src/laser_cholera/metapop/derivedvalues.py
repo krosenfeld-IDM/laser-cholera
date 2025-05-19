@@ -15,12 +15,12 @@ class DerivedValues:
         return
 
     def check(self):
-        assert hasattr(self.model, "agents"), "DerivedValues: model needs to have an 'agents' attribute."
-        assert hasattr(self.model.agents, "S"), "DerivedValues: model.agents needs to have 'S' attribute."
-        assert hasattr(self.model.agents, "Isym"), "DerivedValues: model.agents needs to have 'Isym' attribute."
-        assert hasattr(self.model.agents, "Iasym"), "DerivedValues: model.agents needs to have 'Iasym' attribute."
-        assert hasattr(self.model.agents, "V1sus"), "DerivedValues: model.agents needs to have 'V1sus' attribute."
-        assert hasattr(self.model.agents, "V2sus"), "DerivedValues: model.agents needs to have 'V2sus' attribute."
+        assert hasattr(self.model, "people"), "DerivedValues: model needs to have an 'people' attribute."
+        assert hasattr(self.model.people, "S"), "DerivedValues: model.people needs to have 'S' attribute."
+        assert hasattr(self.model.people, "Isym"), "DerivedValues: model.people needs to have 'Isym' attribute."
+        assert hasattr(self.model.people, "Iasym"), "DerivedValues: model.people needs to have 'Iasym' attribute."
+        assert hasattr(self.model.people, "V1sus"), "DerivedValues: model.people needs to have 'V1sus' attribute."
+        assert hasattr(self.model.people, "V2sus"), "DerivedValues: model.people needs to have 'V2sus' attribute."
 
         assert hasattr(self.model, "patches"), "DerivedValues: model needs to have a 'patches' attribute."
         assert hasattr(self.model.patches, "N"), "DerivedValues: model.patches needs to have 'N' attribute."
@@ -69,17 +69,17 @@ class DerivedValues:
                 model.patches.beta_j_seasonality,
                 model.params.p,
                 model.params.tau_i,
-                model.agents.S,
-                model.agents.V1sus,
-                model.agents.V2sus,
+                model.people.S,
+                model.people.V1sus,
+                model.people.V2sus,
                 model.patches.N,
                 model.patches.pi_ij,
-                model.agents.Iasym,
-                model.agents.Isym,
+                model.people.Iasym,
+                model.people.Isym,
                 model.patches.spatial_hazard,
             )
 
-            calculate_coupling(model.agents.Isym, model.agents.Iasym, model.patches.N, model.patches.coupling)
+            calculate_coupling(model.people.Isym, model.people.Iasym, model.patches.N, model.patches.coupling)
 
         return
 
@@ -108,13 +108,13 @@ def calculate_spatial_hazard_for_model(model):
         model.patches.beta_j_seasonality,
         model.params.p,
         model.params.tau_i,
-        model.agents.S,
-        model.agents.V1sus,
-        model.agents.V2sus,
+        model.people.S,
+        model.people.V1sus,
+        model.people.V2sus,
         model.patches.N,
         model.patches.pi_ij,
-        model.agents.Iasym,
-        model.agents.Isym,
+        model.people.Iasym,
+        model.people.Isym,
         model.patches.spatial_hazard,
     )
 
@@ -158,7 +158,7 @@ def calculate_coupling_for_model(model):
 
     Helpful for calling from R without needing to specify all the parameters.
     """
-    calculate_coupling(model.agents.Isym, model.agents.Iasym, model.patches.N, model.patches.coupling)
+    calculate_coupling(model.people.Isym, model.people.Iasym, model.patches.N, model.patches.coupling)
 
     return
 
