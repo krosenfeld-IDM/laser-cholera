@@ -11,9 +11,9 @@ from scipy.stats import shapiro
 
 def get_model_likelihood(
     obs_cases,
-    est_cases,
+    sim_cases,
     obs_deaths,
-    est_deaths,
+    sim_deaths,
     weight_cases=None,
     weight_deaths=None,
     weights_location=None,
@@ -21,18 +21,18 @@ def get_model_likelihood(
     verbose=False,
 ):
     """
-    Calculate the likelihood of the model given the observed and estimated cases and deaths.
+    Calculate the likelihood of the model given the observed and simulated cases and deaths.
 
     Parameters
     ----------
     obs_cases : np.ndarray
         Observed cases.
-    est_cases : np.ndarray
-        Estimated cases.
+    sim_cases : np.ndarray
+        simulated cases.
     obs_deaths : np.ndarray
         Observed deaths.
-    est_deaths : np.ndarray
-        Estimated deaths.
+    sim_deaths : np.ndarray
+        simulated deaths.
     weight_cases : np.ndarray, optional
         Weights for the cases. If None, all weights are set to 1.
     weight_deaths : np.ndarray, optional
@@ -47,25 +47,25 @@ def get_model_likelihood(
     Returns
     -------
     float
-        The likelihood of the model given the observed and estimated cases and deaths.
+        The likelihood of the model given the observed and simulated cases and deaths.
     """
 
     # 1) Matrix dimension checks
     if (
         not isinstance(obs_cases, np.ndarray)
-        or not isinstance(est_cases, np.ndarray)
+        or not isinstance(sim_cases, np.ndarray)
         or not isinstance(obs_deaths, np.ndarray)
-        or not isinstance(est_deaths, np.ndarray)
+        or not isinstance(sim_deaths, np.ndarray)
     ):
         raise TypeError(
-            f"obs_* and est_* must be numpy arrays ({type(obs_cases)=}, {type(est_cases)=}, {type(obs_deaths)=}, {type(est_deaths)=})."
+            f"obs_* and est_* must be numpy arrays ({type(obs_cases)=}, {type(sim_cases)=}, {type(obs_deaths)=}, {type(sim_deaths)=})."
         )
 
     n_locations, n_time_steps = obs_cases.shape
 
-    if (est_cases.shape != obs_cases.shape) or (obs_deaths.shape != obs_cases.shape) or (est_deaths.shape != obs_cases.shape):
+    if (sim_cases.shape != obs_cases.shape) or (obs_deaths.shape != obs_cases.shape) or (sim_deaths.shape != obs_cases.shape):
         raise ValueError(
-            f"obs_* and est_* must have the same dimensions (n_locations x n_time_steps). {obs_cases.shape=}, {est_cases.shape=}, {obs_deaths.shape=}, {est_deaths.shape=}."
+            f"obs_* and est_* must have the same dimensions (n_locations x n_time_steps). {obs_cases.shape=}, {sim_cases.shape=}, {obs_deaths.shape=}, {sim_deaths.shape=}."
         )
 
     # 2) Default location/time weights
@@ -100,7 +100,7 @@ def get_model_likelihood(
         cases = obs_cases[j, :]
         if np.all(np.isnan(cases)):
             if verbose:
-                print(f"Location {j} (cases): all NA — skipping.")
+                print(f"Location {j} (observed cases): all NA — skipping.")
             continue
 
         mean_cases = np.nanmean(cases)
@@ -135,12 +135,12 @@ def get_model_likelihood(
 
         # Calculate log-likelihood for cases
         ll_cases = calc_log_likelihood(
-            observed=obs_cases[j,], estimated=est_cases[j,], family=family_cases, weights=weights_time, verbose=verbose
+            observed=obs_cases[j,], simulated=sim_cases[j,], family=family_cases, weights=weights_time, verbose=verbose
         )
 
         ll_max_cases = calc_log_likelihood(
             observed=np.array([np.nanmax(obs_cases[j,])]),
-            estimated=np.array([np.nanmax(est_cases[j,])]),
+            simulated=np.array([np.nanmax(sim_cases[j,])]),
             family="poisson",
             weights=None,
             verbose=verbose,
@@ -148,12 +148,12 @@ def get_model_likelihood(
 
         # Calculate log-likelihood for deaths
         ll_deaths = calc_log_likelihood(
-            observed=obs_deaths[j,], estimated=est_deaths[j,], family=family_deaths, weights=weights_time, verbose=False
+            observed=obs_deaths[j,], simulated=sim_deaths[j,], family=family_deaths, weights=weights_time, verbose=False
         )
 
         ll_max_deaths = calc_log_likelihood(
             observed=np.array([np.nanmax(obs_deaths[j,])]),
-            estimated=np.array([np.nanmax(est_deaths[j,])]),
+            simulated=np.array([np.nanmax(sim_deaths[j,])]),
             family="poisson",
             weights=None,
             verbose=False,
@@ -167,9 +167,9 @@ def get_model_likelihood(
 
         if verbose:
             print(f"Location {j}:")
-            print(f"  Cases: var={var_cases:.2f}, mean={mean_cases:%.2f} => {family_cases}, LL={ll_cases:%.2f};")
-            print(f"  Deaths: var={var_deaths:%.2f}, mean={mean_deaths:%.2f} => {family_deaths}, LL={ll_deaths:%.2f};")
-            print(f"  Weighted={ll_location_tmp:%.2f}")
+            print(f"  Cases: var={var_cases:.2f}, mean={mean_cases:.2f} => {family_cases}, LL={ll_cases:.2f};")
+            print(f"  Deaths: var={var_deaths:.2f}, mean={mean_deaths:.2f} => {family_deaths}, LL={ll_deaths:.2f};")
+            print(f"  Weighted={ll_location_tmp:.2f}")
 
     # If everything was skipped
     if np.all(np.isnan(ll_locations)):
@@ -181,21 +181,21 @@ def get_model_likelihood(
     ll_total = np.nansum(ll_locations)
 
     if verbose:
-        print(f"Overall total log-likelihood: {ll_total:%.2f}")
+        print(f"Overall total log-likelihood: {ll_total:.2f}")
 
     return ll_total
 
 
-def calc_log_likelihood(observed, estimated, family, weights=None, **kwargs):
+def calc_log_likelihood(observed, simulated, family, weights=None, **kwargs):
     """
-    Calculate the log-likelihood of the observed data given the estimated data.
+    Calculate the log-likelihood of the observed data given the simulated data.
 
     Parameters
     ----------
     observed : np.ndarray
         Observed data.
-    estimated : np.ndarray
-        Estimated data.
+    simulated : np.ndarray
+        Simulated data.
     family : str
         The family of the distribution (e.g., "poisson", "negbin").
     weights : np.ndarray, optional
@@ -206,7 +206,7 @@ def calc_log_likelihood(observed, estimated, family, weights=None, **kwargs):
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
     switch = {
         "beta": calc_log_likelihood_beta,
@@ -218,14 +218,14 @@ def calc_log_likelihood(observed, estimated, family, weights=None, **kwargs):
     }
 
     if family in switch:
-        result = switch[family](observed, estimated, weights=weights, **kwargs)
+        result = switch[family](observed, simulated, weights=weights, **kwargs)
     else:
         raise ValueError(f"Unknown family: {family}")
 
     return result
 
 
-def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=None, verbose=True):
+def calc_log_likelihood_beta(observed, simulated, mean_precision=True, weights=None, verbose=True):
     """
     Calculate the log-likelihood for the Beta distribution.
 
@@ -233,8 +233,8 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
     ----------
     observed : np.ndarray
         Observed values (must be strictly between 0 and 1).
-    estimated : np.ndarray
-        Estimated values (must be strictly between 0 and 1).
+    simulated : np.ndarray
+        Simulated values (must be strictly between 0 and 1).
     mean_precision : bool, optional
         Whether to use mean-precision parameterization. Default is True.
     weights : np.ndarray, optional
@@ -245,23 +245,23 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
 
-    if (result := calc_log_likelihood_validation(observed, estimated, weights, verbose=verbose)) is None:
+    if (result := calc_log_likelihood_validation(observed, simulated, weights, verbose=verbose)) is None:
         return np.nan
 
-    observed, estimated, weights = result
+    observed, simulated, weights = result
 
     # Beta domain checks
     if np.any((observed <= 0) | (observed >= 1)):
         raise ValueError("observed must be strictly between 0 and 1 for Beta distribution.")
-    if np.any((estimated <= 0) | (estimated >= 1)):
-        raise ValueError("estimated must be strictly between 0 and 1 for Beta distribution.")
+    if np.any((simulated <= 0) | (simulated >= 1)):
+        raise ValueError("simulated must be strictly between 0 and 1 for Beta distribution.")
 
     # Parameter estimation
     if mean_precision:
-        residuals = observed - estimated
+        residuals = observed - simulated
         sigma2 = np.var(residuals, ddof=1 if len(residuals) > 1 else 0)
         if sigma2 <= 0:
             raise ValueError("Residual variance is non-positive — cannot estimate phi.")
@@ -269,13 +269,13 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
         mu = np.mean(observed)
         phi = (mu * (1 - mu)) / sigma2 - 1
         if phi <= 0:
-            raise ValueError("Estimated phi must be > 0 — data may be too dispersed or flat.")
+            raise ValueError("simulated phi must be > 0 — data may be too dispersed or flat.")
 
-        shape_1 = estimated * phi
-        shape_2 = (1 - estimated) * phi
+        shape_1 = simulated * phi
+        shape_2 = (1 - simulated) * phi
 
         if verbose:
-            print(f"Mean–precision mode: estimated phi = {phi:.2f}")
+            print(f"Mean–precision mode: simulated phi = {phi:.2f}")
 
     else:
         mu = np.mean(observed)
@@ -284,7 +284,7 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
         shape_2 = shape_1 * (1 / mu - 1)
 
         if shape_1 <= 0 or shape_2 <= 0:
-            raise ValueError("Estimated shape parameters must be positive — check observed values.")
+            raise ValueError("simulated shape parameters must be positive — check observed values.")
 
         if verbose:
             print(f"Standard shape mode: shape_1 = {shape_1:.2f}, shape_2 = {shape_2:.2f}")
@@ -304,7 +304,7 @@ def calc_log_likelihood_beta(observed, estimated, mean_precision=True, weights=N
     return ll
 
 
-def calc_log_likelihood_binomial(observed, estimated, trials, weights=None, verbose=True):
+def calc_log_likelihood_binomial(observed, simulated, trials, weights=None, verbose=True):
     """
     Calculate the log-likelihood for the Binomial distribution.
 
@@ -312,8 +312,8 @@ def calc_log_likelihood_binomial(observed, estimated, trials, weights=None, verb
     ----------
     observed : np.ndarray
         Observed counts (must be integers between 0 and trials).
-    estimated : np.ndarray
-        Estimated probabilities (must be strictly between 0 and 1).
+    simulated : np.ndarray
+        simulated probabilities (must be strictly between 0 and 1).
     trials : np.ndarray
         Number of trials (must be positive integers).
     weights : np.ndarray, optional
@@ -324,24 +324,24 @@ def calc_log_likelihood_binomial(observed, estimated, trials, weights=None, verb
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
 
-    if (result := calc_log_likelihood_validation(observed, estimated, weights, trials, verbose=verbose)) is None:
+    if (result := calc_log_likelihood_validation(observed, simulated, weights, trials, verbose=verbose)) is None:
         return np.nan
 
-    observed, estimated, trials, weights = result
+    observed, simulated, trials, weights = result
 
     # Domain checks
     if np.any((observed < 0) | (observed > trials) | (observed % 1 != 0)):
         raise ValueError("observed must be integer counts between 0 and trials.")
     if np.any((trials < 1) | (trials % 1 != 0)):
         raise ValueError("trials must be positive integers.")
-    if np.any((estimated <= 0) | (estimated >= 1)):
-        raise ValueError("estimated probabilities must be in (0, 1).")
+    if np.any((simulated <= 0) | (simulated >= 1)):
+        raise ValueError("simulated probabilities must be in (0, 1).")
 
     # Weighted likelihood
-    ll_vec = binom.logpmf(observed, n=trials, p=estimated)
+    ll_vec = binom.logpmf(observed, n=trials, p=simulated)
     ll = np.sum(weights * ll_vec)
 
     if verbose:
@@ -350,7 +350,7 @@ def calc_log_likelihood_binomial(observed, estimated, trials, weights=None, verb
     return ll
 
 
-def calc_log_likelihood_gamma(observed, estimated, weights=None, verbose=True):
+def calc_log_likelihood_gamma(observed, simulated, weights=None, verbose=True):
     """
     Calculate the log-likelihood for the Gamma distribution.
 
@@ -358,8 +358,8 @@ def calc_log_likelihood_gamma(observed, estimated, weights=None, verbose=True):
     ----------
     observed : np.ndarray
         Observed values (must be strictly positive).
-    estimated : np.ndarray
-        Estimated values (must be strictly positive).
+    simulated : np.ndarray
+        Simulated values (must be strictly positive).
     weights : np.ndarray, optional
         Weights for the observations. If None, all weights are set to 1.
     verbose : bool, optional
@@ -368,25 +368,25 @@ def calc_log_likelihood_gamma(observed, estimated, weights=None, verbose=True):
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
 
-    if (result := calc_log_likelihood_validation(observed, estimated, weights, verbose=verbose)) is None:
+    if (result := calc_log_likelihood_validation(observed, simulated, weights, verbose=verbose)) is None:
         return np.nan
 
-    observed, estimated, weights = result
+    observed, simulated, weights = result
 
     # Domain checks
     if np.any(observed <= 0):
         raise ValueError("All observed values must be strictly positive.")
-    if np.any(estimated <= 0):
-        raise ValueError("All estimated values must be strictly positive.")
+    if np.any(simulated <= 0):
+        raise ValueError("All simulated values must be strictly positive.")
 
     # Parameter estimation
     mu = np.mean(observed)
     s2 = np.var(observed, ddof=1 if len(observed) > 1 else 0)
     shape = mu**2 / s2
-    scale = estimated / shape
+    scale = simulated / shape
 
     if verbose:
         print(f"Gamma shape (⍺) = {shape:.2f}")
@@ -401,7 +401,7 @@ def calc_log_likelihood_gamma(observed, estimated, weights=None, verbose=True):
     return ll
 
 
-def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbose=True):
+def calc_log_likelihood_negbin(observed, simulated, k=None, weights=None, verbose=True):
     """
     Calculate the log-likelihood for the Negative Binomial distribution.
 
@@ -409,10 +409,10 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
     ----------
     observed : np.ndarray
         Observed counts (must be non-negative integers).
-    estimated : np.ndarray
-        Estimated means (must be strictly positive).
+    simulated : np.ndarray
+        simulated means (must be strictly positive).
     k : float, optional
-        Dispersion parameter. If None, it will be estimated from the data.
+        Dispersion parameter. If None, it will be simulated from the data.
     weights : np.ndarray, optional
         Weights for the observations. If None, all weights are set to 1.
     verbose : bool, optional
@@ -421,18 +421,18 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
 
-    if (result := calc_log_likelihood_validation(observed, estimated, weights, verbose=verbose)) is None:
+    if (result := calc_log_likelihood_validation(observed, simulated, weights, verbose=verbose)) is None:
         return np.nan
 
-    observed, estimated, weights = result
+    observed, simulated, weights = result
 
     # Add cushion around 0 values to avoid -Inf in log calculations
-    if np.any(estimated <= 0):
-        estimated = estimated.astype(np.float64)
-    estimated[estimated <= 0] = np.finfo(np.float64).eps
+    if np.any(simulated <= 0):
+        simulated = simulated.astype(np.float64)
+    simulated[simulated <= 0] = np.finfo(np.float64).eps
 
     # Domain checks
     if np.any(observed < 0) or np.any(observed % 1 != 0):
@@ -450,14 +450,14 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
         else:
             k = mu**2 / (s2 - mu)
             if verbose:
-                print(f"Estimated k = {k:.2f} (from Var = {s2:.2f}, Mean = {mu:.2f})")
+                print(f"simulated k = {k:.2f} (from Var = {s2:.2f}, Mean = {mu:.2f})")
     else:
         if verbose:
             print(f"Using provided k = {k:.2f}")
 
     # Use Poisson if k = Inf
     if np.isinf(k):
-        ll_vec = observed * np.log(estimated) - estimated - gammaln(observed + 1)
+        ll_vec = observed * np.log(simulated) - simulated - gammaln(observed + 1)
     else:
         if k < 1.5 and verbose:
             warnings.warn(f"k ({k:.2f}) < 1.5 indicates near-Poisson dispersion.")  # noqa: B028
@@ -465,8 +465,8 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
             gammaln(observed + k)
             - gammaln(k)
             - gammaln(observed + 1)
-            + k * np.log(k / (k + estimated))
-            + observed * np.log(estimated / (k + estimated))
+            + k * np.log(k / (k + simulated))
+            + observed * np.log(simulated / (k + simulated))
         )
 
     # Weighted likelihood
@@ -478,7 +478,7 @@ def calc_log_likelihood_negbin(observed, estimated, k=None, weights=None, verbos
     return ll
 
 
-def calc_log_likelihood_normal(observed, estimated, weights=None, verbose=True):
+def calc_log_likelihood_normal(observed, simulated, weights=None, verbose=True):
     """
     Calculate the log-likelihood for the Normal distribution.
 
@@ -486,8 +486,8 @@ def calc_log_likelihood_normal(observed, estimated, weights=None, verbose=True):
     ----------
     observed : np.ndarray
         Observed values.
-    estimated : np.ndarray
-        Estimated values.
+    simulated : np.ndarray
+        Simulated values.
     weights : np.ndarray, optional
         Weights for the observations. If None, all weights are set to 1.
     verbose : bool, optional
@@ -496,20 +496,20 @@ def calc_log_likelihood_normal(observed, estimated, weights=None, verbose=True):
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
 
-    if (result := calc_log_likelihood_validation(observed, estimated, weights, verbose=verbose)) is None:
+    if (result := calc_log_likelihood_validation(observed, simulated, weights, verbose=verbose)) is None:
         return np.nan
 
-    observed, estimated, weights = result
+    observed, simulated, weights = result
 
     n = len(observed)
     if n < 3:
         raise ValueError("At least 3 non-missing observations are required for Normal likelihood.")
 
     # Estimate residual standard deviation
-    residuals = observed - estimated
+    residuals = observed - simulated
     sigma = np.std(residuals, ddof=1)  # Use ddof=1 for sample standard deviation
     if sigma <= 0:
         raise ValueError("Standard deviation of residuals is non-positive.")
@@ -524,17 +524,17 @@ def calc_log_likelihood_normal(observed, estimated, weights=None, verbose=True):
             print(f"Shapiro-Wilk p = {shapiro_p:.4f}: residuals are consistent with normality.")
 
     # Weighted log-likelihood
-    ll_vec = norm.logpdf(observed, loc=estimated, scale=sigma)
+    ll_vec = norm.logpdf(observed, loc=simulated, scale=sigma)
     ll = np.sum(weights * ll_vec)
 
     if verbose:
-        print(f"Estimated σ = {sigma:.4f}")
+        print(f"simulated σ = {sigma:.4f}")
         print(f"Normal log-likelihood: {ll:.2f}")
 
     return ll
 
 
-def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True):
+def calc_log_likelihood_poisson(observed, simulated, weights=None, verbose=True):
     """
     Calculate the log-likelihood for the Poisson distribution.
 
@@ -542,8 +542,8 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     ----------
     observed : np.ndarray
         Observed counts (must be non-negative integers).
-    estimated : np.ndarray
-        Estimated means (must be strictly positive).
+    simulated : np.ndarray
+        simulated means (must be strictly positive).
     weights : np.ndarray, optional
         Weights for the observations. If None, all weights are set to 1.
     verbose : bool, optional
@@ -552,18 +552,18 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     Returns
     -------
     float
-        The log-likelihood of the observed data given the estimated data.
+        The log-likelihood of the observed data given the simulated data.
     """
 
-    if (result := calc_log_likelihood_validation(observed, estimated, weights, verbose=verbose)) is None:
+    if (result := calc_log_likelihood_validation(observed, simulated, weights, verbose=verbose)) is None:
         return np.nan
 
-    observed, estimated, weights = result
+    observed, simulated, weights = result
 
     # Add cushion around 0 values to avoid -Inf in log calculations
-    if np.any(estimated <= 0):
-        estimated = estimated.astype(np.float64)
-    estimated[estimated <= 0] = np.finfo(np.float64).eps
+    if np.any(simulated <= 0):
+        simulated = simulated.astype(np.float64)
+    simulated[simulated <= 0] = np.finfo(np.float64).eps
 
     # Domain checks
     if np.any((observed < 0) | (observed % 1 != 0)):
@@ -579,7 +579,7 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     # endif
 
     # Weighted log-likelihood
-    ll_vec = observed * np.log(estimated) - estimated - gammaln(observed + 1)
+    ll_vec = observed * np.log(simulated) - simulated - gammaln(observed + 1)
     ll = np.sum(weights * ll_vec)
 
     if verbose:
@@ -588,7 +588,7 @@ def calc_log_likelihood_poisson(observed, estimated, weights=None, verbose=True)
     return ll
 
 
-def calc_log_likelihood_validation(observed, estimated, weights, trials=None, verbose=True):
+def calc_log_likelihood_validation(observed, simulated, weights, trials=None, verbose=True):
     """
     Validate and preprocess inputs for log-likelihood calculation.
     This function performs validation and preprocessing of input arrays for
@@ -598,7 +598,7 @@ def calc_log_likelihood_validation(observed, estimated, weights, trials=None, ve
 
     Parameters:
         observed (np.ndarray): Array of observed values.
-        estimated (np.ndarray): Array of estimated values.
+        simulated (np.ndarray): Array of simulated values.
         weights (np.ndarray or None): Array of weights. If None, defaults to an
             array of ones with the same shape as `observed`.
         trials (np.ndarray or None, optional): Array of trial counts. If provided,
@@ -608,11 +608,11 @@ def calc_log_likelihood_validation(observed, estimated, weights, trials=None, ve
 
     Returns:
         tuple: A tuple containing the validated and preprocessed arrays:
-            - (observed, estimated, weights) if `trials` is None.
-            - (observed, estimated, trials, weights) if `trials` is provided.
+            - (observed, simulated, weights) if `trials` is None.
+            - (observed, simulated, trials, weights) if `trials` is provided.
 
     Raises:
-        ValueError: If the lengths of `observed`, `estimated`, and `weights` do
+        ValueError: If the lengths of `observed`, `simulated`, and `weights` do
             not match after preprocessing.
         ValueError: If any weight is negative.
         ValueError: If all weights are zero.
@@ -628,24 +628,24 @@ def calc_log_likelihood_validation(observed, estimated, weights, trials=None, ve
 
     # Check lengths
     n = len(observed)
-    if len(estimated) != n or len(weights) != n:
+    if len(simulated) != n or len(weights) != n:
         raise ValueError(
-            f"Lengths of observed ({len(observed)}), estimated ({len(estimated)}), and weights ({len(weights)}) must all match."
+            f"Lengths of observed ({len(observed)}), simulated ({len(simulated)}), and weights ({len(weights)}) must all match."
         )
 
     # Remove NaNs
     if trials is None:
-        mask = ~np.isnan(observed) & ~np.isnan(estimated) & ~np.isnan(weights)
+        mask = ~np.isnan(observed) & ~np.isnan(simulated) & ~np.isnan(weights)
     else:
-        mask = ~np.isnan(observed) & ~np.isnan(estimated) & ~np.isnan(trials) & ~np.isnan(weights)
+        mask = ~np.isnan(observed) & ~np.isnan(simulated) & ~np.isnan(trials) & ~np.isnan(weights)
         trials = trials[mask]
 
     observed = observed[mask]
-    estimated = estimated[mask]
+    simulated = simulated[mask]
     weights = weights[mask]
 
     # Handle empty input after NA removal
-    if len(observed) == 0 or len(estimated) == 0 or len(weights) == 0:
+    if len(observed) == 0 or len(simulated) == 0 or len(weights) == 0:
         if verbose:
             print("No usable data (all NaN) — returning NaN for log-likelihood.")
         return None
@@ -656,4 +656,4 @@ def calc_log_likelihood_validation(observed, estimated, weights, trials=None, ve
     if np.all(weights == 0):
         raise ValueError("All weights are zero, cannot compute likelihood.")
 
-    return (observed, estimated, weights) if trials is None else (observed, estimated, trials, weights)
+    return (observed, simulated, weights) if trials is None else (observed, simulated, trials, weights)
