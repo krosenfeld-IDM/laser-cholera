@@ -20,6 +20,9 @@ class Vaccinated:
         model.people.add_vector_property("V2imm", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.people.add_vector_property("V2sus", length=model.params.nticks + 1, dtype=np.int32, default=0)
         model.people.add_vector_property("V2inf", length=model.params.nticks + 1, dtype=np.int32, default=0)
+        # We will track doses on the date (tick) given to more easily match nu_1_jt and nu_2_jt.
+        model.patches.add_vector_property("dose_one_doses", length=model.params.nticks, dtype=np.int32, default=0)
+        model.patches.add_vector_property("dose_two_doses", length=model.params.nticks, dtype=np.int32, default=0)
         assert "V1_j_initial" in model.params, (
             "Vaccinated: model params needs to have a 'V1_j_initial' (initial one dose vaccinated population) parameter."
         )
@@ -116,6 +119,7 @@ class Vaccinated:
 
         # +newly vaccinated (successful take)
         new_one_doses = model.prng.poisson(model.params.nu_1_jt[tick] * S / (S + E)).astype(V1imm.dtype)
+        model.patches.dose_one_doses[tick] = new_one_doses
         if np.any(new_one_doses > S):
             logger.debug(f"WARNING: new_one_doses > S ({tick=})")
             for index in np.nonzero(new_one_doses > S)[0]:
@@ -137,6 +141,7 @@ class Vaccinated:
         if np.any(new_two_doses > V1):
             logger.debug(f"WARNING: new_two_doses > V1 ({tick=}\n\t{new_two_doses=}\n\t{V1=})")
             new_two_doses = np.minimum(new_two_doses, V1)
+        model.patches.dose_two_doses[tick] = new_two_doses
         v1imm_contribution = np.round((V1imm / V1) * new_two_doses).astype(V1imm.dtype)
         V1imm_next -= v1imm_contribution
         v1sus_contribution = np.round((V1sus / V1) * new_two_doses).astype(V1sus.dtype)

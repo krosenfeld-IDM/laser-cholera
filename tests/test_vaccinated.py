@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 
 import numpy as np
 
@@ -13,8 +14,10 @@ from laser_cholera.utils import sim_duration
 
 class TestVaccinated(unittest.TestCase):
     @staticmethod
-    def get_test_parameters(V1=20_000, V2=10_000):
-        params = get_parameters(overrides=sim_duration(), do_validation=False)
+    def get_test_parameters(V1=20_000, V2=10_000, overrides=None):
+        if overrides is None:
+            overrides = sim_duration()
+        params = get_parameters(overrides=overrides, do_validation=False)
         # S - use given susceptible populations
         # E - move any exposed people back to susceptible
         params.S_j_initial += params.E_j_initial
@@ -351,6 +354,39 @@ class TestVaccinated(unittest.TestCase):
         assert np.all(model.people.V2sus[-1] > model.people.V2sus[0]), "V2 susceptible: missing newly vaccinated people."
         assert np.all(model.people.V2inf[-1] == model.people.V2inf[0]), "V2 infected: steady state not held."
         assert np.all(model.people.V2[-1] > model.people.V2[0]), "V2 total: missing newly vaccinated people."
+
+        return
+
+    def test_doses_given_against_dose_schedule(self):
+        params = self.get_test_parameters(V1=0, V2=0, overrides=sim_duration(start=datetime(2023, 1, 1), stop=datetime(2024, 12, 17)))
+
+        model = Model(parameters=params)
+        model.components = [Susceptible, Exposed, Vaccinated, Census]
+        model.run()
+
+        nonzero_param_indices = np.nonzero(model.params.nu_1_jt)
+        if len(nonzero_param_indices[0]) > 0:
+            # Check any non-zero days in nu_1_jt should have non-zero doses in dose_one_doses
+            assert np.all(model.patches.dose_one_doses[nonzero_param_indices] != 0), (
+                "All non-zero nu_1_jt should have non-zero doses in dose_one_doses."
+            )
+            # Check that first doses given match the schedule
+            nonzero_dose_indices = np.nonzero(model.patches.dose_one_doses)
+            assert np.all(model.params.nu_1_jt[nonzero_dose_indices] != 0), (
+                "All non-zero dose_one_doses should have non-zero doses in params.nu_1_jt."
+            )
+
+        nonzero_param_indices = np.nonzero(model.params.nu_2_jt)
+        if len(nonzero_param_indices[0]) > 0:
+            # Check any non-zero days in nu_2_jt should have non-zero doses in dose_two_doses
+            assert np.all(model.patches.dose_two_doses[nonzero_param_indices] != 0), (
+                "All non-zero nu_2_jt should have non-zero doses in dose_two_doses."
+            )
+            # Check that second doses given match the schedule
+            nonzero_dose_indices = np.nonzero(model.patches.dose_two_doses)
+            assert np.all(model.params.nu_2_jt[nonzero_dose_indices] != 0), (
+                "All non-zero dose_two_doses should have non-zero doses in params.nu_2_jt."
+            )
 
         return
 
