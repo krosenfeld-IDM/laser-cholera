@@ -41,7 +41,7 @@ class Susceptible(Component):
 
         # births
         N = model.patches.N[tick]
-        births = model.prng.binomial(N, -np.expm1(-model.params.b_jt[tick])).astype(S_next.dtype)
+        births = model.prng.poisson(N * model.params.b_jt[tick]).astype(S_next.dtype)
         S_next[:] += births
         model.patches.births[tick] = births
 

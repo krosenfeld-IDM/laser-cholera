@@ -38,7 +38,7 @@ class Recovered:
         R_next -= non_disease_deaths
         model.patches.non_disease_deaths[tick] += non_disease_deaths
 
-        # waning natural immunity
+        # waning natural immunity - don't include those removed by natural mortality
         waned = model.prng.binomial(R - non_disease_deaths, -np.expm1(-model.params.epsilon)).astype(R_next.dtype)
         R_next -= waned
         S_next += waned

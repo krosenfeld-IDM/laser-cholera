@@ -81,7 +81,8 @@ class HumanToHuman:
         E_next = model.people.E[tick + 1]
 
         total_i = Isym + Iasym
-        local_i = (total_i * (1 - model.params.tau_i)).astype(Lambda.dtype)
+        local_frac = 1 - model.params.tau_i
+        local_i = (local_frac * total_i).astype(Lambda.dtype)
         # TODO - sum over axis=0 or axis=1?
         immigrating_i = (model.patches.pi_ij * (model.params.tau_i * total_i)).sum(axis=1).astype(Lambda.dtype)
         effective_i = local_i + immigrating_i
@@ -97,7 +98,7 @@ class HumanToHuman:
             rate = np.maximum(rate, 0.0)
 
         Lambda[:] = rate
-        local = np.round((1 - model.params.tau_i) * S).astype(S.dtype)
+        local = np.round(local_frac * S).astype(S.dtype)
         if np.any(np.isnan(rate)):
             logger.debug(f"NaN transmission rate at tick {tick + 1}.\n\t{rate=}")
         new_infections = model.prng.binomial(local, -np.expm1(-rate)).astype(S.dtype)

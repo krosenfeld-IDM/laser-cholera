@@ -83,13 +83,13 @@ class Infectious:
 
         # Use E_next here, can't progress deceased individuals
         E_next = model.people.E[tick + 1]
-        progress = model.prng.binomial(E_next, -np.expm1(-model.params.iota)).astype(E_next.dtype)
-        E_next -= progress
+        progressing = model.prng.binomial(E_next, -np.expm1(-model.params.iota)).astype(E_next.dtype)
+        E_next -= progressing
         assert np.all(E_next >= 0), f"E_next should not go negative ({tick=}\n\t{E_next=})"
 
         ## new symptomatic infections
-        new_symptomatic = np.round(model.params.sigma * progress).astype(Is_next.dtype)
-        new_asymptomatic = progress - new_symptomatic
+        new_symptomatic = np.round(model.params.sigma * progressing).astype(Is_next.dtype)
+        new_asymptomatic = progressing - new_symptomatic
         Is_next += new_symptomatic
         Ia_next += new_asymptomatic
 
