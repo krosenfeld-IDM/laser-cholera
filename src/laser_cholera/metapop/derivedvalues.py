@@ -24,9 +24,7 @@ class DerivedValues:
 
         assert hasattr(self.model, "patches"), "DerivedValues: model needs to have a 'patches' attribute."
         assert hasattr(self.model.patches, "N"), "DerivedValues: model.patches needs to have 'N' attribute."
-        assert hasattr(self.model.patches, "beta_j_seasonality"), (
-            "DerivedValues: model.patches needs to have 'beta_j_seasonality' attribute."
-        )
+        assert hasattr(self.model.patches, "beta_jt_human"), "DerivedValues: model.patches needs to have 'beta_jt_human' attribute."
         assert hasattr(self.model.patches, "pi_ij"), "DerivedValues: model.patches needs to have 'pi_ij' attribute."
 
         assert "beta_j0_hum" in self.model.params, "DerivedValues: model.params needs to have 'beta_j0_hum' attribute."
@@ -65,8 +63,7 @@ class DerivedValues:
         if tick == model.params.nticks - 1:
             calculate_spatial_hazard(
                 model.params.nticks,
-                model.params.beta_j0_hum,
-                model.patches.beta_j_seasonality,
+                model.patches.beta_jt_human,
                 model.params.p,
                 model.params.tau_i,
                 model.people.S,
@@ -104,8 +101,7 @@ def calculate_spatial_hazard_for_model(model):
     """
     calculate_spatial_hazard(
         model.params.nticks,
-        model.params.beta_j0_hum,
-        model.patches.beta_j_seasonality,
+        model.patches.beta_jt_human,
         model.params.p,
         model.params.tau_i,
         model.people.S,
@@ -121,7 +117,7 @@ def calculate_spatial_hazard_for_model(model):
     return
 
 
-def calculate_spatial_hazard(nticks, beta_j0_hum, beta_j_seasonality, p, tau_i, S, V1sus, V2sus, N, pi_ij, Iasym, Isym, spatial_hazard):
+def calculate_spatial_hazard(nticks, beta_jt_human, p, tau_i, S, V1sus, V2sus, N, pi_ij, Iasym, Isym, spatial_hazard):
     """Calculate the spatial hazard for each location at each time step.
     The spatial hazard is calculated using the formula:
 
@@ -134,7 +130,7 @@ def calculate_spatial_hazard(nticks, beta_j0_hum, beta_j_seasonality, p, tau_i, 
     """
 
     for t in range(nticks):
-        beta_j = beta_j0_hum * (1.0 + beta_j_seasonality[t % p, :])
+        beta_jt = beta_jt_human[t % p, :]
         tau_j = tau_i
         S_j = S[t] + V1sus[t] + V2sus[t]  # Use S_j where S_j = S + V1sus + V2sus
         N_i = N_j = N[t]
@@ -147,8 +143,8 @@ def calculate_spatial_hazard(nticks, beta_j0_hum, beta_j_seasonality, p, tau_i, 
         I_incoming = ((tau_i * I_i / N_i) * pi_ij.T).sum(axis=0)
         rate = S_effective * I_incoming
         probability = -np.expm1(-rate)  # expm1 = exp(x) - 1, ∴ -expm1(-x) = 1 - exp(-x)
-        denominator = 1 / (1 + beta_j * (1 - tau_j) * S_j)
-        hazard = (beta_j * probability) / denominator
+        denominator = 1 / (1 + beta_jt * (1 - tau_j) * S_j)
+        hazard = (beta_jt * probability) / denominator
         spatial_hazard[t] = hazard
 
     return

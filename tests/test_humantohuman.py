@@ -90,7 +90,7 @@ class TestHumanToHuman(unittest.TestCase):
 
     # Special cases for alpha_1?
     # Special cases for beta_j0_hum?
-    # Special cases for beta_j_seasonality?
+    # Special cases for beta_jt_human?
     # Special cases for alpha_2?
 
 
