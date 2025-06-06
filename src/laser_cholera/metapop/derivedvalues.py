@@ -143,7 +143,8 @@ def calculate_spatial_hazard(nticks, beta_j0_hum, beta_j_seasonality, p, tau_i, 
         I_i = Isym[t] + Iasym[t]  # Use I_i where I_i = Isym + Iasym
 
         S_effective = (1 - tau_j) * S_j / N_j  # Use S_effective where S_effective = (1 - tau_j) * S_j / N_j
-        I_incoming = (pi_ij * tau_i * I_i / N_i).sum(axis=1)
+        # This odd formulation (vector * matrix.T).T ensures that the result is indexed [src, dst] just like the matrix pi_ij
+        I_incoming = ((tau_i * I_i / N_i) * pi_ij.T).sum(axis=0)
         rate = S_effective * I_incoming
         probability = -np.expm1(-rate)  # expm1 = exp(x) - 1, ∴ -expm1(-x) = 1 - exp(-x)
         denominator = 1 / (1 + beta_j * (1 - tau_j) * S_j)

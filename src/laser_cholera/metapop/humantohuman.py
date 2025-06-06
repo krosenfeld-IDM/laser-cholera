@@ -83,8 +83,8 @@ class HumanToHuman:
         total_i = Isym + Iasym
         local_frac = 1 - model.params.tau_i
         local_i = (local_frac * total_i).astype(Lambda.dtype)
-        # TODO - sum over axis=0 or axis=1?
-        immigrating_i = (model.patches.pi_ij * (model.params.tau_i * total_i)).sum(axis=1).astype(Lambda.dtype)
+        # This odd formulation (vector * matrix.T).T ensures that the result is indexed [src, dst] just like the matrix pi_ij
+        immigrating_i = ((model.params.tau_i * total_i) * model.patches.pi_ij.T).T.sum(axis=0).astype(Lambda.dtype)
         effective_i = local_i + immigrating_i
         power_adjusted = np.power(effective_i, model.params.alpha_1).astype(Lambda.dtype)
         seasonality = (model.params.beta_j0_hum * (1.0 + model.patches.beta_j_seasonality[tick % model.params.p, :])).astype(Lambda.dtype)
