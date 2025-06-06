@@ -19,11 +19,11 @@ class EnvToHuman:
 
         psi = model.params.psi_jt  # convenience
         # TODO - use newer laser_core with add_array_property and psi.shape
-        model.patches.add_vector_property("beta_env", length=psi.shape[0], dtype=np.float32, default=0.0)
-        assert model.patches.beta_env.shape == model.params.psi_jt.shape
-        assert model.params.beta_j0_env.shape[0] == model.patches.beta_env.shape[1]
+        model.patches.add_vector_property("beta_jt_env", length=psi.shape[0], dtype=np.float32, default=0.0)
+        assert model.patches.beta_jt_env.shape == model.params.psi_jt.shape
+        assert model.params.beta_j0_env.shape[0] == model.patches.beta_jt_env.shape[1]
         psi_bar = psi.mean(axis=0, keepdims=True)
-        model.patches.beta_env[:, :] = model.params.beta_j0_env.T * (1.0 + (psi - psi_bar) / psi_bar)
+        model.patches.beta_jt_env[:, :] = model.params.beta_j0_env.T * (1.0 + (psi - psi_bar) / psi_bar)
 
         model.patches.add_vector_property("incidence_env", length=model.params.nticks + 1, dtype=np.int32, default=0)
 
@@ -54,7 +54,7 @@ class EnvToHuman:
         local_frac = 1 - tau_i
 
         non_wash = (1 - model.params.theta_j) * W
-        seasonal = model.patches.beta_env[tick] * non_wash
+        seasonal = model.patches.beta_jt_env[tick] * non_wash
         denominator = model.params.kappa + W
         normalized = seasonal / denominator
         Psi[:] = normalized
